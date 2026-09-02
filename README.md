@@ -1,5 +1,8 @@
 # AgentDesk — Multi-Agent Research & Report Orchestrator
 
+[![Tests](https://github.com/rahuldabola/agentdesk/actions/workflows/tests.yml/badge.svg)](https://github.com/rahuldabola/agentdesk/actions/workflows/tests.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 A LangGraph-based multi-agent system that turns a question into a cited, fact-checked report,
 using MCP (Model Context Protocol) for tool access and a RAG pipeline over a local knowledge
 base for grounding.
