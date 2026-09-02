@@ -21,3 +21,18 @@ jobs:
 
       - name: Run test suite
         run: pytest -v
+
+      - name: Smoke-test API server boot
+        run: |
+          uvicorn app.main:app --host 127.0.0.1 --port 8000 &
+          server_pid=$!
+          for i in $(seq 1 20); do
+            if curl -sf http://127.0.0.1:8000/health; then
+              kill $server_pid
+              exit 0
+            fi
+            sleep 0.5
+          done
+          echo "Server did not become healthy in time"
+          kill $server_pid
+          exit 1

@@ -72,9 +72,14 @@ actually relevant to the question.
   scrape (DuckDuckGo actively rate-limits/blocks scripted requests, so Tavily's free tier is
   the reliable path — the fallback exists so the tool never hard-fails, not as the primary path)
 - **API:** FastAPI (`app/main.py`), `POST /api/report {"question": "..."}`
-- **Tests:** pytest, 17 tests, all mocking the LLM/embedding calls so the suite runs fully
-  offline with zero API cost — verifies graph wiring (including the revise-loop), each agent's
-  parsing logic, chunking, retrieval, and the web-search tool's HTML parsing
+- **Tests:** pytest, 19 tests, all mocking the LLM/embedding/network calls so the suite runs
+  fully offline with zero API cost — verifies graph wiring (including the revise-loop), each
+  agent's parsing logic, chunking, retrieval, and the web-search tool's HTML parsing. Two of
+  these drive the real `MCPServer` through an actual `ClientSession` over the mcp SDK's
+  in-memory transport (`tests/test_mcp_protocol_integration.py`), proving the JSON-RPC
+  initialize/call_tool wiring works end to end rather than only testing the tool functions
+  as plain Python. CI also boots `uvicorn app.main:app` and polls `/health` after the test
+  suite, catching import-time/startup breakage that a mocked test suite can't see.
 
 ## Evaluation
 
