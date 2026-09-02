@@ -1,0 +1,13 @@
+fastapi>=0.115
+uvicorn[standard]>=0.30
+anthropic>=0.40
+openai>=1.50
+langgraph>=0.2
+chromadb>=0.5
+mcp>=2.0
+requests>=2.32
+beautifulsoup4>=4.12
+python-dotenv>=1.0
+pydantic>=2.8
+pytest>=8.0
+pytest-mock>=3.14

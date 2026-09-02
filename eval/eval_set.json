@@ -1,0 +1,32 @@
+[
+  {
+    "question": "What is our on-call rotation schedule?",
+    "expects_rag": true,
+    "expects_web": false
+  },
+  {
+    "question": "What is the API rate limit per key?",
+    "expects_rag": true,
+    "expects_web": false
+  },
+  {
+    "question": "How long is customer data retained after account deletion?",
+    "expects_rag": true,
+    "expects_web": false
+  },
+  {
+    "question": "What are the latest features released in LangGraph?",
+    "expects_rag": false,
+    "expects_web": true
+  },
+  {
+    "question": "What is the current stable version of the Python requests library?",
+    "expects_rag": false,
+    "expects_web": true
+  },
+  {
+    "question": "Summarize our incident severity levels and how they compare to industry-standard SRE practices.",
+    "expects_rag": true,
+    "expects_web": true
+  }
+]
