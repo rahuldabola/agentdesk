@@ -11,7 +11,7 @@
     "critic_revision_rate": 0.0,
     "research_loop_rate": 0.0,
     "unverified_report_rate": 0.0,
-    "mean_latency_s": 0.04
+    "mean_latency_s": 0.02
   },
   "rows": [
     {
@@ -29,7 +29,7 @@
       "facts": 4,
       "citation_markers": 4,
       "citations_resolved": 4,
-      "latency_s": 0.1
+      "latency_s": 0.06
     },
     {
       "question": "What is the API rate limit per key?",
@@ -46,7 +46,7 @@
       "facts": 4,
       "citation_markers": 4,
       "citations_resolved": 4,
-      "latency_s": 0.03
+      "latency_s": 0.02
     },
     {
       "question": "How long is customer data retained after account deletion?",
@@ -63,7 +63,7 @@
       "facts": 4,
       "citation_markers": 4,
       "citations_resolved": 4,
-      "latency_s": 0.03
+      "latency_s": 0.02
     },
     {
       "question": "What are the latest features released in LangGraph?",
@@ -80,7 +80,7 @@
       "facts": 3,
       "citation_markers": 3,
       "citations_resolved": 3,
-      "latency_s": 0.02
+      "latency_s": 0.01
     },
     {
       "question": "What is the current stable version of the Python requests library?",
@@ -97,7 +97,7 @@
       "facts": 3,
       "citation_markers": 3,
       "citations_resolved": 3,
-      "latency_s": 0.02
+      "latency_s": 0.01
     },
     {
       "question": "Summarize our incident severity levels and how they compare to industry-standard SRE practices.",
@@ -114,7 +114,7 @@
       "facts": 7,
       "citation_markers": 7,
       "citations_resolved": 7,
-      "latency_s": 0.04
+      "latency_s": 0.02
     }
   ]
 }

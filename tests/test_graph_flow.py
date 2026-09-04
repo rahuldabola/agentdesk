@@ -2,7 +2,15 @@
 
 from unittest.mock import patch
 
-from app.graph import build_graph, merge_notes, resolve_citations, route_after_critic
+import pytest
+
+from app.graph import (
+    build_graph,
+    merge_notes,
+    resolve_citations,
+    route_after_critic,
+    stream_agentdesk,
+)
 
 
 def _default_nodes():
@@ -187,3 +195,79 @@ def test_resolve_citations_reports_what_the_report_actually_cites():
 
 def test_resolve_citations_is_empty_for_an_uncited_report():
     assert resolve_citations("No citations here.", {"web:1": {}}) == []
+
+
+# --- streaming ----------------------------------------------------------------
+
+
+def _stream(**overrides):
+    nodes = _default_nodes()
+    nodes.update(overrides)
+    patches = [patch(f"app.graph.{name}", side_effect=fn) for name, fn in nodes.items()]
+    for p in patches:
+        p.start()
+    try:
+        return list(stream_agentdesk("a question"))
+    finally:
+        for p in patches:
+            p.stop()
+
+
+def test_streaming_emits_each_node_once_then_the_finished_report():
+    events = _stream()
+
+    kinds = [kind for kind, _ in events]
+    assert kinds == ["progress"] * 5 + ["report"]
+    assert [payload["node"] for kind, payload in events if kind == "progress"] == [
+        "planner",
+        "researcher",
+        "analyst",
+        "writer",
+        "critic",
+    ]
+
+    _, result = events[-1]
+    assert result["final_report"] == "Report v1"
+    assert result["status"] == "passed"
+
+
+def test_streaming_does_not_replay_trace_entries_across_a_loop():
+    """Each node's progress event must be emitted exactly once, loops included."""
+    calls = {"critic": 0}
+
+    def critic(state):
+        calls["critic"] += 1
+        if calls["critic"] == 1:
+            return {
+                "critic_verdict": "revise",
+                "revision_count": 1,
+                "missing_information": [],
+                "trace": [{"node": "critic"}],
+            }
+        return {
+            "critic_verdict": "pass",
+            "final_report": state["draft_report"],
+            "status": "passed",
+            "trace": [{"node": "critic"}],
+        }
+
+    events = _stream(critic_node=critic)
+    progress = [payload["node"] for kind, payload in events if kind == "progress"]
+
+    # planner, researcher, analyst, writer, critic, writer, critic - no repeats
+    # of already-emitted entries when the state is re-yielded.
+    assert progress == [
+        "planner",
+        "researcher",
+        "analyst",
+        "writer",
+        "critic",
+        "writer",
+        "critic",
+    ]
+    assert len([k for k, _ in events if k == "report"]) == 1
+
+
+def test_streaming_rejects_an_empty_question_before_running():
+    with pytest.raises(ValueError, match="must not be empty"):
+        list(stream_agentdesk("  "))

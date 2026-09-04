@@ -3,6 +3,7 @@
 import logging
 import operator
 import re
+from collections.abc import Iterator
 from typing import Annotated, TypedDict
 
 from langgraph.graph import END, START, StateGraph
@@ -101,10 +102,22 @@ _graph = None
 
 
 def get_graph():
+    """Compile once and reuse; the node set never changes at runtime."""
     global _graph
     if _graph is None:
         _graph = build_graph()
     return _graph
+
+
+def reset_graph() -> None:
+    """Drop the compiled graph.
+
+    A compiled StateGraph captures its node functions by reference at build
+    time, so a cached graph would ignore later patching. Tests reset between
+    cases to keep that cache from leaking across them.
+    """
+    global _graph
+    _graph = None
 
 
 def resolve_citations(report: str, sources: dict) -> list[dict]:
@@ -121,18 +134,16 @@ def resolve_citations(report: str, sources: dict) -> list[dict]:
     return citations
 
 
-def run_agentdesk(question: str) -> dict:
+def _initial_state(question: str) -> dict:
     question = (question or "").strip()
     if not question:
         raise ValueError("question must not be empty")
+    return {"question": question, "revision_count": 0, "research_rounds": 0, "trace": []}
 
-    initial_state = {
-        "question": question,
-        "revision_count": 0,
-        "research_rounds": 0,
-        "trace": [],
-    }
-    result = dict(get_graph().invoke(initial_state))
+
+def finalize(state: dict) -> dict:
+    """Attach the resolved citations and a status to a finished run."""
+    result = dict(state)
     result["citations"] = resolve_citations(
         result.get("final_report", ""), result.get("sources", {})
     )
@@ -145,3 +156,24 @@ def run_agentdesk(question: str) -> dict:
         len(result["citations"]),
     )
     return result
+
+
+def run_agentdesk(question: str) -> dict:
+    return finalize(get_graph().invoke(_initial_state(question)))
+
+
+def stream_agentdesk(question: str) -> Iterator[tuple[str, dict]]:
+    """Yield ("progress", trace_entry) as each node finishes, then ("report", result).
+
+    A full run takes tens of seconds; this lets a caller show the pipeline
+    working rather than holding a blank connection open until the end.
+    """
+    emitted = 0
+    state: dict = {}
+    for state in get_graph().stream(_initial_state(question), stream_mode="values"):
+        trace = state.get("trace", [])
+        for entry in trace[emitted:]:
+            yield "progress", entry
+        emitted = len(trace)
+
+    yield "report", finalize(state)

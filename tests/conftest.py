@@ -7,6 +7,7 @@ client/server protocol all run for real - see tests/doubles.py.
 
 import pytest
 
+import app.graph as graph_module
 import app.llm.claude_client as claude_client
 from tests.doubles import fake_embed_texts, flatten_exception, in_memory_mcp_session
 
@@ -38,6 +39,14 @@ def no_network(monkeypatch):
     monkeypatch.setattr("app.mcp.tools.requests.get", _boom)
     monkeypatch.setattr("app.mcp.tools.requests.post", _boom)
     monkeypatch.delenv("TAVILY_API_KEY", raising=False)
+
+
+@pytest.fixture(autouse=True)
+def reset_compiled_graph():
+    """A compiled graph binds its nodes by reference; never share one across tests."""
+    graph_module.reset_graph()
+    yield
+    graph_module.reset_graph()
 
 
 @pytest.fixture(autouse=True)

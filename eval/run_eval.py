@@ -24,6 +24,7 @@ import statistics
 import sys
 import time
 from contextlib import ExitStack
+from datetime import UTC, datetime
 from unittest.mock import patch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -34,7 +35,30 @@ load_dotenv()
 
 from app.graph import CITATION_RE, run_agentdesk  # noqa: E402
 
-RESULTS_PATH = os.path.join(os.path.dirname(__file__), "results_offline.json")
+EVAL_DIR = os.path.dirname(os.path.abspath(__file__))
+REPO_ROOT = os.path.dirname(EVAL_DIR)
+README_PATH = os.path.join(REPO_ROOT, "README.md")
+
+# Metrics that describe the orchestrator, and hold whichever model is answering.
+PIPELINE_METRICS = (
+    "task_completion_rate",
+    "termination_rate",
+    "citation_coverage",
+    "citation_validity",
+    "error_rate",
+)
+# Metrics that describe the model doing the judging, not the pipeline.
+JUDGEMENT_METRICS = (
+    "tool_routing_accuracy",
+    "critic_revision_rate",
+    "research_loop_rate",
+    "unverified_report_rate",
+)
+
+
+def results_path(mode: str) -> str:
+    return os.path.join(EVAL_DIR, f"results_{mode}.json")
+
 
 # Pipeline invariants. A change that breaks one of these is a regression in the
 # orchestrator, independent of how good the underlying model is.
@@ -155,6 +179,42 @@ def run_eval(mode="offline", eval_path=None, docs_dir="data/sample_docs", chroma
     return summarise(rows), rows
 
 
+def render_table(mode: str, summary: dict) -> str:
+    """Render the summary as the markdown block the README embeds."""
+    stamp = datetime.now(UTC).strftime("%Y-%m-%d")
+    lines = [
+        f"_{mode.capitalize()} run, {summary['cases']} cases, recorded {stamp}._",
+        "",
+        "| Metric | Result | Measures |",
+        "| --- | --- | --- |",
+    ]
+    for metric in PIPELINE_METRICS:
+        lines.append(f"| `{metric}` | {summary[metric]:.2f} | the pipeline |")
+    for metric in JUDGEMENT_METRICS:
+        target = "the stub" if mode == "offline" else "the model"
+        lines.append(f"| `{metric}` | {summary[metric]:.2f} | {target} |")
+    lines.append(f"| `mean_latency_s` | {summary['mean_latency_s']:.2f} | — |")
+    return "\n".join(lines)
+
+
+def update_readme(mode: str, summary: dict) -> bool:
+    """Replace the README block between this mode's markers. No markers, no edit."""
+    start, end = f"<!-- eval:{mode}:start -->", f"<!-- eval:{mode}:end -->"
+    try:
+        with open(README_PATH, encoding="utf-8") as f:
+            readme = f.read()
+    except OSError:
+        return False
+    if start not in readme or end not in readme:
+        return False
+
+    head, _, rest = readme.partition(start)
+    _, _, tail = rest.partition(end)
+    with open(README_PATH, "w", encoding="utf-8") as f:
+        f.write(f"{head}{start}\n{render_table(mode, summary)}\n{end}{tail}")
+    return True
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     group = parser.add_mutually_exclusive_group()
@@ -184,11 +244,14 @@ def main():
     document = {"mode": mode, "summary": summary, "rows": rows}
     print(json.dumps(document, indent=2))
 
-    if args.write and mode == "offline":
-        with open(RESULTS_PATH, "w", encoding="utf-8") as f:
+    if args.write:
+        path = results_path(mode)
+        with open(path, "w", encoding="utf-8") as f:
             json.dump(document, f, indent=2)
             f.write("\n")
-        print(f"\nwrote {RESULTS_PATH}", file=sys.stderr)
+        print(f"\nwrote {path}", file=sys.stderr)
+        if update_readme(mode, summary):
+            print(f"updated the {mode} results table in README.md", file=sys.stderr)
 
     if args.check:
         failures = [

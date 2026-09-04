@@ -77,6 +77,11 @@ the (subtasks × tools) calls a single question produces.
 
 ### Why RAG instead of stuffing docs into the prompt
 
+The sample corpus in `data/sample_docs/` is 8 internal-style documents (~10KB, 20 chunks)
+covering on-call, incident response, SRE practice, deployment, access control, and API policy —
+enough overlap between documents that retrieval has to discriminate rather than just return
+whatever exists.
+
 `app/rag/ingest.py` chunks markdown (800 chars, 150 overlap), embeds with OpenAI
 `text-embedding-3-small`, and upserts into a persistent Chroma collection configured for
 **cosine** distance. Re-ingesting a file deletes its previous chunks first, so deleting content
@@ -108,9 +113,11 @@ the Analyst would then treat as evidence. Anything past the floor is dropped ins
   `tool_choice={"type": "tool", ...}`, so there is no free-text parsing anywhere
 - **Embeddings + vector store** — OpenAI `text-embedding-3-small` + Chroma (persistent, cosine)
 - **Tool access** — the `mcp` SDK: a real client/server pair over stdio
-- **API** — FastAPI (`app/main.py`), `POST /api/report`
-- **Quality gates** — ruff (lint + format), pytest with a 85% coverage floor, and a
-  deterministic offline eval — all enforced in CI on Python 3.11 and 3.12
+- **API** — FastAPI (`app/main.py`): `POST /api/report`, plus `POST /api/report/stream`
+  which server-sends each agent's progress as it finishes
+- **Quality gates** — ruff (lint + format), pytest with an 85% coverage floor, a stdio
+  subprocess smoke test, and a deterministic offline eval with pass/fail thresholds — all
+  enforced in CI on Python 3.11 and 3.12
 
 ## Setup
 
@@ -167,6 +174,26 @@ curl -X POST localhost:8000/api/report -H 'content-type: application/json' \
 }
 ```
 
+For long runs, stream the pipeline instead of holding a blank connection open:
+
+```bash
+curl -N -X POST localhost:8000/api/report/stream -H 'content-type: application/json'      -d '{"question": "What is our incident severity scheme?"}'
+```
+
+```
+event: progress
+data: {"node": "planner", "detail": "3 subtasks, use_rag=True, use_web=False", "elapsed_ms": 812.4}
+
+event: progress
+data: {"node": "researcher", "detail": "initial: 9 notes from 3 subtask(s), 9 source(s)", "elapsed_ms": 1904.7}
+
+event: report
+data: {"status": "passed", "report": "...", "citations": [...], "trace": [...]}
+```
+
+A failure mid-stream arrives as a terminal `error` event rather than a severed connection —
+the response status is already committed by the time an agent can fail.
+
 Or with Docker:
 
 ```bash
@@ -176,8 +203,8 @@ docker build -t agentdesk . && docker run -p 8000:8000 --env-file .env agentdesk
 ## Tests
 
 ```bash
-pytest                        # 102 tests, fully offline, no API keys, no cost
-pytest --cov=app              # 92% line coverage
+pytest                        # 108 tests, fully offline, no API keys, no cost
+pytest --cov=app              # 93% line coverage
 ruff check . && ruff format --check .
 ```
 
@@ -208,29 +235,44 @@ python -m eval.run_eval --offline --check   # deterministic, free, runs in CI
 python -m eval.run_eval --live              # real Claude + embeddings; costs money
 ```
 
-**Offline** substitutes a scripted stub (`eval/stub_model.py`) for Claude and the embedding/search
-APIs, while running the real graph, the real MCP protocol, and real Chroma. Checked in at
-[`eval/results_offline.json`](eval/results_offline.json):
+**Offline** substitutes a scripted stub (`eval/stub_model.py`) for Claude and the
+embedding/search APIs, while running the real graph, the real MCP protocol, and real Chroma.
+`--check` fails the build if a pipeline invariant regresses, which makes the eval a test rather
+than a report nobody reruns. Raw rows: [`eval/results_offline.json`](eval/results_offline.json).
 
-| Metric | Result |
-| --- | --- |
-| `task_completion_rate` | 1.00 |
-| `termination_rate` | 1.00 |
-| `citation_coverage` | 1.00 |
-| `citation_validity` | 1.00 |
-| `error_rate` | 0.00 |
-| `mean_latency_s` | 0.04 |
+<!-- eval:offline:start -->
+_Offline run, 6 cases, recorded 2026-09-04._
 
-`--check` fails the build if any of those regress, which makes the eval a pipeline test rather
-than a report nobody reruns.
+| Metric | Result | Measures |
+| --- | --- | --- |
+| `task_completion_rate` | 1.00 | the pipeline |
+| `termination_rate` | 1.00 | the pipeline |
+| `citation_coverage` | 1.00 | the pipeline |
+| `citation_validity` | 1.00 | the pipeline |
+| `error_rate` | 0.00 | the pipeline |
+| `tool_routing_accuracy` | 1.00 | the stub |
+| `critic_revision_rate` | 0.00 | the stub |
+| `research_loop_rate` | 0.00 | the stub |
+| `unverified_report_rate` | 0.00 | the stub |
+| `mean_latency_s` | 0.02 | — |
+<!-- eval:offline:end -->
 
-**Be clear about what this does and does not measure.** The metrics above are properties of the
+**Live** runs the same cases against real Claude and real embeddings. It costs roughly a dollar
+and is the only thing that measures answer quality, routing judgement, and whether the relevance
+floor is tuned sensibly for real embedding distances.
+
+<!-- eval:live:start -->
+**Not yet run.** `python -m eval.run_eval --live --write` fills this table in and writes
+`eval/results_live.json`. Until it has been run, every number in this README describes the
+pipeline, not the model.
+<!-- eval:live:end -->
+
+**Be clear about what each column measures.** The pipeline metrics are properties of the
 *orchestrator* — did a report come out, does every citation resolve, do the loops terminate — and
-they hold regardless of which model is answering. Metrics that depend on judgement
-(`tool_routing_accuracy`, `critic_revision_rate`) are also reported, but offline they describe the
-stub, not Claude. Measuring those honestly needs `--live`, and answer quality itself needs an
-LLM-as-judge faithfulness score against a labelled key — noted here as the next step rather than
-claimed as built.
+they hold regardless of which model answers. The judgement metrics depend on the model, so in an
+offline run they describe the stub and nothing more; the table labels which is which. Answer
+quality itself is measured by neither, and needs an LLM-as-judge faithfulness score against a
+labelled key — noted here as the next step rather than claimed as built.
 
 ## Configuration
 
@@ -261,7 +303,7 @@ app/
   rag/                ingest.py (chunk/embed/upsert), retriever.py (query + floor)
   main.py             FastAPI surface
 eval/                 eval set, scripted stub model, runner, checked-in results
-tests/                102 tests; doubles.py holds the offline stand-ins
+tests/                108 tests; doubles.py holds the offline stand-ins
 scripts/              ingest_docs, run_demo, check_mcp_server
 ```
 
@@ -269,12 +311,18 @@ scripts/              ingest_docs, run_demo, check_mcp_server
 
 Stated plainly, because they are the honest next steps rather than hidden gaps:
 
-- **No answer-quality metric.** Everything measured here is structural. Whether a passing report
-  is actually *correct* needs an LLM-judge faithfulness score against a labelled answer key.
+- **The live eval has not been run.** Every number here comes from a stubbed run. Whether the
+  reports are actually *good* — and whether the 0.65 relevance floor is right for real
+  `text-embedding-3-small` distances — is unverified until someone runs `--live` with real keys.
+  This is the largest remaining gap, and it is one command wide.
+- **No answer-quality metric.** Everything measured is structural. Whether a passing report is
+  *correct* needs an LLM-judge faithfulness score against a labelled answer key.
 - **Fixed-width chunking** ignores markdown structure; a heading can be separated from the
   paragraph it introduces. Structure-aware splitting would retrieve better.
 - **The Critic sees only the Analyst's facts**, which came from the same model family. It catches
   claims unsupported *by the retrieved evidence*; it cannot catch evidence that is itself wrong.
+- **The corpus is 8 documents.** Big enough that retrieval must discriminate, far short of the
+  scale where chunking strategy and index choice start to matter.
 - **No persistence or auth.** Runs are stateless and the API is unauthenticated — fine for a
   local demo, not for a deployment.
 - **The offline eval never exercises the revision or research loops** (the stub Critic passes
