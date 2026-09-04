@@ -1,8 +1,14 @@
+.venv/
+venv/
 __pycache__/
-*.pyc
+*.py[cod]
 .env
 chroma_db/
 .pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
 *.egg-info/
-.venv/
-venv/
+build/
+dist/
+.ruff_cache/

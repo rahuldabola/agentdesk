@@ -1,38 +1,80 @@
-name: Tests
+name: CI
 
 on:
   push:
-    branches: [master]
+    branches: [master, main]
   pull_request:
-    branches: [master]
+    branches: [master, main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  pytest:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
+          cache: pip
+      - run: pip install ruff
+      - name: Lint
+        run: ruff check .
+      - name: Formatting check
+        run: ruff format --check --diff .
 
-      - name: Install dependencies
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install
         run: pip install -r requirements.txt
 
-      - name: Run test suite
-        run: pytest -v
+      - name: Test suite
+        run: pytest -v --cov=app --cov-report=term-missing --cov-fail-under=85
 
-      - name: Smoke-test API server boot
+      # A mocked suite cannot catch import-time or startup breakage.
+      - name: API boot smoke test
         run: |
           uvicorn app.main:app --host 127.0.0.1 --port 8000 &
           server_pid=$!
-          for i in $(seq 1 20); do
+          trap "kill $server_pid 2>/dev/null || true" EXIT
+          for _ in $(seq 1 30); do
             if curl -sf http://127.0.0.1:8000/health; then
-              kill $server_pid
+              echo "server healthy"
               exit 0
             fi
             sleep 0.5
           done
-          echo "Server did not become healthy in time"
-          kill $server_pid
+          echo "server did not become healthy in time"
           exit 1
+
+      # The MCP tool server is a separate process; prove it starts and speaks
+      # the protocol, which the in-memory transport tests deliberately bypass.
+      - name: MCP stdio server smoke test
+        run: python -m scripts.check_mcp_server
+
+  eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+
+      # Deterministic, stubbed end-to-end run. Fails the build if a pipeline
+      # invariant regresses (every case completes, every citation resolves).
+      - name: Offline evaluation
+        run: python -m eval.run_eval --offline --check

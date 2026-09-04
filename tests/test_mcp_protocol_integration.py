@@ -1,88 +1,117 @@
-"""Integration tests that exercise the real MCP client/server protocol.
+"""Tests that exercise the real MCP client/server protocol.
 
-Every other test in this suite calls the tool functions (web_search_impl,
-rag_search_impl) directly as plain Python. That never proves the actual
-production path works: app/mcp/client.py talks to app/mcp/server.py over a
-JSON-RPC session (normally stdio), and that wiring (initialize handshake,
-tool schema validation, request/response framing) is untested by unit-level
-mocks alone.
-
-These tests drive the real `MCPServer` instance from app/mcp/server.py
-through a real `ClientSession`, connected via the mcp SDK's in-memory
-transport instead of a subprocess+stdio pipe (a subprocess can't be
-monkeypatched from the test process). Only the network/embedding calls at
-the edges are mocked, so this stays offline and free like the rest of the
-suite, while still proving the protocol layer itself works end to end.
+Unit tests call `web_search_impl` / `rag_search_impl` as plain Python, which
+never proves the production path works: the Researcher talks to
+`app/mcp/server.py` over a JSON-RPC session. These drive the real `MCPServer`
+through a real `ClientSession` (in-memory transport, so no subprocess to
+monkeypatch), exercising the initialize handshake, the declared tool schemas,
+and `app/mcp/client.py`'s own payload parsing.
 """
 
 import asyncio
 from unittest.mock import MagicMock, patch
 
-import anyio
-from mcp import ClientSession
-from mcp.shared.memory import create_client_server_memory_streams
+import pytest
 
 import app.rag.ingest as ingest_module
-from app.mcp.server import mcp as mcp_app
+from app.errors import ToolError
+from app.mcp.client import call_tool
+from tests.doubles import flatten_exception, in_memory_mcp_session
+
+DDG_HTML = """
+<div class="result__body">
+  <a class="result__a" href="https://example.com">Example Title</a>
+  <a class="result__snippet">Example snippet text.</a>
+</div>
+"""
 
 
-async def _call_tool_over_real_session(tool_name, arguments):
-    async with create_client_server_memory_streams() as (client_streams, server_streams):
-        client_read, client_write = client_streams
-        server_read, server_write = server_streams
-
-        async with anyio.create_task_group() as tg:
-            tg.start_soon(
-                mcp_app._lowlevel_server.run,
-                server_read,
-                server_write,
-                mcp_app._lowlevel_server.create_initialization_options(),
-            )
-
-            async with ClientSession(client_read, client_write) as session:
-                await session.initialize()
-                result = await session.call_tool(tool_name, arguments)
-                text = "\n".join(part.text for part in result.content if hasattr(part, "text"))
-
-            tg.cancel_scope.cancel()
-
-    return text
+async def _call(tool_name, arguments):
+    async with in_memory_mcp_session() as session:
+        return await call_tool(session, tool_name, arguments)
 
 
-def test_web_search_tool_over_real_mcp_session(monkeypatch):
+async def _list_tools():
+    async with in_memory_mcp_session() as session:
+        return await session.list_tools()
+
+
+def test_the_server_declares_both_tools_with_schemas():
+    result = asyncio.run(_list_tools())
+    tools = {t.name: t for t in result.tools}
+
+    assert set(tools) == {"web_search", "rag_search"}
+    assert "query" in tools["rag_search"].input_schema["properties"]
+    assert "max_results" in tools["web_search"].input_schema["properties"]
+    assert tools["rag_search"].description
+
+
+def test_web_search_over_a_real_session(monkeypatch):
     monkeypatch.delenv("TAVILY_API_KEY", raising=False)
+    resp = MagicMock()
+    resp.text = DDG_HTML
+    resp.raise_for_status = MagicMock()
 
-    html = """
-    <div class="result__body">
-      <a class="result__a" href="https://example.com">Example Title</a>
-      <a class="result__snippet">Example snippet text.</a>
-    </div>
-    """
-    mock_resp = MagicMock()
-    mock_resp.text = html
-    mock_resp.raise_for_status = MagicMock()
+    with patch("app.mcp.tools.requests.get", return_value=resp):
+        payload = asyncio.run(_call("web_search", {"query": "test", "max_results": 2}))
 
-    with patch("app.mcp.tools.requests.get", return_value=mock_resp):
-        text = asyncio.run(
-            _call_tool_over_real_session("web_search", {"query": "test query", "max_results": 2})
-        )
-
-    assert "Example Title" in text
-    assert "example.com" in text
+    assert payload["provider"] == "duckduckgo"
+    assert payload["results"][0]["title"] == "Example Title"
+    assert payload["results"][0]["url"] == "https://example.com"
 
 
-def test_rag_search_tool_over_real_mcp_session(tmp_path, fake_embed, monkeypatch):
-    monkeypatch.setenv("AGENTDESK_CHROMA_DIR", str(tmp_path / "chroma"))
-    monkeypatch.setattr(ingest_module, "COLLECTION_NAME", "mcp_integration_test")
-
-    docs_dir = tmp_path / "docs"
-    docs_dir.mkdir()
-    (docs_dir / "oncall.md").write_text(
+def test_rag_search_over_a_real_session(tmp_path, isolated_chroma, fake_embed):
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "oncall.md").write_text(
         "The on-call rotation is weekly and starts Monday at 9am.", encoding="utf-8"
     )
-    ingest_module.ingest_docs(docs_dir=str(docs_dir))
+    ingest_module.ingest_docs(docs_dir=str(docs))
 
-    text = asyncio.run(_call_tool_over_real_session("rag_search", {"query": "on-call rotation", "k": 2}))
+    payload = asyncio.run(_call("rag_search", {"query": "on-call rotation", "k": 2}))
 
-    assert "[rag:oncall.md" in text
-    assert "on-call rotation" in text
+    assert payload["provider"] == "chroma"
+    assert payload["results"][0]["doc_id"].startswith("oncall.md#")
+    assert "on-call rotation" in payload["results"][0]["content"]
+
+
+def test_concurrent_tool_calls_share_one_session(tmp_path, isolated_chroma, fake_embed):
+    """The Researcher fans out over a single session; the protocol must cope."""
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "oncall.md").write_text("Weekly on-call rotation.", encoding="utf-8")
+    ingest_module.ingest_docs(docs_dir=str(docs))
+
+    async def fan_out():
+        async with in_memory_mcp_session() as session:
+            return await asyncio.gather(
+                *(
+                    call_tool(session, "rag_search", {"query": f"query {i}", "k": 1})
+                    for i in range(5)
+                )
+            )
+
+    payloads = asyncio.run(fan_out())
+
+    assert len(payloads) == 5
+    assert all(p["provider"] == "chroma" for p in payloads)
+
+
+def test_a_non_json_tool_payload_is_reported_as_a_tool_error(monkeypatch):
+    """A tool that stops returning JSON must fail loudly, not silently yield nothing."""
+    monkeypatch.setattr("app.mcp.server.rag_search_impl", lambda query, k=4: "not json at all")
+
+    with pytest.raises(BaseException) as caught:
+        asyncio.run(_call("rag_search", {"query": "q", "k": 1}))
+
+    errors = flatten_exception(caught.value)
+    assert any(isinstance(e, ToolError) and "non-JSON payload" in str(e) for e in errors), errors
+
+
+def test_calling_an_undeclared_tool_fails_loudly():
+    """The server must reject an unknown tool rather than answering it."""
+    with pytest.raises(BaseException) as caught:  # noqa: B017 - anyio wraps the real cause
+        asyncio.run(_call("no_such_tool", {}))
+
+    messages = " ".join(str(e) for e in flatten_exception(caught.value)).lower()
+    assert "no_such_tool" in messages or "unknown tool" in messages, messages
