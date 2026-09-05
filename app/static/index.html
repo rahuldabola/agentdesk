@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AgentDesk</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="shell">
+    <header class="header">
+      <div class="brand">
+        <span class="brand-mark">AD</span>
+        <div>
+          <h1>AgentDesk</h1>
+          <p class="tagline">Multi-agent research &amp; report orchestrator</p>
+        </div>
+      </div>
+      <div class="pipeline" aria-hidden="true">
+        <span class="pipeline-step" data-step="plan">Plan</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step" data-step="research">Research</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step" data-step="analyze">Analyze</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step" data-step="write">Write</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step" data-step="critique">Critique</span>
+      </div>
+    </header>
+
+    <main class="main">
+      <form id="report-form" class="ask">
+        <textarea
+          id="question"
+          class="ask-input"
+          rows="2"
+          placeholder="Ask a question — e.g. What is our on-call rotation and how does it compare to typical SRE practice?"
+          required
+        ></textarea>
+        <button id="submit-btn" type="submit" class="ask-submit">Run</button>
+      </form>
+
+      <p class="hint">
+        Runs the full Planner &rarr; Researcher &rarr; Analyst &rarr; Writer &rarr; Critic graph against
+        <code>/api/report</code>. First run a doc ingest (<code>python -m scripts.ingest_docs</code>) so RAG has
+        something to retrieve.
+      </p>
+
+      <section id="status" class="status" hidden>
+        <div class="spinner" aria-hidden="true"></div>
+        <span id="status-text">Running the agent graph&hellip;</span>
+      </section>
+
+      <section id="error" class="error" hidden></section>
+
+      <section id="result" class="result" hidden>
+        <div class="result-header">
+          <h2>Report</h2>
+          <span id="revision-badge" class="badge"></span>
+        </div>
+        <article id="report-body" class="report-body"></article>
+
+        <div id="citations-block" class="citations-block" hidden>
+          <h3>Citations</h3>
+          <div id="citations-list" class="citations-list"></div>
+        </div>
+
+        <details id="trace-block" class="trace-block">
+          <summary>Agent trace</summary>
+          <ol id="trace-list" class="trace-list"></ol>
+        </details>
+      </section>
+    </main>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

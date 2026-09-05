@@ -63,15 +63,17 @@ actually relevant to the question.
 ## Tech stack
 
 - **Orchestration:** LangGraph (`app/graph.py`) — explicit state machine, not a fixed chain
-- **LLM:** Claude API (`app/llm/claude_client.py`) — structured JSON-schema outputs are forced
-  via tool use (`tool_choice={"type": "tool", ...}`) for the Planner/Analyst/Critic, matching
-  the function-calling + structured-output pattern used in production RAG pipelines
+- **LLM:** Claude or Gemini (`app/llm/claude_client.py`), selected via `AI_PROVIDER`
+  (`anthropic` or `gemini`) — structured JSON-schema outputs are forced via tool/function
+  calling for the Planner/Analyst/Critic, matching the function-calling + structured-output
+  pattern used in production RAG pipelines
 - **Embeddings + vector store:** OpenAI `text-embedding-3-small` + Chroma (persistent, local)
 - **Tool access:** MCP (`mcp` SDK) — a real client/server pair over stdio, not hardcoded calls
 - **Web search:** Tavily API if `TAVILY_API_KEY` is set, else a best-effort DuckDuckGo HTML
   scrape (DuckDuckGo actively rate-limits/blocks scripted requests, so Tavily's free tier is
   the reliable path — the fallback exists so the tool never hard-fails, not as the primary path)
-- **API:** FastAPI (`app/main.py`), `POST /api/report {"question": "..."}`
+- **API + UI:** FastAPI (`app/main.py`), `POST /api/report {"question": "..."}`, plus a static
+  web UI (`app/static/`) served at `/`
 - **Tests:** pytest, 19 tests, all mocking the LLM/embedding/network calls so the suite runs
   fully offline with zero API cost — verifies graph wiring (including the revise-loop), each
   agent's parsing logic, chunking, retrieval, and the web-search tool's HTML parsing. Two of
@@ -109,12 +111,18 @@ python -m scripts.ingest_docs # embeds data/sample_docs/*.md into a local Chroma
 python -m scripts.run_demo "What is our on-call rotation and how does it compare to typical SRE practice?"
 ```
 
-Or run it as an API:
+Or run it as an API + web UI:
 
 ```bash
 uvicorn app.main:app --reload
-# POST http://localhost:8000/api/report  {"question": "..."}
+# UI:  http://localhost:8000/
+# API: POST http://localhost:8000/api/report  {"question": "..."}
 ```
+
+The UI (`app/static/`) is a static HTML/CSS/JS page served directly by FastAPI — no build step.
+It posts to `/api/report` and renders the final report (with inline `[source_id]` citations
+highlighted), the citation list, the revision badge, and the full agent trace returned by the
+graph.
 
 Run the offline test suite (no API keys needed):
 
