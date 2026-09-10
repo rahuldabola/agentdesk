@@ -11,6 +11,9 @@ knowledge base; and a Critic agent can send work back for a rewrite *or* for mor
 Every sentence in the output traces to a `source_id`, and every `source_id` resolves to a real
 file and chunk or a real URL — so the report is auditable, not just plausible.
 
+**🔗 Live demo:** [agentdesk-research.vercel.app](https://agentdesk-research.vercel.app) (password-protected —
+ask the repo owner for access) · API: [agentdesk-production-9e6c.up.railway.app](https://agentdesk-production-9e6c.up.railway.app)
+
 ---
 
 ## The problem this solves
@@ -82,8 +85,8 @@ covering on-call, incident response, SRE practice, deployment, access control, a
 enough overlap between documents that retrieval has to discriminate rather than just return
 whatever exists.
 
-`app/rag/ingest.py` chunks markdown (800 chars, 150 overlap), embeds with OpenAI
-`text-embedding-3-small`, and upserts into a persistent Chroma collection configured for
+`app/rag/ingest.py` chunks markdown (800 chars, 150 overlap), embeds with Gemini
+`gemini-embedding-001`, and upserts into a persistent Chroma collection configured for
 **cosine** distance. Re-ingesting a file deletes its previous chunks first, so deleting content
 from a source document actually removes it from retrieval.
 
@@ -95,7 +98,7 @@ the Analyst would then treat as evidence. Anything past the floor is dropped ins
 
 | Concern | How it is handled |
 | --- | --- |
-| Transient 429s / 5xx / connection drops | `app/util/retry.py` — jittered exponential backoff on both Claude and embedding calls. 4xx is never retried. |
+| Transient 429s / 5xx / connection drops | `app/util/retry.py` — jittered exponential backoff on both Gemini generation and embedding calls, honoring the API's own `Retry-After` hint on rate limits. 4xx is never retried. |
 | A search provider failing | Tavily errors fall through to DuckDuckGo; total failure returns an empty result set plus the reason, and the run continues with whatever the other tool found. |
 | A tool returning something unparseable | `ToolError`, surfaced — never silently treated as "no results". |
 | Missing API keys | `ConfigurationError` with the fix in the message, raised before any network call. |
@@ -108,13 +111,16 @@ the Analyst would then treat as evidence. Anything past the floor is dropped ins
 
 - **Orchestration** — LangGraph (`app/graph.py`): an explicit state machine with reducers and
   conditional edges, not a fixed chain
-- **LLM** — Claude (`app/llm/claude_client.py`). Every agent decision point (planning, fact
-  extraction, critique) is a forced-schema call via
-  `tool_choice={"type": "tool", ...}`, so there is no free-text parsing anywhere
-- **Embeddings + vector store** — OpenAI `text-embedding-3-small` + Chroma (persistent, cosine)
+- **LLM** — Gemini (`app/llm/gemini_client.py`). Every agent decision point (planning, fact
+  extraction, critique) is a forced function call via `FunctionCallingConfig(mode="ANY")`,
+  so there is no free-text parsing anywhere
+- **Embeddings + vector store** — Gemini `gemini-embedding-001` + Chroma (persistent, cosine)
 - **Tool access** — the `mcp` SDK: a real client/server pair over stdio
 - **API** — FastAPI (`app/main.py`): `POST /api/report`, plus `POST /api/report/stream`
-  which server-sends each agent's progress as it finishes
+  which server-sends each agent's progress as it finishes; both gated behind an optional
+  shared-password header (`AGENTDESK_APP_PASSWORD`) for public deployments
+- **Frontend** — `frontend/`: a Vite + React chat UI that streams the pipeline live and
+  renders the cited report with clickable source chips
 - **Quality gates** — ruff (lint + format), pytest with an 85% coverage floor, a stdio
   subprocess smoke test, and a deterministic offline eval with pass/fail thresholds — all
   enforced in CI on Python 3.11 and 3.12
@@ -125,10 +131,19 @@ the Analyst would then treat as evidence. Anything past the floor is dropped ins
 python -m venv .venv
 .venv\Scripts\activate            # or: source .venv/bin/activate
 pip install -r requirements.txt   # installs the project + dev extras
-cp .env.example .env              # fill in ANTHROPIC_API_KEY and OPENAI_API_KEY
+cp .env.example .env              # fill in GEMINI_API_KEY (get one at aistudio.google.com/apikey)
 
 python -m scripts.ingest_docs     # embeds data/sample_docs/*.md into ./chroma_db
 python -m scripts.run_demo "What is our on-call rotation and how does it compare to typical SRE practice?"
+```
+
+### Running the frontend locally
+
+```bash
+cd frontend
+npm install
+echo "VITE_API_BASE_URL=http://localhost:8000" > .env.local
+npm run dev                       # then, in another terminal: uvicorn app.main:app --reload
 ```
 
 Sample run (shape of the output; text abridged):
@@ -203,12 +218,12 @@ docker build -t agentdesk . && docker run -p 8000:8000 --env-file .env agentdesk
 ## Tests
 
 ```bash
-pytest                        # 108 tests, fully offline, no API keys, no cost
+pytest                        # 130 tests, fully offline, no API keys, no cost
 pytest --cov=app              # 93% line coverage
 ruff check . && ruff format --check .
 ```
 
-Only the three true edges are mocked — the Anthropic API, the OpenAI embeddings API, and
+Only the three true edges are mocked — the Gemini generation API, the Gemini embeddings API, and
 outbound HTTP (`tests/doubles.py`). **Chroma, LangGraph, and the MCP protocol all run for real.**
 
 Worth singling out:
@@ -232,10 +247,10 @@ Worth singling out:
 
 ```bash
 python -m eval.run_eval --offline --check   # deterministic, free, runs in CI
-python -m eval.run_eval --live              # real Claude + embeddings; costs money
+python -m eval.run_eval --live              # real Gemini + embeddings; costs money
 ```
 
-**Offline** substitutes a scripted stub (`eval/stub_model.py`) for Claude and the
+**Offline** substitutes a scripted stub (`eval/stub_model.py`) for Gemini and the
 embedding/search APIs, while running the real graph, the real MCP protocol, and real Chroma.
 `--check` fails the build if a pipeline invariant regresses, which makes the eval a test rather
 than a report nobody reruns. Raw rows: [`eval/results_offline.json`](eval/results_offline.json).
@@ -257,14 +272,25 @@ _Offline run, 6 cases, recorded 2026-09-04._
 | `mean_latency_s` | 0.02 | — |
 <!-- eval:offline:end -->
 
-**Live** runs the same cases against real Claude and real embeddings. It costs roughly a dollar
-and is the only thing that measures answer quality, routing judgement, and whether the relevance
-floor is tuned sensibly for real embedding distances.
+**Live** runs the same cases against real Gemini and real embeddings. It costs well under a dollar
+on the free tier and is the only thing that measures answer quality, routing judgement, and
+whether the relevance floor is tuned sensibly for real embedding distances.
 
 <!-- eval:live:start -->
-**Not yet run.** `python -m eval.run_eval --live --write` fills this table in and writes
-`eval/results_live.json`. Until it has been run, every number in this README describes the
-pipeline, not the model.
+_Live run, 6 cases, recorded 2026-09-10._
+
+| Metric | Result | Measures |
+| --- | --- | --- |
+| `task_completion_rate` | 1.00 | the pipeline |
+| `termination_rate` | 1.00 | the pipeline |
+| `citation_coverage` | 0.67 | the pipeline |
+| `citation_validity` | 1.00 | the pipeline |
+| `error_rate` | 0.00 | the pipeline |
+| `tool_routing_accuracy` | 1.00 | the model |
+| `critic_revision_rate` | 0.00 | the model |
+| `research_loop_rate` | 0.00 | the model |
+| `unverified_report_rate` | 0.00 | the model |
+| `mean_latency_s` | 15.47 | — |
 <!-- eval:live:end -->
 
 **Be clear about what each column measures.** The pipeline metrics are properties of the
@@ -280,15 +306,17 @@ All settings are environment variables read at call time (see `app/config.py` an
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `ANTHROPIC_API_KEY` | — | required |
-| `OPENAI_API_KEY` | — | required, for embeddings |
+| `GEMINI_API_KEY` | — | required; free tier available at aistudio.google.com/apikey |
 | `TAVILY_API_KEY` | — | optional; without it, web search scrapes DuckDuckGo |
-| `ANTHROPIC_MODEL` | `claude-sonnet-5` | |
+| `GEMINI_MODEL` | `gemini-flash-lite-latest` | chat/tool-calling model; heavier models hit free-tier rate limits fast under this pipeline's call volume |
+| `AGENTDESK_EMBED_MODEL` | `gemini-embedding-001` | |
 | `AGENTDESK_MAX_DISTANCE` | `0.65` | cosine-distance relevance floor for retrieval |
 | `AGENTDESK_RETRIEVAL_K` | `4` | chunks per subtask |
 | `AGENTDESK_MAX_REVISIONS` | `2` | Critic → Writer rewrites before shipping unverified |
 | `AGENTDESK_MAX_RESEARCH_ROUNDS` | `1` | Critic → Researcher rounds for evidence gaps |
 | `AGENTDESK_LLM_MAX_ATTEMPTS` | `4` | retry budget for 429/5xx/connection errors |
+| `AGENTDESK_APP_PASSWORD` | — | optional; gates `/api/report*` behind an `X-App-Password` header for public deployments |
+| `AGENTDESK_CORS_ORIGINS` | `*` | comma-separated list of origins allowed to call the API |
 
 ## Project layout
 
@@ -298,23 +326,25 @@ app/
   config.py           settings; errors.py: typed error taxonomy
   agents/             planner, researcher, analyst, writer, critic
     base.py           @node decorator: timing, logging, trace entries
-  llm/claude_client.py  forced-schema calls + retry policy
+  llm/gemini_client.py  forced function-calling + retry policy
   mcp/                server.py (tool process), client.py (session), tools.py (impls)
   rag/                ingest.py (chunk/embed/upsert), retriever.py (query + floor)
-  main.py             FastAPI surface
-eval/                 eval set, scripted stub model, runner, checked-in results
-tests/                108 tests; doubles.py holds the offline stand-ins
-scripts/              ingest_docs, run_demo, check_mcp_server
+  main.py             FastAPI surface: auth gate, CORS, /api/report(/stream)
+frontend/              Vite + React chat UI (password gate, live pipeline view, report + citations)
+eval/                  eval set, scripted stub model, runner, checked-in results
+tests/                 130 tests; doubles.py holds the offline stand-ins
+scripts/               ingest_docs, run_demo, check_mcp_server
 ```
 
 ## Known limitations
 
 Stated plainly, because they are the honest next steps rather than hidden gaps:
 
-- **The live eval has not been run.** Every number here comes from a stubbed run. Whether the
-  reports are actually *good* — and whether the 0.65 relevance floor is right for real
-  `text-embedding-3-small` distances — is unverified until someone runs `--live` with real keys.
-  This is the largest remaining gap, and it is one command wide.
+- **The live eval has been run against Gemini** (see the table above) — all pipeline metrics are
+  clean and the 0.65 relevance floor holds up for `gemini-embedding-001` distances too. Its
+  `citation_coverage` of 0.67 is lower than the offline stub's 1.00 because 2 of the 6 cases are
+  pure web-search questions that hit the DuckDuckGo-scrape fallback with no `TAVILY_API_KEY` set
+  in this run, not a RAG problem.
 - **No answer-quality metric.** Everything measured is structural. Whether a passing report is
   *correct* needs an LLM-judge faithfulness score against a labelled answer key.
 - **Fixed-width chunking** ignores markdown structure; a heading can be separated from the
@@ -323,8 +353,9 @@ Stated plainly, because they are the honest next steps rather than hidden gaps:
   claims unsupported *by the retrieved evidence*; it cannot catch evidence that is itself wrong.
 - **The corpus is 8 documents.** Big enough that retrieval must discriminate, far short of the
   scale where chunking strategy and index choice start to matter.
-- **No persistence or auth.** Runs are stateless and the API is unauthenticated — fine for a
-  local demo, not for a deployment.
+- **No persistence, and auth is a shared password, not per-user.** Runs are stateless (nothing is
+  saved server-side between requests), and `AGENTDESK_APP_PASSWORD` is a single shared secret
+  for gating a public deployment, not real multi-user authentication.
 - **The offline eval never exercises the revision or research loops** (the stub Critic passes
   every case). Those paths are covered by `tests/test_graph_flow.py` instead.
 - **DuckDuckGo scraping is best-effort**; it is a fallback so the tool never hard-fails, not a
