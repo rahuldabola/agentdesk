@@ -2,7 +2,7 @@
 
 Shared by the test suite and by `eval/run_eval.py --offline`, so both exercise
 the same code paths: real LangGraph, real Chroma, real MCP protocol, with only
-the embedding API, the Anthropic API, and outbound HTTP replaced.
+the Gemini embeddings API, the Gemini generation API, and outbound HTTP replaced.
 """
 
 import math
@@ -17,7 +17,7 @@ from app.mcp.server import mcp as mcp_app
 EMBED_DIM = 16
 
 
-def fake_embed_texts(texts, client=None):
+def fake_embed_texts(texts, client=None, task_type=None):
     """Deterministic bag-of-characters embedding, unit-normalised.
 
     Not semantic, but stable, and similar strings do come out closer than

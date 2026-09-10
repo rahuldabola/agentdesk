@@ -1,7 +1,7 @@
 """Analyst: turns raw passages into atomic claims, each bound to a source_id."""
 
 from app.agents.base import node
-from app.llm.claude_client import structured_call
+from app.llm.gemini_client import structured_call
 
 FACTS_SCHEMA = {
     "type": "object",

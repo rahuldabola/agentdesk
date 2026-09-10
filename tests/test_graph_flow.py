@@ -197,6 +197,14 @@ def test_resolve_citations_is_empty_for_an_uncited_report():
     assert resolve_citations("No citations here.", {"web:1": {}}) == []
 
 
+def test_resolve_citations_splits_ids_a_model_packed_into_one_bracket():
+    """The Writer is told one id per bracket, but a model sometimes ignores that."""
+    sources = {"web:1": {"source_id": "web:1"}, "rag:a#0": {"source_id": "rag:a#0"}}
+    report = "A joint claim [rag:a#0, web:1]."
+
+    assert resolve_citations(report, sources) == [sources["rag:a#0"], sources["web:1"]]
+
+
 # --- streaming ----------------------------------------------------------------
 
 

@@ -1,14 +1,16 @@
 """Writer: drafts the report from the fact list, citing every claim."""
 
 from app.agents.base import node
-from app.llm.claude_client import text_call
+from app.llm.gemini_client import text_call
 
 SYSTEM = (
     "You are the Writer agent. Write a clear, well-structured report answering the question "
     "using ONLY the provided facts. Cite each claim inline using its source_id in square "
-    "brackets, exactly as given, e.g. [rag:engineering_handbook.md#2] or [web:1]. Never invent "
-    "a source_id. If the facts are insufficient to fully answer the question, say so "
-    "explicitly and state what is missing, rather than guessing."
+    "brackets, exactly as given, e.g. [rag:engineering_handbook.md#2] or [web:1]. Put exactly "
+    "one source_id per bracket - if a claim draws on two sources, cite them as two consecutive "
+    "brackets like [rag:a.md#0][web:2], never combined in one bracket like [rag:a.md#0, web:2]. "
+    "Never invent a source_id. If the facts are insufficient to fully answer the question, say "
+    "so explicitly and state what is missing, rather than guessing."
 )
 
 

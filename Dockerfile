@@ -17,4 +17,7 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s \
   CMD python -c "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/health')"
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Ingesting is idempotent (each file's old chunks are deleted before its new
+# ones are added) and cheap for this corpus, so it's simplest to run it fresh
+# on every boot rather than bake an embedded chroma_db into the image.
+CMD python -m scripts.ingest_docs && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}

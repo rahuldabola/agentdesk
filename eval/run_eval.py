@@ -3,17 +3,17 @@
 Two modes:
 
   --offline  (default)  Deterministic. Real graph, real MCP protocol, real
-                        Chroma; a scripted stub stands in for Claude and the
+                        Chroma; a scripted stub stands in for Gemini and the
                         embedding/search APIs. Costs nothing, runs in CI, and
                         catches pipeline regressions.
-  --live                Real Claude, real embeddings, real web search. Needs
-                        ANTHROPIC_API_KEY and OPENAI_API_KEY, and costs money.
+  --live                Real Gemini, real embeddings, real web search. Needs
+                        GEMINI_API_KEY, and costs money.
 
 Metrics fall into two groups. Pipeline metrics (task_completion_rate,
 citation_validity, citation_coverage, termination_rate) describe the system
 and are meaningful in both modes - CI asserts on them. Judgement metrics
 (tool_routing_accuracy, critic_revision_rate) describe whichever model is
-answering, so offline they are a property of the stub, not of Claude.
+answering, so offline they are a property of the stub, not of Gemini.
 """
 
 import argparse
@@ -33,7 +33,7 @@ from dotenv import load_dotenv  # noqa: E402
 
 load_dotenv()
 
-from app.graph import CITATION_RE, run_agentdesk  # noqa: E402
+from app.graph import extract_citation_ids, run_agentdesk  # noqa: E402
 
 EVAL_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.dirname(EVAL_DIR)
@@ -83,7 +83,7 @@ def offline_patches(docs_dir, chroma_dir):
 
     os.environ["AGENTDESK_CHROMA_DIR"] = chroma_dir
     os.environ["AGENTDESK_COLLECTION"] = "agentdesk-eval"
-    os.environ.setdefault("ANTHROPIC_API_KEY", "offline-stub")
+    os.environ.setdefault("GEMINI_API_KEY", "offline-stub")
     os.environ.pop("TAVILY_API_KEY", None)
 
     return [
@@ -113,7 +113,7 @@ def evaluate_case(case):
 
     report = result.get("final_report") or ""
     sources = result.get("sources", {})
-    markers = CITATION_RE.findall(report)
+    markers = extract_citation_ids(report)
     resolvable = [m for m in markers if m in sources]
 
     return {
@@ -235,10 +235,8 @@ def main():
     )
 
     mode = "live" if args.live else "offline"
-    if mode == "live" and not (
-        os.environ.get("ANTHROPIC_API_KEY") and os.environ.get("OPENAI_API_KEY")
-    ):
-        parser.error("--live needs ANTHROPIC_API_KEY and OPENAI_API_KEY")
+    if mode == "live" and not os.environ.get("GEMINI_API_KEY"):
+        parser.error("--live needs GEMINI_API_KEY")
 
     summary, rows = run_eval(mode=mode)
     document = {"mode": mode, "summary": summary, "rows": rows}

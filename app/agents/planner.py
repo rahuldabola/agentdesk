@@ -1,7 +1,7 @@
 """Planner: decomposes the question and routes it to the right tools."""
 
 from app.agents.base import node
-from app.llm.claude_client import structured_call
+from app.llm.gemini_client import structured_call
 
 PLAN_SCHEMA = {
     "type": "object",

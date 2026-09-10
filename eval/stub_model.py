@@ -1,4 +1,4 @@
-"""A scripted stand-in for Claude, so the pipeline can be evaluated offline.
+"""A scripted stand-in for Gemini, so the pipeline can be evaluated offline.
 
 This exists to test the *harness*, not the model. It answers every agent's
 structured call deterministically, which makes the model-independent metrics
@@ -8,7 +8,7 @@ terminate) reproducible in CI at zero cost.
 The stub is deliberately not clairvoyant: the planner heuristic below is a
 keyword rule that gets some routing decisions wrong. Metrics that depend on
 the quality of the model's judgement are reported but are properties of this
-stub, not of Claude - see "Evaluation" in the README.
+stub, not of Gemini - see "Evaluation" in the README.
 """
 
 import re

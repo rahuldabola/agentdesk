@@ -9,7 +9,7 @@ information sends the graph back to the Researcher instead.
 
 from app.agents.base import node
 from app.config import get_settings
-from app.llm.claude_client import structured_call
+from app.llm.gemini_client import structured_call
 
 VERDICT_SCHEMA = {
     "type": "object",

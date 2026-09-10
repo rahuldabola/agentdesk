@@ -21,7 +21,7 @@ def _float(name: str, default: float) -> float:
 @dataclass(frozen=True)
 class Settings:
     # LLM
-    anthropic_model: str
+    gemini_model: str
     llm_max_attempts: int
     llm_backoff_base: float
     llm_timeout: float
@@ -48,11 +48,11 @@ class Settings:
 
 def get_settings() -> Settings:
     return Settings(
-        anthropic_model=os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-5"),
+        gemini_model=os.environ.get("GEMINI_MODEL", "gemini-flash-lite-latest"),
         llm_max_attempts=_int("AGENTDESK_LLM_MAX_ATTEMPTS", 4),
         llm_backoff_base=_float("AGENTDESK_LLM_BACKOFF_BASE", 0.5),
         llm_timeout=_float("AGENTDESK_LLM_TIMEOUT", 60.0),
-        embed_model=os.environ.get("AGENTDESK_EMBED_MODEL", "text-embedding-3-small"),
+        embed_model=os.environ.get("AGENTDESK_EMBED_MODEL", "gemini-embedding-001"),
         embed_batch_size=_int("AGENTDESK_EMBED_BATCH_SIZE", 64),
         chroma_dir=os.environ.get("AGENTDESK_CHROMA_DIR", "./chroma_db"),
         collection_name=os.environ.get("AGENTDESK_COLLECTION", "agentdesk_docs"),

@@ -2,10 +2,14 @@
 
 import json
 import logging
+import os
+import secrets
 from collections.abc import Iterator
 
-from fastapi import FastAPI, Request
+from dotenv import load_dotenv
+from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 from starlette.concurrency import iterate_in_threadpool
@@ -13,6 +17,8 @@ from starlette.concurrency import iterate_in_threadpool
 from app.config import get_settings
 from app.errors import AgentDeskError, ConfigurationError
 from app.graph import run_agentdesk, stream_agentdesk
+
+load_dotenv()  # no-ops if .env doesn't exist (Docker/Railway set real env vars instead)
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("agentdesk.api")
@@ -22,6 +28,29 @@ app = FastAPI(
     version="1.0.0",
     description="Multi-agent research & report orchestrator (LangGraph + MCP + RAG)",
 )
+
+_raw_cors_origins = os.environ.get("AGENTDESK_CORS_ORIGINS", "*")
+_cors_origins = [o.strip() for o in _raw_cors_origins.split(",") if o.strip()]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_cors_origins,
+    allow_credentials=False,
+    allow_methods=["GET", "POST"],
+    allow_headers=["content-type", "x-app-password"],
+)
+
+
+async def require_app_password(x_app_password: str | None = Header(default=None)) -> None:
+    """Gate the expensive endpoints behind a shared password.
+
+    Unset `AGENTDESK_APP_PASSWORD` disables the gate (local dev). When set, every
+    request to a protected route must send a matching `X-App-Password` header.
+    """
+    expected = os.environ.get("AGENTDESK_APP_PASSWORD")
+    if not expected:
+        return
+    if not x_app_password or not secrets.compare_digest(x_app_password, expected):
+        raise HTTPException(status_code=401, detail="Missing or incorrect password.")
 
 
 class ReportRequest(BaseModel):
@@ -60,10 +89,10 @@ async def agentdesk_error_handler(request: Request, exc: AgentDeskError) -> JSON
 
 @app.get("/health")
 def health() -> dict:
-    return {"status": "ok", "model": get_settings().anthropic_model}
+    return {"status": "ok", "model": get_settings().gemini_model}
 
 
-@app.post("/api/report")
+@app.post("/api/report", dependencies=[Depends(require_app_password)])
 async def create_report(req: ReportRequest) -> dict:
     result = await run_in_threadpool(run_agentdesk, req.question)
     return _response_body(req.question, result)
@@ -90,7 +119,13 @@ def _report_events(question: str) -> Iterator[str]:
         yield _sse("error", {"error": type(exc).__name__, "detail": str(exc)})
 
 
-@app.post("/api/report/stream")
+@app.post("/api/auth/check", dependencies=[Depends(require_app_password)])
+async def auth_check() -> dict:
+    """Let the frontend validate a password before wiring up the real UI."""
+    return {"ok": True}
+
+
+@app.post("/api/report/stream", dependencies=[Depends(require_app_password)])
 async def create_report_stream(req: ReportRequest) -> StreamingResponse:
     """Same run as /api/report, streamed as each agent finishes."""
     return StreamingResponse(

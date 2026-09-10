@@ -7,6 +7,7 @@ each of the (subtasks x tools) calls a single question produces.
 
 import json
 import logging
+import os
 import sys
 from contextlib import asynccontextmanager
 
@@ -17,14 +18,28 @@ from app.errors import ToolError
 
 log = logging.getLogger("agentdesk.mcp")
 
-SERVER_PARAMS = StdioServerParameters(command=sys.executable, args=["-m", "app.mcp.server"])
+
+def _server_params() -> StdioServerParameters:
+    """Built fresh per session, not cached at import time.
+
+    mcp's stdio_client only forwards a small allowlisted subset of the parent's
+    environment by default (PATH, HOME, etc - deliberately not API keys, since
+    an MCP server is normally someone else's process). Ours is our own trusted
+    subprocess and needs the real environment: GEMINI_API_KEY, TAVILY_API_KEY,
+    and every AGENTDESK_* setting app/config.py reads at call time. Reading
+    os.environ here (rather than once at import time) matters because
+    `load_dotenv()` in app/main.py runs after app.mcp.client is first imported.
+    """
+    return StdioServerParameters(
+        command=sys.executable, args=["-m", "app.mcp.server"], env=dict(os.environ)
+    )
 
 
 @asynccontextmanager
 async def mcp_session():
     """Yield an initialized MCP session backed by the tool server subprocess."""
     async with (
-        stdio_client(SERVER_PARAMS) as (read, write),
+        stdio_client(_server_params()) as (read, write),
         ClientSession(read, write) as session,
     ):
         await session.initialize()

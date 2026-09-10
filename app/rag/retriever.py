@@ -26,7 +26,7 @@ def rag_search(query: str, k: int | None = None, max_distance: float | None = No
         return []
 
     results = collection.query(
-        query_embeddings=[embed_texts([query])[0]],
+        query_embeddings=[embed_texts([query], task_type="RETRIEVAL_QUERY")[0]],
         n_results=min(k, count),
         include=["documents", "metadatas", "distances"],
     )

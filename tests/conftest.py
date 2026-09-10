@@ -1,14 +1,14 @@
 """Shared fixtures. Every test in this suite runs offline and costs nothing.
 
-The only things mocked are the true edges of the system: the Anthropic API,
-the OpenAI embeddings API, and outbound HTTP. Chroma, LangGraph, and the MCP
-client/server protocol all run for real - see tests/doubles.py.
+The only things mocked are the true edges of the system: the Gemini generation
+API, the Gemini embeddings API, and outbound HTTP. Chroma, LangGraph, and the
+MCP client/server protocol all run for real - see tests/doubles.py.
 """
 
 import pytest
 
 import app.graph as graph_module
-import app.llm.claude_client as claude_client
+import app.llm.gemini_client as gemini_client
 from tests.doubles import fake_embed_texts, flatten_exception, in_memory_mcp_session
 
 __all__ = ["fake_embed_texts", "flatten_exception", "in_memory_mcp_session"]
@@ -51,10 +51,10 @@ def reset_compiled_graph():
 
 @pytest.fixture(autouse=True)
 def reset_llm_client():
-    """The Anthropic client is cached; drop it between tests."""
-    claude_client.reset_client()
+    """The Gemini client is cached; drop it between tests."""
+    gemini_client.reset_client()
     yield
-    claude_client.reset_client()
+    gemini_client.reset_client()
 
 
 @pytest.fixture

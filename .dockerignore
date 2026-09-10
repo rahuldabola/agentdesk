@@ -4,6 +4,8 @@
 chroma_db
 tests
 eval
+frontend
 **/__pycache__
 *.pyc
 .env
+*.log

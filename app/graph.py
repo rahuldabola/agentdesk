@@ -16,7 +16,20 @@ from app.agents.writer import writer_node
 
 log = logging.getLogger("agentdesk.graph")
 
-CITATION_RE = re.compile(r"\[([A-Za-z0-9_:.#/\-]+)\]")
+CITATION_RE = re.compile(r"\[([A-Za-z0-9_:.#/\-]+(?:\s*,\s*[A-Za-z0-9_:.#/\-]+)*)\]")
+
+
+def extract_citation_ids(report: str) -> list[str]:
+    """Every source_id cited in `report`, in order of appearance.
+
+    The Writer is told to put one source_id per bracket, but a model
+    occasionally packs several into one anyway (`[rag:a#0, web:1]`) - split
+    those out too, so a formatting slip doesn't silently drop a citation.
+    """
+    ids = []
+    for group in CITATION_RE.findall(report or ""):
+        ids.extend(part.strip() for part in group.split(","))
+    return ids
 
 
 def merge_notes(existing: list, new: list) -> list:
@@ -127,7 +140,7 @@ def resolve_citations(report: str, sources: dict) -> list[dict]:
     is what the reader can verify, not what the Writer was offered.
     """
     seen, citations = set(), []
-    for source_id in CITATION_RE.findall(report or ""):
+    for source_id in extract_citation_ids(report):
         if source_id in sources and source_id not in seen:
             seen.add(source_id)
             citations.append(sources[source_id])

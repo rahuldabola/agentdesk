@@ -3,13 +3,15 @@
 import glob
 import logging
 import os
+import threading
 
 import chromadb
-import openai
-from openai import OpenAI
+from google import genai
+from google.genai import types
 
 from app.config import get_settings
-from app.errors import ConfigurationError, RetrievalError
+from app.errors import RetrievalError
+from app.llm.gemini_client import get_client, is_retryable, retry_delay_hint
 from app.util.retry import retry_call
 
 log = logging.getLogger("agentdesk.rag")
@@ -32,47 +34,69 @@ def chunk_text(text: str, chunk_size: int | None = None, overlap: int | None = N
     return [c.strip() for c in chunks if c.strip()]
 
 
-def get_openai_client() -> OpenAI:
-    key = os.environ.get("OPENAI_API_KEY")
-    if not key:
-        raise ConfigurationError(
-            "OPENAI_API_KEY is not set. Copy .env.example to .env and fill it in."
-        )
-    return OpenAI(api_key=key)
+def embed_texts(
+    texts: list[str],
+    client: "genai.Client | None" = None,
+    task_type: str = "RETRIEVAL_DOCUMENT",
+) -> list[list[float]]:
+    """Embed in batches - one request per 10k texts is neither polite nor allowed.
 
-
-def _embeddings_retryable(exc: BaseException) -> bool:
-    if isinstance(exc, (openai.APIConnectionError, openai.APITimeoutError, openai.RateLimitError)):
-        return True
-    if isinstance(exc, openai.APIStatusError):
-        return exc.status_code >= 500
-    return False
-
-
-def embed_texts(texts: list[str], client: OpenAI | None = None) -> list[list[float]]:
-    """Embed in batches - one request per 10k texts is neither polite nor allowed."""
+    `task_type` selects Gemini's asymmetric embedding mode: documents are embedded
+    for `RETRIEVAL_DOCUMENT`, queries for `RETRIEVAL_QUERY` - matching either as
+    the corpus grows finds closer neighbours than embedding both the same way.
+    """
     if not texts:
         return []
     settings = get_settings()
-    client = client or get_openai_client()
+    client = client or get_client()
     vectors: list[list[float]] = []
     for start in range(0, len(texts), settings.embed_batch_size):
         batch = texts[start : start + settings.embed_batch_size]
         resp = retry_call(
-            lambda b=batch: client.embeddings.create(model=settings.embed_model, input=b),
+            lambda b=batch: client.models.embed_content(
+                model=settings.embed_model,
+                contents=b,
+                config=types.EmbedContentConfig(taskType=task_type),
+            ),
             attempts=settings.llm_max_attempts,
             base_delay=settings.llm_backoff_base,
-            retryable=_embeddings_retryable,
-            description="openai.embeddings.create",
+            retryable=is_retryable,
+            delay_hint=retry_delay_hint,
+            description="gemini.embed_content",
         )
-        vectors.extend(d.embedding for d in resp.data)
+        vectors.extend(e.values for e in resp.embeddings)
     return vectors
+
+
+_clients: dict[str, chromadb.ClientAPI] = {}
+_clients_lock = threading.Lock()
+
+
+def _get_persistent_client(chroma_dir: str) -> chromadb.ClientAPI:
+    """One PersistentClient per directory, reused across calls.
+
+    The MCP server runs tool calls for concurrent subtasks in a thread pool
+    (see app/mcp/server.py); constructing a fresh chromadb.PersistentClient per
+    call races on the same on-disk index and corrupts the Rust binding state
+    ("'RustBindingsAPI' object has no attribute 'bindings'"). Caching by path
+    keeps client construction single-threaded while still letting tests point
+    at a throwaway directory per case.
+    """
+    client = _clients.get(chroma_dir)
+    if client is not None:
+        return client
+    with _clients_lock:
+        client = _clients.get(chroma_dir)
+        if client is None:
+            client = chromadb.PersistentClient(path=chroma_dir)
+            _clients[chroma_dir] = client
+        return client
 
 
 def get_chroma_collection():
     settings = get_settings()
     try:
-        client = chromadb.PersistentClient(path=settings.chroma_dir)
+        client = _get_persistent_client(settings.chroma_dir)
         return client.get_or_create_collection(
             settings.collection_name, configuration=COLLECTION_CONFIG
         )

@@ -2,7 +2,6 @@
 
 from unittest.mock import MagicMock, patch
 
-import openai
 import pytest
 
 from app.agents.base import node
@@ -10,7 +9,8 @@ from app.agents.researcher import research_node
 from app.config import get_settings
 from app.errors import ConfigurationError
 from app.graph import run_agentdesk
-from app.rag.ingest import _embeddings_retryable, embed_texts, get_openai_client
+from app.llm.gemini_client import get_client
+from app.rag.ingest import embed_texts
 
 # --- the node decorator -------------------------------------------------------
 
@@ -78,36 +78,25 @@ def test_blank_environment_values_fall_back_to_defaults(monkeypatch):
 def test_embed_texts_batches_requests(monkeypatch):
     monkeypatch.setenv("AGENTDESK_EMBED_BATCH_SIZE", "2")
     client = MagicMock()
-    client.embeddings.create.side_effect = lambda model, input: MagicMock(
-        data=[MagicMock(embedding=[0.0]) for _ in input]
+    client.models.embed_content.side_effect = lambda model, contents, config: MagicMock(
+        embeddings=[MagicMock(values=[0.0]) for _ in contents]
     )
 
     vectors = embed_texts(["a", "b", "c", "d", "e"], client=client)
 
     assert len(vectors) == 5
-    assert client.embeddings.create.call_count == 3, "5 texts at batch size 2 is 3 requests"
+    assert client.models.embed_content.call_count == 3, "5 texts at batch size 2 is 3 requests"
 
 
 def test_embed_texts_short_circuits_on_no_input():
     assert embed_texts([], client=MagicMock()) == []
 
 
-def test_a_missing_openai_key_is_a_configuration_error(monkeypatch):
-    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+def test_a_missing_gemini_key_is_a_configuration_error(monkeypatch):
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
 
-    with pytest.raises(ConfigurationError, match="OPENAI_API_KEY"):
-        get_openai_client()
-
-
-@pytest.mark.parametrize(
-    "exc,expected",
-    [
-        (openai.APIConnectionError(request=MagicMock()), True),
-        (ValueError("nope"), False),
-    ],
-)
-def test_only_transient_embedding_failures_are_retried(exc, expected):
-    assert _embeddings_retryable(exc) is expected
+    with pytest.raises(ConfigurationError, match="GEMINI_API_KEY"):
+        get_client()
 
 
 # --- the researcher's degenerate case -----------------------------------------

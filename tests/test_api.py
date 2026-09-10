@@ -72,15 +72,15 @@ def test_malformed_requests_are_rejected_before_any_llm_call(payload):
 
 
 def test_an_upstream_failure_is_a_bad_gateway_not_a_stack_trace():
-    with patch("app.main.run_agentdesk", side_effect=LLMError("Claude is down")):
+    with patch("app.main.run_agentdesk", side_effect=LLMError("Gemini is down")):
         resp = client.post("/api/report", json={"question": "a question"})
 
     assert resp.status_code == 502
-    assert resp.json() == {"error": "LLMError", "detail": "Claude is down"}
+    assert resp.json() == {"error": "LLMError", "detail": "Gemini is down"}
 
 
 def test_a_missing_key_is_reported_as_a_server_configuration_problem():
-    with patch("app.main.run_agentdesk", side_effect=ConfigurationError("ANTHROPIC_API_KEY unset")):
+    with patch("app.main.run_agentdesk", side_effect=ConfigurationError("GEMINI_API_KEY unset")):
         resp = client.post("/api/report", json={"question": "a question"})
 
     assert resp.status_code == 500
