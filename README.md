@@ -119,8 +119,13 @@ the Analyst would then treat as evidence. Anything past the floor is dropped ins
 - **API** — FastAPI (`app/main.py`): `POST /api/report`, plus `POST /api/report/stream`
   which server-sends each agent's progress as it finishes; both gated behind an optional
   shared-password header (`AGENTDESK_APP_PASSWORD`) for public deployments
-- **Frontend** — `frontend/`: a Vite + React chat UI that streams the pipeline live and
-  renders the cited report with clickable source chips
+- **Frontend** — `frontend/`: a Vite + React + three.js UI. An interactive 3D scene shows
+  the five agents orbiting the orchestrator and lights up each hand-off live as the stream
+  arrives; finished runs can be replayed step by step on a timeline scrubber. Reports open
+  in tabs (report with hoverable citation chips, filterable sources, an execution
+  timeline, and the Critic's verdict) and export to Markdown or PDF. History persists
+  locally with search, runs can be cancelled mid-flight, and there's a backend health /
+  cold-start indicator, keyboard shortcuts, and a responsive mobile drawer
 - **Quality gates** — ruff (lint + format), pytest with an 85% coverage floor, a stdio
   subprocess smoke test, and a deterministic offline eval with pass/fail thresholds — all
   enforced in CI on Python 3.11 and 3.12
@@ -330,7 +335,7 @@ app/
   mcp/                server.py (tool process), client.py (session), tools.py (impls)
   rag/                ingest.py (chunk/embed/upsert), retriever.py (query + floor)
   main.py             FastAPI surface: auth gate, CORS, /api/report(/stream)
-frontend/              Vite + React chat UI (password gate, live pipeline view, report + citations)
+frontend/              Vite + React + three.js UI (3D live pipeline + replay, tabbed report, history)
 eval/                  eval set, scripted stub model, runner, checked-in results
 tests/                 130 tests; doubles.py holds the offline stand-ins
 scripts/               ingest_docs, run_demo, check_mcp_server
