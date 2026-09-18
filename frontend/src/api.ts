@@ -39,6 +39,18 @@ export async function checkPassword(password: string): Promise<boolean> {
   return res.ok;
 }
 
+export interface Health {
+  status: string;
+  model: string;
+}
+
+/** Unauthenticated liveness probe; also tells us which model is serving. */
+export async function fetchHealth(signal?: AbortSignal): Promise<Health> {
+  const res = await fetch(`${API_BASE}/health`, { signal });
+  if (!res.ok) throw new ApiError(`Health check failed (${res.status}).`, res.status);
+  return res.json();
+}
+
 export interface TraceEntry {
   node: string;
   detail: string;
