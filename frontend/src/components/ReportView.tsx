@@ -1,5 +1,7 @@
 import { motion } from "motion/react";
 import {
+  AArrowDown,
+  AArrowUp,
   BookOpen,
   Check,
   Copy,
@@ -13,7 +15,7 @@ import {
   ShieldAlert,
   ShieldCheck,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Children, isValidElement, useMemo, useState, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Citation, ReportResult, TraceEntry } from "../api";
@@ -54,6 +56,51 @@ function slugify(s: string) {
 
 type Tab = "report" | "sources" | "timeline" | "critic";
 
+const TEXT_SIZES = [13.5, 14.5, 16, 17.5];
+const TEXT_SIZE_KEY = "agentdesk:text-size";
+
+function loadTextSize(): number {
+  try {
+    const raw = localStorage.getItem(TEXT_SIZE_KEY);
+    const v = raw === null ? NaN : Number(raw);
+    return Number.isInteger(v) && v >= 0 && v < TEXT_SIZES.length ? v : 1;
+  } catch {
+    return 1;
+  }
+}
+
+function textOf(node: ReactNode): string {
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(textOf).join("");
+  if (isValidElement<{ children?: ReactNode }>(node)) return textOf(node.props.children);
+  return "";
+}
+
+function headingId(text: string) {
+  return `h-${slugify(text)}`;
+}
+
+function makeHeading(Tag: "h2" | "h3") {
+  return function MdHeading({ children }: { children?: ReactNode }) {
+    return (
+      <Tag id={headingId(textOf(Children.toArray(children)).replace(CITE_RE, "").trim())} className="scroll-mt-20">
+        {children}
+      </Tag>
+    );
+  };
+}
+const H2 = makeHeading("h2");
+const H3 = makeHeading("h3");
+
+/** h2/h3 headings in the report, for the "On this page" outline. */
+function extractOutline(report: string): { level: number; text: string }[] {
+  return report
+    .split("\n")
+    .map((line) => /^(#{2,3})\s+(.+?)\s*#*$/.exec(line))
+    .filter((m): m is RegExpExecArray => !!m)
+    .map((m) => ({ level: m[1].length, text: m[2].replace(CITE_RE, "").replace(/[*_`]/g, "").trim() }));
+}
+
 export default function ReportView({ result, trace, onRerun }: { result: ReportResult; trace: TraceEntry[]; onRerun: () => void }) {
   const [tab, setTab] = useState<Tab>("report");
   const [highlighted, setHighlighted] = useState<string | null>(null);
@@ -64,6 +111,22 @@ export default function ReportView({ result, trace, onRerun }: { result: ReportR
   const passed = result.status === "passed";
   const flagged = result.critic.unsupported_claims ?? [];
   const words = useMemo(() => (result.report ?? "").split(/\s+/).filter(Boolean).length, [result.report]);
+  const readMinutes = Math.max(1, Math.round(words / 220));
+  const outline = useMemo(() => extractOutline(result.report ?? ""), [result.report]);
+  const [sizeIdx, setSizeIdx] = useState(loadTextSize);
+
+  function changeSize(delta: number) {
+    setSizeIdx((i) => {
+      const next = Math.min(TEXT_SIZES.length - 1, Math.max(0, i + delta));
+      try {
+        localStorage.setItem(TEXT_SIZE_KEY, String(next));
+      } catch {
+        /* preference just won't persist */
+      }
+      return next;
+    });
+  }
+
 
   function jumpToCitation(id: string) {
     setTab("sources");
@@ -124,7 +187,7 @@ export default function ReportView({ result, trace, onRerun }: { result: ReportR
           <Stat label="revisions" value={result.revisions} />
           <Stat label="research rounds" value={result.research_rounds} />
           <Stat label="sources" value={result.citations.length} />
-          <Stat label="words" value={words} />
+          <Stat label="min read" value={readMinutes} />
         </div>
       </div>
 
@@ -152,6 +215,17 @@ export default function ReportView({ result, trace, onRerun }: { result: ReportR
             ))}
           </div>
           <div className="flex gap-0.5">
+            {tab === "report" && (
+              <>
+                <IconButton label="Smaller text" onClick={() => changeSize(-1)} disabled={sizeIdx === 0}>
+                  <AArrowDown size={15} />
+                </IconButton>
+                <IconButton label="Larger text" onClick={() => changeSize(1)} disabled={sizeIdx === TEXT_SIZES.length - 1}>
+                  <AArrowUp size={15} />
+                </IconButton>
+                <span className="mx-1 my-2 w-px bg-[var(--border)]" />
+              </>
+            )}
             <IconButton label={copied ? "Copied" : "Copy as Markdown"} onClick={copy}>
               {copied ? <Check size={14} className="text-[var(--ok)]" /> : <Copy size={14} />}
             </IconButton>
@@ -175,11 +249,28 @@ export default function ReportView({ result, trace, onRerun }: { result: ReportR
 
         <div key={tab} className="animate-fade-up">
             {tab === "report" && (
-              <article className="report-md px-5 py-5 text-[14.5px] leading-[1.75] sm:px-7 sm:py-6">
+              <article className="report-md px-5 py-5 leading-[1.75] sm:px-7 sm:py-6" style={{ fontSize: TEXT_SIZES[sizeIdx] }}>
                 <h1 className="!mt-0 hidden print:block">{result.question}</h1>
+                {outline.length >= 2 && (
+                  <nav aria-label="On this page" className="no-print mb-5 flex flex-wrap items-center gap-1.5 rounded-xl border border-[var(--border)] bg-white/[0.02] px-3 py-2.5 text-[12px]">
+                    <span className="mr-1 font-semibold text-[var(--text-faint)]">On this page</span>
+                    {outline.map((h) => (
+                      <button
+                        key={h.text}
+                        type="button"
+                        onClick={() => document.getElementById(headingId(h.text))?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                        className={`rounded-md px-2 py-0.5 transition hover:bg-[var(--accent-soft)] hover:text-[var(--text)] ${h.level === 3 ? "text-[var(--text-faint)]" : "text-[var(--text-dim)]"}`}
+                      >
+                        {h.text}
+                      </button>
+                    ))}
+                  </nav>
+                )}
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
                   components={{
+                    h2: H2,
+                    h3: H3,
                     a: ({ href, children }) => {
                       if (href?.startsWith("#cite-")) {
                         const id = decodeURIComponent(href.slice(6));
@@ -215,13 +306,14 @@ function Stat({ label, value }: { label: string; value: number }) {
   );
 }
 
-function IconButton({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
+function IconButton({ label, onClick, disabled, children }: { label: string; onClick: () => void; disabled?: boolean; children: React.ReactNode }) {
   return (
     <button
       onClick={onClick}
+      disabled={disabled}
       aria-label={label}
       title={label}
-      className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-dim)] transition hover:bg-white/[0.06] hover:text-[var(--text)]"
+      className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-dim)] transition hover:bg-white/[0.06] hover:text-[var(--text)] disabled:opacity-30 disabled:hover:bg-transparent"
     >
       {children}
     </button>

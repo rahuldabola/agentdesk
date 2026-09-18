@@ -1,7 +1,9 @@
-import { AnimatePresence, motion } from "motion/react";
-import { Keyboard, Menu, Plus, RefreshCw, TriangleAlert } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { ArrowUp, Keyboard, Menu, Plus, RefreshCw, Search, TriangleAlert } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { checkPassword, clearStoredPassword, fetchHealth, getStoredPassword, streamReport } from "./api";
+import CommandPalette from "./components/CommandPalette";
+import DraftingPreview from "./components/DraftingPreview";
+import FollowUps from "./components/FollowUps";
 import Hero from "./components/Hero";
 import Logo from "./components/Logo";
 import PasswordGate from "./components/PasswordGate";
@@ -22,6 +24,8 @@ export default function App() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [showTop, setShowTop] = useState(false);
   const [health, setHealth] = useState<HealthState>({ state: "checking" });
   const abortRef = useRef<Map<string, AbortController>>(new Map());
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -168,6 +172,12 @@ export default function App() {
     window.setTimeout(() => document.getElementById(section)?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
   }
 
+  function togglePin(id: string) {
+    const run = runs.find((r) => r.id === id);
+    patchRun(id, (r) => ({ pinned: !r.pinned }));
+    toast(run?.pinned ? "Unpinned" : "Pinned to the top of your history", "info");
+  }
+
   function lock() {
     clearStoredPassword();
     setPassword("");
@@ -191,7 +201,9 @@ export default function App() {
       const typing = target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable;
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
-        newResearch();
+        setPaletteOpen((o) => !o);
+      } else if (paletteOpen) {
+        return; // the palette handles its own keys
       } else if (e.key === "Escape") {
         if (shortcutsOpen) setShortcutsOpen(false);
         else if (drawerOpen) setDrawerOpen(false);
@@ -222,6 +234,18 @@ export default function App() {
     }
   }, [hasResult, active?.finishedAt]);
 
+  const paletteActions = useMemo(
+    () => ({
+      newResearch,
+      ask: startRun,
+      openRun: (id: string) => setActiveId(id),
+      navigate: navigateTo,
+      showShortcuts: () => setShortcutsOpen(true),
+      lock,
+    }),
+    [startRun],
+  );
+
   // ---- Render --------------------------------------------------------------------------
   if (gate === "checking") {
     return (
@@ -246,6 +270,7 @@ export default function App() {
       }}
       onNew={newResearch}
       onDelete={deleteRun}
+      onTogglePin={togglePin}
       onClearAll={() => {
         setRuns((prev) => prev.filter((r) => r.running));
         setActiveId(null);
@@ -268,28 +293,17 @@ export default function App() {
 
       <aside className="glass no-print relative z-10 hidden w-72 shrink-0 border-y-0 border-l-0 md:block">{sidebar()}</aside>
 
-      <AnimatePresence>
-        {drawerOpen && (
-          <>
-            <motion.div
-              className="no-print fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setDrawerOpen(false)}
-            />
-            <motion.aside
-              className="no-print fixed inset-y-0 left-0 z-50 w-[82%] max-w-[300px] border-r border-[var(--border)] bg-[#0b0c13f5] backdrop-blur-xl md:hidden"
-              initial={{ x: "-100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
-              transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            >
-              {sidebar(() => setDrawerOpen(false))}
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
+      <div
+        aria-hidden
+        className={`no-print fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300 md:hidden ${drawerOpen ? "opacity-100" : "pointer-events-none opacity-0"}`}
+        onClick={() => setDrawerOpen(false)}
+      />
+      <aside
+        inert={!drawerOpen}
+        className={`no-print fixed inset-y-0 left-0 z-50 w-[82%] max-w-[300px] border-r border-[var(--border)] bg-[#0b0c13f5] backdrop-blur-xl transition-transform duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] md:hidden ${drawerOpen ? "translate-x-0" : "-translate-x-full"}`}
+      >
+        {sidebar(() => setDrawerOpen(false))}
+      </aside>
 
       <main className="relative z-10 flex min-w-0 flex-1 flex-col">
         <header className="no-print flex shrink-0 items-center gap-3 border-b border-[var(--border)] px-4 py-3 backdrop-blur-md sm:px-6">
@@ -312,6 +326,16 @@ export default function App() {
               <span className="font-medium">New research</span>
             )}
           </div>
+          <button
+            onClick={() => setPaletteOpen(true)}
+            className="hidden shrink-0 items-center gap-2 rounded-lg border border-[var(--border)] bg-white/[0.02] py-1.5 pl-2.5 pr-1.5 text-xs text-[var(--text-faint)] transition hover:border-[var(--border-strong)] hover:text-[var(--text-dim)] sm:flex"
+          >
+            <Search size={13} /> Search or ask…
+            <kbd className="ml-3">Ctrl K</kbd>
+          </button>
+          <button onClick={() => setPaletteOpen(true)} aria-label="Search or ask" className="rounded-lg p-1.5 text-[var(--text-dim)] hover:bg-white/5 sm:hidden">
+            <Search size={17} />
+          </button>
           {active && (
             <button
               onClick={newResearch}
@@ -336,7 +360,13 @@ export default function App() {
           </div>
         )}
 
-        <div ref={scrollRef} className="print-root min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-4 sm:px-6">
+        <div
+          ref={scrollRef}
+          onScroll={(e) => {
+            const next = e.currentTarget.scrollTop > 900;
+            if (next !== showTop) setShowTop(next);
+          }}
+          className="print-root min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-4 sm:px-6">
           <div className="mx-auto w-full max-w-4xl py-8">
             {!active ? (
               <Hero composer={composer(true)} onAsk={startRun} />
@@ -365,9 +395,13 @@ export default function App() {
                   </div>
                 )}
 
+                {active.running && <DraftingPreview trace={active.trace} />}
+
                 <div ref={reportAnchorRef} className="scroll-mt-4">
                   {active.result && <ReportView result={active.result} trace={active.trace} onRerun={() => startRun(active.question)} />}
                 </div>
+
+                {active.result && <FollowUps question={active.question} disabled={anyRunning} onAsk={startRun} />}
               </div>
             )}
           </div>
@@ -380,7 +414,19 @@ export default function App() {
         )}
       </main>
 
+      {showTop && (
+        <button
+          onClick={() => scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" })}
+          aria-label="Back to top"
+          title="Back to top"
+          className="glass no-print animate-fade-up fixed bottom-28 right-5 z-30 flex h-10 w-10 items-center justify-center rounded-full text-[var(--text-dim)] shadow-xl transition hover:text-[var(--text)] sm:right-8"
+        >
+          <ArrowUp size={16} />
+        </button>
+      )}
+
       <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} runs={runs} running={anyRunning} actions={paletteActions} />
     </div>
   );
 }
