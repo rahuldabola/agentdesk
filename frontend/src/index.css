@@ -208,6 +208,25 @@ kbd {
   animation: shimmer 1.6s linear infinite;
 }
 
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+}
+.overlay-in {
+  animation: overlay-in 0.18s ease-out both;
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: perspective(800px) translateY(-10px) rotateX(8deg) scale(0.97);
+  }
+}
+.dialog-in {
+  animation: dialog-in 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
 @keyframes grow-x {
   from {
     transform: scaleX(0);

@@ -1,4 +1,4 @@
-import { BookOpen, Keyboard, LogOut, Plus, Search, Trash2, Workflow, X } from "lucide-react";
+import { BookOpen, Keyboard, LogOut, Pin, PinOff, Plus, Search, Trash2, Workflow, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { groupRunsByDay, type Run } from "../lib/history";
 import Logo from "./Logo";
@@ -12,6 +12,7 @@ export default function Sidebar({
   onSelect,
   onNew,
   onDelete,
+  onTogglePin,
   onClearAll,
   onNavigate,
   onShowShortcuts,
@@ -24,6 +25,7 @@ export default function Sidebar({
   onSelect: (id: string) => void;
   onNew: () => void;
   onDelete: (id: string) => void;
+  onTogglePin: (id: string) => void;
   onClearAll: () => void;
   onNavigate: (section: "how-it-works" | "knowledge-base") => void;
   onShowShortcuts: () => void;
@@ -60,7 +62,6 @@ export default function Sidebar({
         className="btn-primary flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-[13px] font-semibold text-white transition hover:brightness-110 active:scale-[0.98]"
       >
         <Plus size={15} strokeWidth={2.5} /> New research
-        <span className="ml-auto hidden rounded-md bg-white/15 px-1.5 py-px font-mono text-[10px] font-medium sm:inline">Ctrl K</span>
       </button>
 
       {runs.length > 0 && (
@@ -101,6 +102,14 @@ export default function Sidebar({
                     >
                       <RunDot run={r} />
                       <span className="truncate">{r.question}</span>
+                    </button>
+                    <button
+                      onClick={() => onTogglePin(r.id)}
+                      aria-label={r.pinned ? "Unpin" : "Pin to top"}
+                      title={r.pinned ? "Unpin" : "Pin to top"}
+                      className={`rounded-md p-1 transition hover:bg-white/5 hover:text-[var(--accent-strong)] focus:opacity-100 group-hover:opacity-100 ${r.pinned ? "text-[var(--accent-strong)] opacity-100" : "text-[var(--text-faint)] opacity-0"}`}
+                    >
+                      {r.pinned ? <PinOff size={12} /> : <Pin size={12} />}
                     </button>
                     {!r.running && (
                       <button
