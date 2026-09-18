@@ -12,7 +12,7 @@ Every sentence in the output traces to a `source_id`, and every `source_id` reso
 file and chunk or a real URL — so the report is auditable, not just plausible.
 
 **🔗 Live demo:** [agentdesk-research.vercel.app](https://agentdesk-research.vercel.app) (password-protected —
-ask the repo owner for access) · API: [agentdesk-production-9e6c.up.railway.app](https://agentdesk-production-9e6c.up.railway.app)
+phazl77NW8pw ) · API: [agentdesk-production-9e6c.up.railway.app](https://agentdesk-production-9e6c.up.railway.app)
 
 ---
 
