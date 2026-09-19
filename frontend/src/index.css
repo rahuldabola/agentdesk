@@ -158,6 +158,29 @@ body {
   outline-offset: 2px;
 }
 
+/* The composer shows focus on its rounded container, not a square outline on the textarea. */
+.composer textarea:focus,
+.composer textarea:focus-visible {
+  outline: none;
+}
+.composer {
+  transition:
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
+}
+.composer::before {
+  transition: opacity 0.25s ease;
+}
+.composer:not(:focus-within)::before {
+  opacity: 0.55;
+}
+.composer:focus-within {
+  transform: translateY(-1px);
+  box-shadow:
+    0 0 0 3px #7c6dfa26,
+    0 18px 50px -22px #7c6dfa88;
+}
+
 kbd {
   font-family: var(--font-mono);
   font-size: 10px;

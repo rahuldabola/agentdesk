@@ -47,7 +47,7 @@ export default function QuestionComposer({
   return (
     <form
       onSubmit={handleSubmit}
-      className={`gradient-border glass group relative rounded-2xl transition-shadow focus-within:shadow-[0_0_0_4px_#7c6dfa1f,0_20px_60px_-20px_#7c6dfa66] ${large ? "shadow-[0_20px_70px_-25px_#7c6dfa88]" : ""}`}
+      className={`composer gradient-border glass group relative rounded-2xl ${large ? "shadow-[0_20px_70px_-25px_#7c6dfa88]" : ""}`}
     >
       <label htmlFor="question" className="sr-only">
         Research question
