@@ -39,11 +39,12 @@ export default function PasswordGate({ onUnlock }: { onUnlock: (password: string
   return (
     <div className="relative flex min-h-full items-center justify-center overflow-hidden px-4 py-10">
       <div className="app-backdrop" />
-      <div className="pointer-events-auto absolute inset-0 opacity-70">
+      <div className="pointer-events-none absolute inset-0 opacity-45">
         <Suspense fallback={null}>
           <AgentOrbit demo active={null} visits={EMPTY_VISITS} lastNode={null} running={false} done={false} compact className="h-full w-full" />
         </Suspense>
       </div>
+      <div className="gate-scrim" />
 
       <motion.div
         initial={{ opacity: 0, y: 20, rotateX: 12 }}
@@ -63,12 +64,12 @@ export default function PasswordGate({ onUnlock }: { onUnlock: (password: string
           animate={shake ? { x: [0, -10, 10, -6, 6, 0] } : {}}
           transition={{ duration: 0.4 }}
           onSubmit={handleSubmit}
-          className="gradient-border glass rounded-2xl p-5 shadow-[0_30px_80px_-30px_#7c6dfa99]"
+          className="gradient-border glass gate-card rounded-2xl p-5 shadow-[0_30px_80px_-30px_#7c6dfa99]"
         >
           <label htmlFor="pw" className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-faint)]">
             <Lock size={11} /> Access password
           </label>
-          <div className="flex items-center rounded-xl border border-[var(--border-strong)] bg-black/30 transition focus-within:border-[var(--accent)] focus-within:shadow-[0_0_0_4px_#7c6dfa22]">
+          <div className="field flex items-center rounded-xl border border-[var(--border-strong)] bg-black/30">
             <input
               id="pw"
               autoFocus
