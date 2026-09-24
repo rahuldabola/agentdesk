@@ -75,13 +75,14 @@ def _create(
     max_tokens: int,
     tools: list | None = None,
     tool_config: "types.ToolConfig | None" = None,
+    model: str | None = None,
 ) -> "types.GenerateContentResponse":
     settings = get_settings()
     client = get_client()
     try:
         return retry_call(
             lambda: client.models.generate_content(
-                model=settings.gemini_model,
+                model=model or settings.gemini_model,
                 contents=contents,
                 config=types.GenerateContentConfig(
                     systemInstruction=system,
@@ -107,6 +108,7 @@ def structured_call(
     tool_description: str,
     input_schema: dict,
     max_tokens: int = 1024,
+    model: str | None = None,
 ) -> dict:
     """Force a JSON-schema-shaped response via function calling, instead of parsing free text."""
     tool = types.Tool(
@@ -130,6 +132,7 @@ def structured_call(
         max_tokens=max_tokens,
         tools=[tool],
         tool_config=tool_config,
+        model=model,
     )
     for call in response.function_calls or []:
         if call.name == tool_name:

@@ -34,6 +34,34 @@ Two design choices do most of the work:
 
 ## Architecture
 
+```mermaid
+flowchart LR
+    UI["React + three.js UI<br/>(Vercel)"] -- "SSE stream" --> API["FastAPI<br/>(Railway)"]
+    API --> G
+
+    subgraph G["LangGraph state machine"]
+        direction TB
+        P[Planner] --> R[Researcher] --> A[Analyst] --> W[Writer] --> C{Critic}
+        C -- "rewrite" --> W
+        C -- "missing evidence" --> R
+    end
+
+    R <-- "MCP over stdio" --> T["MCP tool server"]
+    T --> RAG["rag_search<br/>dense · BM25 · RRF · rerank<br/>+ relevance floor"]
+    T --> WEB["web_search<br/>Tavily → DuckDuckGo"]
+    RAG --> DB[("Chroma<br/>gemini-embedding-001")]
+
+    subgraph EVAL["Evaluation"]
+        direction TB
+        E1["pipeline eval (CI)<br/>citations resolve, loops end"]
+        E2["retrieval benchmark (CI)<br/>64 labelled questions"]
+        E3["answer eval (live)<br/>LLM judge: correctness, faithfulness"]
+    end
+    EVAL -.-> G
+```
+
+The agent loop in detail:
+
 ```
 question
    │
@@ -383,6 +411,24 @@ What the numbers say, and what changed because of them:
   0.81 and MRR from 0.86 to 0.88. But it adds about 1.5 s per query on CPU and slightly lowers
   Recall@4. The Analyst reads all four chunks, so Recall@4 is what matters here, and the
   reranker ships disabled (`AGENTDESK_RERANKER=cross-encoder` turns it on).
+
+### Public benchmark: BEIR SciFact
+
+The in-house benchmark's questions and corpus were written by the same author, so it could
+flatter the system. `eval/run_beir_eval.py` runs the same production `retrieve()` (Chroma,
+the BM25 index, rank fusion, and the cross-encoder) over
+[BEIR SciFact](https://github.com/beir-cellar/beir). SciFact has 5,183 scientific abstracts and
+300 claims with relevance labels from domain experts. Embeddings come from a small local model,
+because embedding 5k abstracts on the Gemini free tier is impractical. That means this tests the
+retrieval *pipeline*, not Gemini.
+
+```bash
+python -m eval.run_beir_eval --write   # downloads the dataset once (~3MB), ~15 min on a laptop CPU
+```
+
+<!-- eval:beir:start -->
+_Results pending: the first full run is in progress._
+<!-- eval:beir:end -->
 
 ## Configuration
 
