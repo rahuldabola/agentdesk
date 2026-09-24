@@ -1,0 +1,823 @@
+{
+  "description": "Labelled retrieval benchmark over data/sample_docs. Each gold item names the file and a short evidence string; a retrieved chunk is relevant to that item if it comes from that file and contains the evidence (whitespace-normalised). `any_of` accepts any one of several equivalent sources. `negatives` are questions the corpus cannot answer, which the relevance floor should reject: `off-topic` ones are plainly unrelated, `near-domain` ones sound like internal-docs questions but have no answer here.",
+  "queries": [
+    {
+      "id": "kw-01",
+      "type": "keyword",
+      "question": "What does error code AUTH-1003 mean?",
+      "gold": [
+        {
+          "file": "error_codes.md",
+          "evidence": "AUTH-1003"
+        }
+      ]
+    },
+    {
+      "id": "kw-02",
+      "type": "keyword",
+      "question": "How should a client handle PAY-4015?",
+      "gold": [
+        {
+          "file": "error_codes.md",
+          "evidence": "PAY-4015"
+        }
+      ]
+    },
+    {
+      "id": "kw-03",
+      "type": "keyword",
+      "question": "What is RATE-4291?",
+      "gold": [
+        {
+          "file": "error_codes.md",
+          "evidence": "RATE-4291"
+        }
+      ]
+    },
+    {
+      "id": "kw-04",
+      "type": "keyword",
+      "question": "What triggers the HighConsumerLag alert?",
+      "gold": [
+        {
+          "file": "alert_catalog.md",
+          "evidence": "10,000 messages behind"
+        }
+      ]
+    },
+    {
+      "id": "kw-05",
+      "type": "keyword",
+      "question": "What should I do when DiskPressureCritical fires?",
+      "gold": [
+        {
+          "file": "alert_catalog.md",
+          "evidence": "Cordon the node"
+        }
+      ]
+    },
+    {
+      "id": "kw-06",
+      "type": "keyword",
+      "question": "What is the ReplicationLagHigh threshold?",
+      "gold": [
+        {
+          "file": "alert_catalog.md",
+          "evidence": "more than 30 seconds behind"
+        }
+      ]
+    },
+    {
+      "id": "kw-07",
+      "type": "keyword",
+      "question": "How is the X-Signature-256 header computed?",
+      "gold": [
+        {
+          "file": "webhooks.md",
+          "evidence": "HMAC-SHA256 of the raw request body"
+        }
+      ]
+    },
+    {
+      "id": "kw-08",
+      "type": "keyword",
+      "question": "What runs in stage-east-1?",
+      "gold": [
+        {
+          "file": "kubernetes_platform.md",
+          "evidence": "Staging runs in `stage-east-1`"
+        }
+      ]
+    },
+    {
+      "id": "kw-09",
+      "type": "keyword",
+      "question": "What is ledger-svc responsible for?",
+      "gold": [
+        {
+          "file": "architecture_overview.md",
+          "evidence": "double-entry ledger"
+        }
+      ]
+    },
+    {
+      "id": "kw-10",
+      "type": "keyword",
+      "question": "When is REQ-2009 returned?",
+      "gold": [
+        {
+          "file": "error_codes.md",
+          "evidence": "idempotency key was reused"
+        }
+      ]
+    },
+    {
+      "id": "kw-11",
+      "type": "keyword",
+      "question": "What does SYS-5031 indicate?",
+      "gold": [
+        {
+          "file": "error_codes.md",
+          "evidence": "read-only maintenance mode"
+        }
+      ]
+    },
+    {
+      "id": "kw-12",
+      "type": "keyword",
+      "question": "What does the ErrorBudgetBurnFast alert indicate?",
+      "gold": [
+        {
+          "file": "alert_catalog.md",
+          "evidence": "14 times faster"
+        }
+      ]
+    },
+    {
+      "id": "kw-13",
+      "type": "keyword",
+      "question": "Which queue-admin command moves poison messages?",
+      "gold": [
+        {
+          "file": "alert_catalog.md",
+          "evidence": "queue-admin dlq move"
+        }
+      ]
+    },
+    {
+      "id": "kw-14",
+      "type": "keyword",
+      "question": "How are topics like billing.invoice.paid named?",
+      "gold": [
+        {
+          "file": "architecture_overview.md",
+          "evidence": "<domain>.<entity>.<event>"
+        }
+      ]
+    },
+    {
+      "id": "kw-15",
+      "type": "keyword",
+      "question": "What PodDisruptionBudget do production deployments use?",
+      "gold": [
+        {
+          "file": "kubernetes_platform.md",
+          "evidence": "PodDisruptionBudget allowing at most one replica"
+        }
+      ]
+    },
+    {
+      "id": "kw-16",
+      "type": "keyword",
+      "question": "What is X-Webhook-Timestamp used for?",
+      "gold": [
+        {
+          "file": "webhooks.md",
+          "evidence": "more than 5 minutes old"
+        }
+      ]
+    },
+    {
+      "id": "kw-17",
+      "type": "keyword",
+      "question": "What does notify-svc handle?",
+      "gold": [
+        {
+          "file": "architecture_overview.md",
+          "evidence": "email, SMS, and push notifications"
+        }
+      ]
+    },
+    {
+      "id": "kw-18",
+      "type": "keyword",
+      "question": "Where is AES-256 required?",
+      "gold": [
+        {
+          "file": "data_classification.md",
+          "evidence": "encrypted with AES-256"
+        }
+      ]
+    },
+    {
+      "id": "kw-19",
+      "type": "keyword",
+      "question": "What does a nit: prefix mean on a review comment?",
+      "gold": [
+        {
+          "file": "code_review.md",
+          "evidence": "never block a merge"
+        }
+      ]
+    },
+    {
+      "id": "kw-20",
+      "type": "keyword",
+      "question": "What is the RTO for Tier 2 systems?",
+      "gold": [
+        {
+          "file": "backup_recovery.md",
+          "evidence": "RTO of 4 hours"
+        }
+      ]
+    },
+    {
+      "id": "pp-01",
+      "type": "paraphrase",
+      "question": "How quickly do we cut off a former employee's permissions?",
+      "gold": [
+        {
+          "file": "access_control.md",
+          "evidence": "revoked within 1 hour of a departure"
+        }
+      ]
+    },
+    {
+      "id": "pp-02",
+      "type": "paraphrase",
+      "question": "How long do we keep the record of who did what, for compliance purposes?",
+      "gold": [
+        {
+          "file": "observability.md",
+          "evidence": "retained for 7 years"
+        }
+      ]
+    },
+    {
+      "id": "pp-03",
+      "type": "paraphrase",
+      "question": "How much money can a support agent give back to a customer without asking anyone?",
+      "gold": [
+        {
+          "file": "billing_operations.md",
+          "evidence": "refunds up to $500 without approval"
+        }
+      ]
+    },
+    {
+      "id": "pp-04",
+      "type": "paraphrase",
+      "question": "What happens when a customer's card keeps getting declined at renewal time?",
+      "gold": [
+        {
+          "file": "billing_operations.md",
+          "evidence": "retries the card on days 1, 3, 5 and 7"
+        }
+      ]
+    },
+    {
+      "id": "pp-05",
+      "type": "paraphrase",
+      "question": "When can a new hire start taking pages?",
+      "gold": [
+        {
+          "file": "onboarding.md",
+          "evidence": "within their first 8 weeks"
+        }
+      ]
+    },
+    {
+      "id": "pp-06",
+      "type": "paraphrase",
+      "question": "How big should a change be before I ask a colleague to look at it?",
+      "gold": [
+        {
+          "file": "code_review.md",
+          "evidence": "under 400 changed"
+        }
+      ]
+    },
+    {
+      "id": "pp-07",
+      "type": "paraphrase",
+      "question": "How long can an unreliable check keep being ignored before it is thrown away?",
+      "gold": [
+        {
+          "file": "testing_strategy.md",
+          "evidence": "within 14 days is deleted"
+        }
+      ]
+    },
+    {
+      "id": "pp-08",
+      "type": "paraphrase",
+      "question": "If our main region goes dark, who decides to switch to the other one?",
+      "gold": [
+        {
+          "file": "backup_recovery.md",
+          "evidence": "manual decision made by the Incident Commander"
+        }
+      ]
+    },
+    {
+      "id": "pp-09",
+      "type": "paraphrase",
+      "question": "How much data can we afford to lose for our most critical systems?",
+      "gold": [
+        {
+          "file": "backup_recovery.md",
+          "evidence": "recovery point objective (RPO) of 5 minutes"
+        }
+      ]
+    },
+    {
+      "id": "pp-10",
+      "type": "paraphrase",
+      "question": "Why don't we cap processor usage on containers?",
+      "gold": [
+        {
+          "file": "kubernetes_platform.md",
+          "evidence": "CPU limits are not set"
+        }
+      ]
+    },
+    {
+      "id": "pp-11",
+      "type": "paraphrase",
+      "question": "Who may I tell about unreleased quarterly earnings?",
+      "gold": [
+        {
+          "file": "data_classification.md",
+          "evidence": "financial results before announcement"
+        }
+      ]
+    },
+    {
+      "id": "pp-12",
+      "type": "paraphrase",
+      "question": "Is it okay to paste a customer's credit card number into an AI chatbot?",
+      "gold": [
+        {
+          "file": "data_classification.md",
+          "evidence": "must never be pasted into chat tools"
+        }
+      ]
+    },
+    {
+      "id": "pp-13",
+      "type": "paraphrase",
+      "question": "What happens to test environments overnight?",
+      "gold": [
+        {
+          "file": "cloud_costs.md",
+          "evidence": "scale to zero outside"
+        }
+      ]
+    },
+    {
+      "id": "pp-14",
+      "type": "paraphrase",
+      "question": "Our team's spending jumped a lot this quarter - what do we have to do?",
+      "gold": [
+        {
+          "file": "cloud_costs.md",
+          "evidence": "more than 25% quarter over quarter"
+        }
+      ]
+    },
+    {
+      "id": "pp-15",
+      "type": "paraphrase",
+      "question": "How fast must we answer a big client's urgent complaint?",
+      "gold": [
+        {
+          "file": "support_escalation.md",
+          "evidence": "within 1 hour for urgent tickets"
+        }
+      ]
+    },
+    {
+      "id": "pp-16",
+      "type": "paraphrase",
+      "question": "Can I email a customer myself about the bug they hit?",
+      "gold": [
+        {
+          "file": "support_escalation.md",
+          "evidence": "Engineers do not contact customers directly"
+        }
+      ]
+    },
+    {
+      "id": "pp-17",
+      "type": "paraphrase",
+      "question": "What should I do first if I accidentally pushed a password to GitHub?",
+      "gold": [
+        {
+          "file": "secrets_management.md",
+          "evidence": "rotate it first, then clean the history"
+        }
+      ]
+    },
+    {
+      "id": "pp-18",
+      "type": "paraphrase",
+      "question": "How often do database credentials change?",
+      "gold": [
+        {
+          "file": "secrets_management.md",
+          "evidence": "Database passwords rotate every 30 days"
+        }
+      ]
+    },
+    {
+      "id": "pp-19",
+      "type": "paraphrase",
+      "question": "How long can a customer wait for us to hand over a copy of the information we hold about them?",
+      "gold": [
+        {
+          "file": "privacy.md",
+          "evidence": "completed within 30 days of receipt"
+        }
+      ]
+    },
+    {
+      "id": "pp-20",
+      "type": "paraphrase",
+      "question": "Who should I talk to before using people's information for something new?",
+      "gold": [
+        {
+          "file": "privacy.md",
+          "evidence": "Data Protection Officer is reachable"
+        }
+      ]
+    },
+    {
+      "id": "pp-21",
+      "type": "paraphrase",
+      "question": "How long does a receiver of our event callbacks have to reply?",
+      "gold": [
+        {
+          "file": "webhooks.md",
+          "evidence": "within 10 seconds"
+        }
+      ]
+    },
+    {
+      "id": "pp-22",
+      "type": "paraphrase",
+      "question": "When does an event callback URL get switched off?",
+      "gold": [
+        {
+          "file": "webhooks.md",
+          "evidence": "fails every delivery for 5 consecutive days"
+        }
+      ]
+    },
+    {
+      "id": "pp-23",
+      "type": "paraphrase",
+      "question": "What fraction of request paths through the system do we record?",
+      "gold": [
+        {
+          "file": "observability.md",
+          "evidence": "keeps 10% of traces"
+        }
+      ]
+    },
+    {
+      "id": "pp-24",
+      "type": "paraphrase",
+      "question": "When am I not allowed to ship code around the weekend?",
+      "gold": [
+        {
+          "file": "deployment.md",
+          "evidence": "16:00 Friday until 09:00 Monday"
+        }
+      ]
+    },
+    {
+      "id": "pp-25",
+      "type": "paraphrase",
+      "question": "How do I safely get rid of a column in a table?",
+      "gold": [
+        {
+          "file": "deployment.md",
+          "evidence": "dropping one requires two deploys"
+        }
+      ]
+    },
+    {
+      "id": "pp-26",
+      "type": "paraphrase",
+      "question": "During an outage, what should the person coordinating avoid doing themselves?",
+      "gold": [
+        {
+          "file": "incident_response.md",
+          "evidence": "The Incident Commander does not debug"
+        }
+      ]
+    },
+    {
+      "id": "pp-27",
+      "type": "paraphrase",
+      "question": "How much downtime does a three-and-a-half-nines target allow per month?",
+      "gold": [
+        {
+          "file": "sre_practices.md",
+          "evidence": "roughly 20 minutes of downtime"
+        }
+      ]
+    },
+    {
+      "id": "pp-28",
+      "type": "paraphrase",
+      "question": "What happens when a team runs out of its reliability allowance?",
+      "gold": [
+        {
+          "file": "sre_practices.md",
+          "evidence": "feature work stops"
+        }
+      ]
+    },
+    {
+      "id": "pp-29",
+      "type": "paraphrase",
+      "question": "How much of our time can go to repetitive manual operations work?",
+      "gold": [
+        {
+          "file": "sre_practices.md",
+          "evidence": "cap toil at 50%"
+        }
+      ]
+    },
+    {
+      "id": "pp-30",
+      "type": "paraphrase",
+      "question": "What is the first thing to look at when the front door starts returning server errors?",
+      "gold": [
+        {
+          "file": "oncall_runbook.md",
+          "evidence": "Check the deploy log first"
+        }
+      ]
+    },
+    {
+      "id": "pp-31",
+      "type": "paraphrase",
+      "question": "How long do we hold on to someone's information after they close their account?",
+      "gold": [
+        {
+          "file": "security_policy.md",
+          "evidence": "retained for 90 days after account deletion"
+        }
+      ]
+    },
+    {
+      "id": "pp-32",
+      "type": "paraphrase",
+      "question": "How many calls per minute can one credential make?",
+      "gold": [
+        {
+          "file": "api_policies.md",
+          "evidence": "1,000 requests per minute"
+        }
+      ]
+    },
+    {
+      "id": "pp-33",
+      "type": "paraphrase",
+      "question": "When do we take away a permission nobody has been using?",
+      "gold": [
+        {
+          "file": "access_control.md",
+          "evidence": "unused for 90 days is revoked"
+        }
+      ]
+    },
+    {
+      "id": "pp-34",
+      "type": "paraphrase",
+      "question": "How long do cached values live before they go stale?",
+      "gold": [
+        {
+          "file": "architecture_overview.md",
+          "evidence": "default TTL of 5 minutes"
+        }
+      ]
+    },
+    {
+      "id": "pp-35",
+      "type": "paraphrase",
+      "question": "How long does a login credential from the auth endpoint stay valid?",
+      "gold": [
+        {
+          "file": "api_policies.md",
+          "evidence": "expire after 24 hours"
+        }
+      ]
+    },
+    {
+      "id": "pp-36",
+      "type": "paraphrase",
+      "question": "When does the weekly on-call shift change over?",
+      "gold": [
+        {
+          "any_of": [
+            {
+              "file": "oncall_runbook.md",
+              "evidence": "Monday 09:00 UTC"
+            },
+            {
+              "file": "engineering_handbook.md",
+              "evidence": "every Monday at 9:00 AM"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mh-01",
+      "type": "multi",
+      "question": "Compare how often third-party API keys rotate with how long bearer tokens last.",
+      "gold": [
+        {
+          "file": "secrets_management.md",
+          "evidence": "Third-party API keys rotate every 90 days"
+        },
+        {
+          "file": "api_policies.md",
+          "evidence": "expire after 24 hours"
+        }
+      ]
+    },
+    {
+      "id": "mh-02",
+      "type": "multi",
+      "question": "When do certificates auto-renew, and when does the expiring-certificate alert fire?",
+      "gold": [
+        {
+          "file": "oncall_runbook.md",
+          "evidence": "auto-renew 30 days before expiry"
+        },
+        {
+          "file": "alert_catalog.md",
+          "evidence": "Fires 14 days before a certificate expires"
+        }
+      ]
+    },
+    {
+      "id": "mh-03",
+      "type": "multi",
+      "question": "How do data deletion requests interact with how long nightly backups are kept?",
+      "gold": [
+        {
+          "file": "privacy.md",
+          "evidence": "Backups age out"
+        },
+        {
+          "file": "backup_recovery.md",
+          "evidence": "retained for 35 days"
+        }
+      ]
+    },
+    {
+      "id": "mh-04",
+      "type": "multi",
+      "question": "What severity is a failed restore drill, and how is an incident of that severity handled?",
+      "gold": [
+        {
+          "file": "backup_recovery.md",
+          "evidence": "treated as a SEV3"
+        },
+        {
+          "any_of": [
+            {
+              "file": "incident_response.md",
+              "evidence": "File a ticket; no page"
+            },
+            {
+              "file": "engineering_handbook.md",
+              "evidence": "ticket only, no page"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mh-05",
+      "type": "multi",
+      "question": "How must webhook receivers and Kafka consumers each cope with duplicate deliveries?",
+      "gold": [
+        {
+          "file": "webhooks.md",
+          "evidence": "deduplicate using the `event_id` field"
+        },
+        {
+          "file": "architecture_overview.md",
+          "evidence": "Consumers must be idempotent"
+        }
+      ]
+    },
+    {
+      "id": "mh-06",
+      "type": "multi",
+      "question": "How does the per-key rate limit relate to the account-wide concurrency cap?",
+      "gold": [
+        {
+          "file": "api_policies.md",
+          "evidence": "1,000 requests per minute"
+        },
+        {
+          "file": "error_codes.md",
+          "evidence": "concurrency cap of 50 in-flight"
+        }
+      ]
+    },
+    {
+      "id": "mh-07",
+      "type": "multi",
+      "question": "What are the latency SLOs for Tier 1 services, and what p99 regression blocks a release?",
+      "gold": [
+        {
+          "file": "sre_practices.md",
+          "evidence": "p99 under 300ms"
+        },
+        {
+          "file": "testing_strategy.md",
+          "evidence": "more than 10% in p99 latency"
+        }
+      ]
+    },
+    {
+      "id": "mh-08",
+      "type": "multi",
+      "question": "What must a support escalation include, and how long are traces kept for looking them up?",
+      "gold": [
+        {
+          "file": "support_escalation.md",
+          "evidence": "the `trace_id` from a failing request"
+        },
+        {
+          "file": "observability.md",
+          "evidence": "retained for 14 days"
+        }
+      ]
+    }
+  ],
+  "negatives": [
+    {
+      "type": "off-topic",
+      "question": "What is the best pizza topping?"
+    },
+    {
+      "type": "off-topic",
+      "question": "Who won the 2022 FIFA World Cup?"
+    },
+    {
+      "type": "off-topic",
+      "question": "How do I bake sourdough bread at home?"
+    },
+    {
+      "type": "off-topic",
+      "question": "What is the capital of Australia?"
+    },
+    {
+      "type": "off-topic",
+      "question": "Explain how photosynthesis works in plants."
+    },
+    {
+      "type": "off-topic",
+      "question": "What will the weather be like in Mumbai tomorrow?"
+    },
+    {
+      "type": "off-topic",
+      "question": "Recommend a good science fiction novel."
+    },
+    {
+      "type": "off-topic",
+      "question": "How tall is Mount Everest?"
+    },
+    {
+      "type": "near-domain",
+      "question": "What is the parental leave policy?"
+    },
+    {
+      "type": "near-domain",
+      "question": "How do I book a meeting room in the office?"
+    },
+    {
+      "type": "near-domain",
+      "question": "What is the company's stock ticker symbol?"
+    },
+    {
+      "type": "near-domain",
+      "question": "How many days of paid vacation do engineers get?"
+    },
+    {
+      "type": "near-domain",
+      "question": "What is the dress code for client meetings?"
+    },
+    {
+      "type": "near-domain",
+      "question": "How do I submit a travel expense claim?"
+    },
+    {
+      "type": "near-domain",
+      "question": "Which programming language should new microservices be written in?"
+    },
+    {
+      "type": "near-domain",
+      "question": "What is the process for requesting a salary review?"
+    }
+  ]
+}

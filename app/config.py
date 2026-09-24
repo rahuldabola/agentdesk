@@ -35,6 +35,11 @@ class Settings:
     chunk_overlap: int
     retrieval_k: int
     max_distance: float
+    retrieval_mode: str
+    candidate_k: int
+    rrf_k: int
+    reranker: str
+    rerank_model: str
 
     # Tools
     web_results: int
@@ -59,9 +64,21 @@ def get_settings() -> Settings:
         chunk_size=_int("AGENTDESK_CHUNK_SIZE", 800),
         chunk_overlap=_int("AGENTDESK_CHUNK_OVERLAP", 150),
         retrieval_k=_int("AGENTDESK_RETRIEVAL_K", 4),
-        # Cosine distance in [0, 2]. Unrelated text against text-embedding-3-small
-        # typically lands above 0.7; genuinely on-topic chunks sit well below it.
-        max_distance=_float("AGENTDESK_MAX_DISTANCE", 0.65),
+        # Cosine distance in [0, 2]. Calibrated on gemini-embedding-001 by
+        # eval/run_retrieval_eval.py: every gold chunk sits within 0.375, every
+        # off-topic question's nearest chunk beyond 0.42. The previous 0.65 was
+        # tuned for OpenAI embeddings and let every off-topic question through.
+        max_distance=_float("AGENTDESK_MAX_DISTANCE", 0.40),
+        # dense | bm25 | hybrid. Dense is the default because it measured best on
+        # this corpus (eval/run_retrieval_eval.py); hybrid fuses dense and BM25
+        # with reciprocal rank fusion, for corpora heavy in exact identifiers.
+        retrieval_mode=os.environ.get("AGENTDESK_RETRIEVAL_MODE", "dense").lower(),
+        # How many candidates each retriever contributes before fusion/reranking.
+        candidate_k=_int("AGENTDESK_CANDIDATE_K", 20),
+        rrf_k=_int("AGENTDESK_RRF_K", 60),
+        # none | cross-encoder. The cross-encoder needs `pip install .[rerank]`.
+        reranker=os.environ.get("AGENTDESK_RERANKER", "none").lower(),
+        rerank_model=os.environ.get("AGENTDESK_RERANK_MODEL", "Xenova/ms-marco-MiniLM-L-6-v2"),
         web_results=_int("AGENTDESK_WEB_RESULTS", 3),
         tool_timeout=_float("AGENTDESK_TOOL_TIMEOUT", 15.0),
         max_concurrent_tool_calls=_int("AGENTDESK_MAX_CONCURRENT_TOOL_CALLS", 4),
