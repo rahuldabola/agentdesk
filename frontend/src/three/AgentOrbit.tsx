@@ -554,6 +554,9 @@ export default function AgentOrbit(props: AgentOrbitProps) {
               labelRefs.current[i] = el;
             }}
             className="pointer-events-none absolute left-0 top-0 select-none whitespace-nowrap will-change-transform"
+            // Hidden until the render loop projects it onto its node; otherwise every
+            // label stacks unpositioned in the top-left corner until the first tick.
+            style={{ opacity: 0 }}
           >
             <div
               className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium backdrop-blur-md transition-all duration-300"
