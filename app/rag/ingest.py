@@ -12,6 +12,7 @@ from google.genai import types
 from app.config import get_settings
 from app.errors import RetrievalError
 from app.llm.gemini_client import get_client, is_retryable, retry_delay_hint
+from app.rag import bm25
 from app.util.retry import retry_call
 
 log = logging.getLogger("agentdesk.rag")
@@ -133,6 +134,8 @@ def ingest_docs(docs_dir: str = "data/sample_docs") -> int:
 
     log.info("embedding %d chunks from %d files", len(ids), len(files))
     collection.upsert(ids=ids, documents=docs, metadatas=metadatas, embeddings=embed_texts(docs))
+    settings = get_settings()
+    bm25.invalidate((settings.chroma_dir, settings.collection_name))
     return len(ids)
 
 

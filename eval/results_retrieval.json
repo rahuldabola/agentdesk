@@ -1,0 +1,4719 @@
+{
+  "meta": {
+    "queries": 64,
+    "by_type": {
+      "keyword": 20,
+      "paraphrase": 36,
+      "multi": 8
+    },
+    "negatives": {
+      "off-topic": 8,
+      "near-domain": 8
+    },
+    "chunks": 55,
+    "embed_model": "gemini-embedding-001",
+    "rerank_model": "Xenova/ms-marco-MiniLM-L-6-v2",
+    "embeddings": "cache"
+  },
+  "summary": {
+    "dense": {
+      "recall@4": 0.9688,
+      "hit@1": 0.75,
+      "mrr@10": 0.8555,
+      "ndcg@10": 0.8832,
+      "recall@4[keyword]": 1.0,
+      "recall@4[paraphrase]": 0.9722,
+      "recall@4[multi]": 0.875,
+      "answerable": 0.9844,
+      "rejected[off-topic]": 1.0,
+      "rejected[near-domain]": 0.5,
+      "latency_ms_p50": 6.7
+    },
+    "bm25": {
+      "recall@4": 0.7031,
+      "hit@1": 0.5312,
+      "mrr@10": 0.6234,
+      "ndcg@10": 0.6722,
+      "recall@4[keyword]": 1.0,
+      "recall@4[paraphrase]": 0.4722,
+      "recall@4[multi]": 1.0,
+      "answerable": 0.7969,
+      "rejected[off-topic]": 1.0,
+      "rejected[near-domain]": 0.625,
+      "latency_ms_p50": 43.5
+    },
+    "hybrid": {
+      "recall@4": 0.8906,
+      "hit@1": 0.6406,
+      "mrr@10": 0.7658,
+      "ndcg@10": 0.8173,
+      "recall@4[keyword]": 1.0,
+      "recall@4[paraphrase]": 0.8056,
+      "recall@4[multi]": 1.0,
+      "answerable": 0.9062,
+      "rejected[off-topic]": 1.0,
+      "rejected[near-domain]": 0.5,
+      "latency_ms_p50": 19.2
+    },
+    "dense+rerank": {
+      "recall@4": 0.9531,
+      "hit@1": 0.8125,
+      "mrr@10": 0.8779,
+      "ndcg@10": 0.9025,
+      "recall@4[keyword]": 1.0,
+      "recall@4[paraphrase]": 0.9167,
+      "recall@4[multi]": 1.0,
+      "answerable": 0.9688,
+      "rejected[off-topic]": 1.0,
+      "rejected[near-domain]": 0.5,
+      "latency_ms_p50": 1480.8
+    },
+    "hybrid+rerank": {
+      "recall@4": 0.9531,
+      "hit@1": 0.8125,
+      "mrr@10": 0.874,
+      "ndcg@10": 0.8959,
+      "recall@4[keyword]": 1.0,
+      "recall@4[paraphrase]": 0.9167,
+      "recall@4[multi]": 1.0,
+      "answerable": 0.9688,
+      "rejected[off-topic]": 1.0,
+      "rejected[near-domain]": 0.5,
+      "latency_ms_p50": 1543.3
+    }
+  },
+  "floor": {
+    "max_distance": 0.4,
+    "gold_distance_max": 0.3748,
+    "off-topic_top1_distance_min": 0.429,
+    "near-domain_top1_distance_min": 0.3657,
+    "sweep": {
+      "dense": [
+        {
+          "max_distance": 0.3,
+          "answerable": 0.3906,
+          "rejected[off-topic]": 1.0,
+          "rejected[near-domain]": 1.0
+        },
+        {
+          "max_distance": 0.325,
+          "answerable": 0.7188,
+          "rejected[off-topic]": 1.0,
+          "rejected[near-domain]": 1.0
+        },
+        {
+          "max_distance": 0.35,
+          "answerable": 0.8906,
+          "rejected[off-topic]": 1.0,
+          "rejected[near-domain]": 1.0
+        },
+        {
+          "max_distance": 0.375,
+          "answerable": 0.9844,
+          "rejected[off-topic]": 1.0,
+          "rejected[near-domain]": 0.75
+        },
+        {
+          "max_distance": 0.4,
+          "answerable": 0.9844,
+          "rejected[off-topic]": 1.0,
+          "rejected[near-domain]": 0.5
+        },
+        {
+          "max_distance": 0.425,
+          "answerable": 0.9844,
+          "rejected[off-topic]": 1.0,
+          "rejected[near-domain]": 0.0
+        },
+        {
+          "max_distance": 0.45,
+          "answerable": 0.9844,
+          "rejected[off-topic]": 0.375,
+          "rejected[near-domain]": 0.0
+        },
+        {
+          "max_distance": 0.475,
+          "answerable": 0.9844,
+          "rejected[off-topic]": 0.0,
+          "rejected[near-domain]": 0.0
+        },
+        {
+          "max_distance": 0.5,
+          "answerable": 0.9844,
+          "rejected[off-topic]": 0.0,
+          "rejected[near-domain]": 0.0
+        },
+        {
+          "max_distance": 0.525,
+          "answerable": 0.9844,
+          "rejected[off-topic]": 0.0,
+          "rejected[near-domain]": 0.0
+        },
+        {
+          "max_distance": 0.55,
+          "answerable": 0.9844,
+          "rejected[off-topic]": 0.0,
+          "rejected[near-domain]": 0.0
+        },
+        {
+          "max_distance": 0.575,
+          "answerable": 0.9844,
+          "rejected[off-topic]": 0.0,
+          "rejected[near-domain]": 0.0
+        },
+        {
+          "max_distance": 0.6,
+          "answerable": 0.9844,
+          "rejected[off-topic]": 0.0,
+          "rejected[near-domain]": 0.0
+        },
+        {
+          "max_distance": 0.625,
+          "answerable": 0.9844,
+          "rejected[off-topic]": 0.0,
+          "rejected[near-domain]": 0.0
+        },
+        {
+          "max_distance": 0.65,
+          "answerable": 0.9844,
+          "rejected[off-topic]": 0.0,
+          "rejected[near-domain]": 0.0
+        }
+      ],
+      "bm25": [
+        {
+          "max_distance": 0.3,
+          "answerable": 0.3594,
+          "rejected[off-topic]": 1.0,
+          "rejected[near-domain]": 1.0
+        },
+        {
+          "max_distance": 0.325,
+          "answerable": 0.6562,
+          "rejected[off-topic]": 1.0,
+          "rejected[near-domain]": 1.0
+        },
+        {
+          "max_distance": 0.35,
+          "answerable": 0.8125,
+          "rejected[off-topic]": 1.0,
+          "rejected[near-domain]": 1.0
+        },
+        {
+          "max_distance": 0.375,
+          "answerable": 0.8281,
+          "rejected[off-topic]": 1.0,
+          "rejected[near-domain]": 0.875
+        },
+        {
+          "max_distance": 0.4,
+          "answerable": 0.7969,
+          "rejected[off-topic]": 1.0,
+          "rejected[near-domain]": 0.625
+        },
+        {
+          "max_distance": 0.425,
+          "answerable": 0.7188,
+          "rejected[off-topic]": 1.0,
+          "rejected[near-domain]": 0.125
+        },
+        {
+          "max_distance": 0.45,
+          "answerable": 0.7188,
+          "rejected[off-topic]": 1.0,
+          "rejected[near-domain]": 0.125
+        },
+        {
+          "max_distance": 0.475,
+          "answerable": 0.7031,
+          "rejected[off-topic]": 0.625,
+          "rejected[near-domain]": 0.125
+        },
+        {
+          "max_distance": 0.5,
+          "answerable": 0.7031,
+          "rejected[off-topic]": 0.625,
+          "rejected[near-domain]": 0.125
+        },
+        {
+          "max_distance": 0.525,
+          "answerable": 0.7031,
+          "rejected[off-topic]": 0.625,
+          "rejected[near-domain]": 0.125
+        },
+        {
+          "max_distance": 0.55,
+          "answerable": 0.7031,
+          "rejected[off-topic]": 0.625,
+          "rejected[near-domain]": 0.125
+        },
+        {
+          "max_distance": 0.575,
+          "answerable": 0.7031,
+          "rejected[off-topic]": 0.625,
+          "rejected[near-domain]": 0.125
+        },
+        {
+          "max_distance": 0.6,
+          "answerable": 0.7031,
+          "rejected[off-topic]": 0.625,
+          "rejected[near-domain]": 0.125
+        },
+        {
+          "max_distance": 0.625,
+          "answerable": 0.7031,
+          "rejected[off-topic]": 0.625,
+          "rejected[near-domain]": 0.125
+        },
+        {
+          "max_distance": 0.65,
+          "answerable": 0.7031,
+          "rejected[off-topic]": 0.625,
+          "rejected[near-domain]": 0.125
+        }
+      ],
+      "hybrid": [
+        {
+          "max_distance": 0.3,
+          "answerable": 0.375,
+          "rejected[off-topic]": 1.0,
+          "rejected[near-domain]": 1.0
+        },
+        {
+          "max_distance": 0.325,
+          "answerable": 0.7031,
+          "rejected[off-topic]": 1.0,
+          "rejected[near-domain]": 1.0
+        },
+        {
+          "max_distance": 0.35,
+          "answerable": 0.8438,
+          "rejected[off-topic]": 1.0,
+          "rejected[near-domain]": 1.0
+        },
+        {
+          "max_distance": 0.375,
+          "answerable": 0.9062,
+          "rejected[off-topic]": 1.0,
+          "rejected[near-domain]": 0.75
+        },
+        {
+          "max_distance": 0.4,
+          "answerable": 0.9062,
+          "rejected[off-topic]": 1.0,
+          "rejected[near-domain]": 0.5
+        },
+        {
+          "max_distance": 0.425,
+          "answerable": 0.8906,
+          "rejected[off-topic]": 1.0,
+          "rejected[near-domain]": 0.0
+        },
+        {
+          "max_distance": 0.45,
+          "answerable": 0.8906,
+          "rejected[off-topic]": 0.375,
+          "rejected[near-domain]": 0.0
+        },
+        {
+          "max_distance": 0.475,
+          "answerable": 0.8906,
+          "rejected[off-topic]": 0.0,
+          "rejected[near-domain]": 0.0
+        },
+        {
+          "max_distance": 0.5,
+          "answerable": 0.8906,
+          "rejected[off-topic]": 0.0,
+          "rejected[near-domain]": 0.0
+        },
+        {
+          "max_distance": 0.525,
+          "answerable": 0.8906,
+          "rejected[off-topic]": 0.0,
+          "rejected[near-domain]": 0.0
+        },
+        {
+          "max_distance": 0.55,
+          "answerable": 0.8906,
+          "rejected[off-topic]": 0.0,
+          "rejected[near-domain]": 0.0
+        },
+        {
+          "max_distance": 0.575,
+          "answerable": 0.8906,
+          "rejected[off-topic]": 0.0,
+          "rejected[near-domain]": 0.0
+        },
+        {
+          "max_distance": 0.6,
+          "answerable": 0.8906,
+          "rejected[off-topic]": 0.0,
+          "rejected[near-domain]": 0.0
+        },
+        {
+          "max_distance": 0.625,
+          "answerable": 0.8906,
+          "rejected[off-topic]": 0.0,
+          "rejected[near-domain]": 0.0
+        },
+        {
+          "max_distance": 0.65,
+          "answerable": 0.8906,
+          "rejected[off-topic]": 0.0,
+          "rejected[near-domain]": 0.0
+        }
+      ],
+      "dense+rerank": [
+        {
+          "max_distance": 0.3,
+          "answerable": 0.375,
+          "rejected[off-topic]": 1.0,
+          "rejected[near-domain]": 1.0
+        },
+        {
+          "max_distance": 0.325,
+          "answerable": 0.7031,
+          "rejected[off-topic]": 1.0,
+          "rejected[near-domain]": 1.0
+        },
+        {
+          "max_distance": 0.35,
+          "answerable": 0.875,
+          "rejected[off-topic]": 1.0,
+          "rejected[near-domain]": 1.0
+        },
+        {
+          "max_distance": 0.375,
+          "answerable": 0.9688,
+          "rejected[off-topic]": 1.0,
+          "rejected[near-domain]": 0.75
+        },
+        {
+          "max_distance": 0.4,
+          "answerable": 0.9688,
+          "rejected[off-topic]": 1.0,
+          "rejected[near-domain]": 0.5
+        },
+        {
+          "max_distance": 0.425,
+          "answerable": 0.9531,
+          "rejected[off-topic]": 1.0,
+          "rejected[near-domain]": 0.0
+        },
+        {
+          "max_distance": 0.45,
+          "answerable": 0.9531,
+          "rejected[off-topic]": 0.375,
+          "rejected[near-domain]": 0.0
+        },
+        {
+          "max_distance": 0.475,
+          "answerable": 0.9531,
+          "rejected[off-topic]": 0.0,
+          "rejected[near-domain]": 0.0
+        },
+        {
+          "max_distance": 0.5,
+          "answerable": 0.9531,
+          "rejected[off-topic]": 0.0,
+          "rejected[near-domain]": 0.0
+        },
+        {
+          "max_distance": 0.525,
+          "answerable": 0.9531,
+          "rejected[off-topic]": 0.0,
+          "rejected[near-domain]": 0.0
+        },
+        {
+          "max_distance": 0.55,
+          "answerable": 0.9531,
+          "rejected[off-topic]": 0.0,
+          "rejected[near-domain]": 0.0
+        },
+        {
+          "max_distance": 0.575,
+          "answerable": 0.9531,
+          "rejected[off-topic]": 0.0,
+          "rejected[near-domain]": 0.0
+        },
+        {
+          "max_distance": 0.6,
+          "answerable": 0.9531,
+          "rejected[off-topic]": 0.0,
+          "rejected[near-domain]": 0.0
+        },
+        {
+          "max_distance": 0.625,
+          "answerable": 0.9531,
+          "rejected[off-topic]": 0.0,
+          "rejected[near-domain]": 0.0
+        },
+        {
+          "max_distance": 0.65,
+          "answerable": 0.9531,
+          "rejected[off-topic]": 0.0,
+          "rejected[near-domain]": 0.0
+        }
+      ],
+      "hybrid+rerank": [
+        {
+          "max_distance": 0.3,
+          "answerable": 0.375,
+          "rejected[off-topic]": 1.0,
+          "rejected[near-domain]": 1.0
+        },
+        {
+          "max_distance": 0.325,
+          "answerable": 0.7031,
+          "rejected[off-topic]": 1.0,
+          "rejected[near-domain]": 1.0
+        },
+        {
+          "max_distance": 0.35,
+          "answerable": 0.875,
+          "rejected[off-topic]": 1.0,
+          "rejected[near-domain]": 1.0
+        },
+        {
+          "max_distance": 0.375,
+          "answerable": 0.9688,
+          "rejected[off-topic]": 1.0,
+          "rejected[near-domain]": 0.75
+        },
+        {
+          "max_distance": 0.4,
+          "answerable": 0.9688,
+          "rejected[off-topic]": 1.0,
+          "rejected[near-domain]": 0.5
+        },
+        {
+          "max_distance": 0.425,
+          "answerable": 0.9531,
+          "rejected[off-topic]": 1.0,
+          "rejected[near-domain]": 0.0
+        },
+        {
+          "max_distance": 0.45,
+          "answerable": 0.9531,
+          "rejected[off-topic]": 0.375,
+          "rejected[near-domain]": 0.0
+        },
+        {
+          "max_distance": 0.475,
+          "answerable": 0.9531,
+          "rejected[off-topic]": 0.0,
+          "rejected[near-domain]": 0.0
+        },
+        {
+          "max_distance": 0.5,
+          "answerable": 0.9531,
+          "rejected[off-topic]": 0.0,
+          "rejected[near-domain]": 0.0
+        },
+        {
+          "max_distance": 0.525,
+          "answerable": 0.9531,
+          "rejected[off-topic]": 0.0,
+          "rejected[near-domain]": 0.0
+        },
+        {
+          "max_distance": 0.55,
+          "answerable": 0.9531,
+          "rejected[off-topic]": 0.0,
+          "rejected[near-domain]": 0.0
+        },
+        {
+          "max_distance": 0.575,
+          "answerable": 0.9531,
+          "rejected[off-topic]": 0.0,
+          "rejected[near-domain]": 0.0
+        },
+        {
+          "max_distance": 0.6,
+          "answerable": 0.9531,
+          "rejected[off-topic]": 0.0,
+          "rejected[near-domain]": 0.0
+        },
+        {
+          "max_distance": 0.625,
+          "answerable": 0.9531,
+          "rejected[off-topic]": 0.0,
+          "rejected[near-domain]": 0.0
+        },
+        {
+          "max_distance": 0.65,
+          "answerable": 0.9531,
+          "rejected[off-topic]": 0.0,
+          "rejected[near-domain]": 0.0
+        }
+      ]
+    }
+  },
+  "rows": {
+    "dense": [
+      {
+        "id": "kw-01",
+        "top4": [
+          "error_codes.md#0",
+          "error_codes.md#2",
+          "error_codes.md#1",
+          "api_policies.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-02",
+        "top4": [
+          "error_codes.md#2",
+          "error_codes.md#1",
+          "oncall_runbook.md#2",
+          "incident_response.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-03",
+        "top4": [
+          "alert_catalog.md#2",
+          "error_codes.md#1",
+          "api_policies.md#0",
+          "error_codes.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6309
+      },
+      {
+        "id": "kw-04",
+        "top4": [
+          "alert_catalog.md#0",
+          "alert_catalog.md#1",
+          "sre_practices.md#2",
+          "alert_catalog.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-05",
+        "top4": [
+          "alert_catalog.md#1",
+          "alert_catalog.md#0",
+          "alert_catalog.md#2",
+          "oncall_runbook.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-06",
+        "top4": [
+          "alert_catalog.md#1",
+          "alert_catalog.md#0",
+          "sre_practices.md#1",
+          "sre_practices.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-07",
+        "top4": [
+          "webhooks.md#1",
+          "webhooks.md#0",
+          "architecture_overview.md#0",
+          "api_policies.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-08",
+        "top4": [
+          "backup_recovery.md#1",
+          "kubernetes_platform.md#0",
+          "architecture_overview.md#1",
+          "architecture_overview.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6309
+      },
+      {
+        "id": "kw-09",
+        "top4": [
+          "architecture_overview.md#1",
+          "architecture_overview.md#0",
+          "observability.md#0",
+          "billing_operations.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6309
+      },
+      {
+        "id": "kw-10",
+        "top4": [
+          "error_codes.md#1",
+          "incident_response.md#3",
+          "backup_recovery.md#1",
+          "deployment.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-11",
+        "top4": [
+          "error_codes.md#2",
+          "alert_catalog.md#1",
+          "engineering_handbook.md#1",
+          "incident_response.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-12",
+        "top4": [
+          "alert_catalog.md#1",
+          "alert_catalog.md#2",
+          "alert_catalog.md#0",
+          "sre_practices.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-13",
+        "top4": [
+          "alert_catalog.md#0",
+          "alert_catalog.md#1",
+          "deployment.md#2",
+          "oncall_runbook.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-14",
+        "top4": [
+          "architecture_overview.md#1",
+          "architecture_overview.md#0",
+          "billing_operations.md#0",
+          "billing_operations.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-15",
+        "top4": [
+          "kubernetes_platform.md#1",
+          "kubernetes_platform.md#0",
+          "sre_practices.md#1",
+          "deployment.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-16",
+        "top4": [
+          "webhooks.md#1",
+          "webhooks.md#0",
+          "observability.md#0",
+          "error_codes.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-17",
+        "top4": [
+          "architecture_overview.md#1",
+          "architecture_overview.md#0",
+          "alert_catalog.md#1",
+          "incident_response.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-18",
+        "top4": [
+          "data_classification.md#1",
+          "access_control.md#1",
+          "alert_catalog.md#2",
+          "access_control.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-19",
+        "top4": [
+          "code_review.md#1",
+          "code_review.md#0",
+          "deployment.md#2",
+          "incident_response.md#3"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-20",
+        "top4": [
+          "backup_recovery.md#0",
+          "backup_recovery.md#1",
+          "sre_practices.md#0",
+          "sre_practices.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-01",
+        "top4": [
+          "access_control.md#1",
+          "security_policy.md#0",
+          "access_control.md#0",
+          "privacy.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-02",
+        "top4": [
+          "observability.md#0",
+          "privacy.md#0",
+          "access_control.md#1",
+          "security_policy.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-03",
+        "top4": [
+          "billing_operations.md#1",
+          "support_escalation.md#0",
+          "billing_operations.md#0",
+          "support_escalation.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-04",
+        "top4": [
+          "billing_operations.md#0",
+          "error_codes.md#2",
+          "error_codes.md#1",
+          "oncall_runbook.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-05",
+        "top4": [
+          "onboarding.md#0",
+          "onboarding.md#1",
+          "oncall_runbook.md#0",
+          "deployment.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-06",
+        "top4": [
+          "code_review.md#0",
+          "code_review.md#1",
+          "deployment.md#1",
+          "deployment.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-07",
+        "top4": [
+          "deployment.md#2",
+          "testing_strategy.md#1",
+          "alert_catalog.md#1",
+          "cloud_costs.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6309
+      },
+      {
+        "id": "pp-08",
+        "top4": [
+          "backup_recovery.md#1",
+          "oncall_runbook.md#1",
+          "backup_recovery.md#0",
+          "oncall_runbook.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-09",
+        "top4": [
+          "backup_recovery.md#0",
+          "backup_recovery.md#1",
+          "sre_practices.md#1",
+          "alert_catalog.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-10",
+        "top4": [
+          "alert_catalog.md#2",
+          "kubernetes_platform.md#1",
+          "kubernetes_platform.md#0",
+          "cloud_costs.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.3333,
+        "ndcg@10": 0.5
+      },
+      {
+        "id": "pp-11",
+        "top4": [
+          "data_classification.md#0",
+          "data_classification.md#2",
+          "privacy.md#1",
+          "deployment.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-12",
+        "top4": [
+          "access_control.md#2",
+          "data_classification.md#1",
+          "privacy.md#0",
+          "security_policy.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6309
+      },
+      {
+        "id": "pp-13",
+        "top4": [
+          "testing_strategy.md#1",
+          "deployment.md#0",
+          "cloud_costs.md#1",
+          "access_control.md#2"
+        ],
+        "recall@4": 0.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.0,
+        "ndcg@10": 0.0
+      },
+      {
+        "id": "pp-14",
+        "top4": [
+          "cloud_costs.md#1",
+          "cloud_costs.md#0",
+          "alert_catalog.md#2",
+          "alert_catalog.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-15",
+        "top4": [
+          "support_escalation.md#0",
+          "support_escalation.md#1",
+          "engineering_handbook.md#1",
+          "incident_response.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-16",
+        "top4": [
+          "support_escalation.md#0",
+          "support_escalation.md#1",
+          "engineering_handbook.md#1",
+          "incident_response.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6309
+      },
+      {
+        "id": "pp-17",
+        "top4": [
+          "secrets_management.md#1",
+          "secrets_management.md#0",
+          "security_policy.md#0",
+          "access_control.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-18",
+        "top4": [
+          "secrets_management.md#0",
+          "access_control.md#1",
+          "security_policy.md#0",
+          "backup_recovery.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-19",
+        "top4": [
+          "privacy.md#0",
+          "privacy.md#1",
+          "support_escalation.md#0",
+          "access_control.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-20",
+        "top4": [
+          "privacy.md#1",
+          "privacy.md#0",
+          "access_control.md#2",
+          "data_classification.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6309
+      },
+      {
+        "id": "pp-21",
+        "top4": [
+          "webhooks.md#0",
+          "webhooks.md#1",
+          "architecture_overview.md#1",
+          "support_escalation.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-22",
+        "top4": [
+          "webhooks.md#1",
+          "webhooks.md#0",
+          "cloud_costs.md#1",
+          "billing_operations.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6309
+      },
+      {
+        "id": "pp-23",
+        "top4": [
+          "observability.md#1",
+          "observability.md#0",
+          "webhooks.md#1",
+          "privacy.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-24",
+        "top4": [
+          "deployment.md#1",
+          "deployment.md#0",
+          "oncall_runbook.md#2",
+          "engineering_handbook.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6309
+      },
+      {
+        "id": "pp-25",
+        "top4": [
+          "deployment.md#1",
+          "access_control.md#2",
+          "security_policy.md#0",
+          "deployment.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-26",
+        "top4": [
+          "oncall_runbook.md#1",
+          "incident_response.md#2",
+          "oncall_runbook.md#2",
+          "incident_response.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.25,
+        "ndcg@10": 0.4307
+      },
+      {
+        "id": "pp-27",
+        "top4": [
+          "sre_practices.md#1",
+          "alert_catalog.md#2",
+          "sre_practices.md#0",
+          "backup_recovery.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-28",
+        "top4": [
+          "sre_practices.md#1",
+          "alert_catalog.md#2",
+          "cloud_costs.md#1",
+          "access_control.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-29",
+        "top4": [
+          "sre_practices.md#1",
+          "alert_catalog.md#2",
+          "cloud_costs.md#1",
+          "deployment.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-30",
+        "top4": [
+          "oncall_runbook.md#1",
+          "oncall_runbook.md#2",
+          "alert_catalog.md#1",
+          "error_codes.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-31",
+        "top4": [
+          "privacy.md#0",
+          "access_control.md#2",
+          "security_policy.md#0",
+          "access_control.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.3333,
+        "ndcg@10": 0.5
+      },
+      {
+        "id": "pp-32",
+        "top4": [
+          "alert_catalog.md#2",
+          "api_policies.md#0",
+          "webhooks.md#1",
+          "webhooks.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6309
+      },
+      {
+        "id": "pp-33",
+        "top4": [
+          "access_control.md#1",
+          "deployment.md#2",
+          "alert_catalog.md#2",
+          "access_control.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-34",
+        "top4": [
+          "deployment.md#2",
+          "architecture_overview.md#1",
+          "observability.md#0",
+          "secrets_management.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6309
+      },
+      {
+        "id": "pp-35",
+        "top4": [
+          "api_policies.md#0",
+          "error_codes.md#0",
+          "webhooks.md#0",
+          "alert_catalog.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-36",
+        "top4": [
+          "oncall_runbook.md#0",
+          "oncall_runbook.md#1",
+          "engineering_handbook.md#0",
+          "incident_response.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "mh-01",
+        "top4": [
+          "secrets_management.md#0",
+          "api_policies.md#0",
+          "access_control.md#1",
+          "alert_catalog.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "mh-02",
+        "top4": [
+          "alert_catalog.md#1",
+          "alert_catalog.md#0",
+          "oncall_runbook.md#2",
+          "billing_operations.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 0.9197
+      },
+      {
+        "id": "mh-03",
+        "top4": [
+          "privacy.md#0",
+          "backup_recovery.md#0",
+          "security_policy.md#0",
+          "billing_operations.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "mh-04",
+        "top4": [
+          "backup_recovery.md#1",
+          "incident_response.md#1",
+          "incident_response.md#0",
+          "engineering_handbook.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "mh-05",
+        "top4": [
+          "webhooks.md#0",
+          "webhooks.md#1",
+          "architecture_overview.md#1",
+          "observability.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 0.9197
+      },
+      {
+        "id": "mh-06",
+        "top4": [
+          "webhooks.md#1",
+          "architecture_overview.md#0",
+          "api_policies.md#0",
+          "alert_catalog.md#2"
+        ],
+        "recall@4": 0.5,
+        "hit@1": 0.0,
+        "mrr@10": 0.3333,
+        "ndcg@10": 0.5438
+      },
+      {
+        "id": "mh-07",
+        "top4": [
+          "sre_practices.md#0",
+          "sre_practices.md#1",
+          "testing_strategy.md#1",
+          "support_escalation.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 0.9197
+      },
+      {
+        "id": "mh-08",
+        "top4": [
+          "support_escalation.md#1",
+          "support_escalation.md#0",
+          "observability.md#0",
+          "oncall_runbook.md#2"
+        ],
+        "recall@4": 0.5,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 0.8503
+      }
+    ],
+    "bm25": [
+      {
+        "id": "kw-01",
+        "top4": [
+          "error_codes.md#0",
+          "sre_practices.md#0",
+          "alert_catalog.md#1",
+          "sre_practices.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-02",
+        "top4": [
+          "error_codes.md#1",
+          "error_codes.md#2",
+          "error_codes.md#0",
+          "support_escalation.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-03",
+        "top4": [
+          "error_codes.md#1",
+          "api_policies.md#0",
+          "architecture_overview.md#0",
+          "incident_response.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-04",
+        "top4": [
+          "sre_practices.md#2",
+          "alert_catalog.md#0",
+          "sre_practices.md#1",
+          "deployment.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6309
+      },
+      {
+        "id": "kw-05",
+        "top4": [
+          "alert_catalog.md#0",
+          "alert_catalog.md#1",
+          "cloud_costs.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-06",
+        "top4": [
+          "alert_catalog.md#1",
+          "sre_practices.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-07",
+        "top4": [
+          "webhooks.md#1",
+          "webhooks.md#0",
+          "billing_operations.md#0",
+          "api_policies.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-08",
+        "top4": [
+          "kubernetes_platform.md#0",
+          "testing_strategy.md#0",
+          "testing_strategy.md#1",
+          "backup_recovery.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-09",
+        "top4": [
+          "architecture_overview.md#0",
+          "architecture_overview.md#1",
+          "billing_operations.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-10",
+        "top4": [
+          "error_codes.md#1",
+          "error_codes.md#0",
+          "support_escalation.md#1",
+          "error_codes.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-11",
+        "top4": [
+          "error_codes.md#2",
+          "alert_catalog.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-12",
+        "top4": [
+          "alert_catalog.md#1",
+          "sre_practices.md#2",
+          "alert_catalog.md#0",
+          "sre_practices.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-13",
+        "top4": [
+          "alert_catalog.md#0",
+          "incident_response.md#2",
+          "billing_operations.md#0",
+          "error_codes.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-14",
+        "top4": [
+          "architecture_overview.md#1",
+          "billing_operations.md#0",
+          "architecture_overview.md#0",
+          "incident_response.md#3"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-15",
+        "top4": [
+          "kubernetes_platform.md#1",
+          "kubernetes_platform.md#0",
+          "testing_strategy.md#1",
+          "secrets_management.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-16",
+        "top4": [
+          "webhooks.md#1",
+          "webhooks.md#0",
+          "billing_operations.md#1",
+          "observability.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-17",
+        "top4": [
+          "architecture_overview.md#0",
+          "architecture_overview.md#1",
+          "support_escalation.md#0",
+          "observability.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-18",
+        "top4": [
+          "data_classification.md#1",
+          "error_codes.md#0",
+          "error_codes.md#1",
+          "webhooks.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-19",
+        "top4": [
+          "code_review.md#1",
+          "code_review.md#0",
+          "cloud_costs.md#1",
+          "sre_practices.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-20",
+        "top4": [
+          "backup_recovery.md#0",
+          "backup_recovery.md#1",
+          "support_escalation.md#0",
+          "sre_practices.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-01",
+        "top4": [
+          "access_control.md#1",
+          "data_classification.md#0",
+          "incident_response.md#1",
+          "access_control.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-02",
+        "top4": [
+          "privacy.md#1",
+          "access_control.md#2",
+          "testing_strategy.md#0",
+          "privacy.md#0"
+        ],
+        "recall@4": 0.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.0,
+        "ndcg@10": 0.0
+      },
+      {
+        "id": "pp-03",
+        "top4": [
+          "support_escalation.md#1",
+          "billing_operations.md#1",
+          "support_escalation.md#0",
+          "billing_operations.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6309
+      },
+      {
+        "id": "pp-04",
+        "top4": [
+          "error_codes.md#2",
+          "error_codes.md#1",
+          "billing_operations.md#0",
+          "alert_catalog.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.3333,
+        "ndcg@10": 0.5
+      },
+      {
+        "id": "pp-05",
+        "top4": [
+          "privacy.md#1",
+          "engineering_handbook.md#1",
+          "incident_response.md#0",
+          "onboarding.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.25,
+        "ndcg@10": 0.4307
+      },
+      {
+        "id": "pp-06",
+        "top4": [
+          "oncall_runbook.md#2",
+          "testing_strategy.md#1",
+          "code_review.md#0",
+          "onboarding.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.3333,
+        "ndcg@10": 0.5
+      },
+      {
+        "id": "pp-07",
+        "top4": [
+          "oncall_runbook.md#1",
+          "alert_catalog.md#0",
+          "access_control.md#1",
+          "privacy.md#0"
+        ],
+        "recall@4": 0.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.1667,
+        "ndcg@10": 0.3562
+      },
+      {
+        "id": "pp-08",
+        "top4": [
+          "backup_recovery.md#0",
+          "code_review.md#0",
+          "deployment.md#1",
+          "backup_recovery.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.25,
+        "ndcg@10": 0.4307
+      },
+      {
+        "id": "pp-09",
+        "top4": [
+          "security_policy.md#0",
+          "data_classification.md#0",
+          "kubernetes_platform.md#1",
+          "privacy.md#0"
+        ],
+        "recall@4": 0.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.125,
+        "ndcg@10": 0.3155
+      },
+      {
+        "id": "pp-10",
+        "top4": [
+          "privacy.md#1",
+          "billing_operations.md#0",
+          "error_codes.md#2",
+          "sre_practices.md#1"
+        ],
+        "recall@4": 0.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.125,
+        "ndcg@10": 0.3155
+      },
+      {
+        "id": "pp-11",
+        "top4": [
+          "deployment.md#2",
+          "alert_catalog.md#2",
+          "access_control.md#1",
+          "oncall_runbook.md#2"
+        ],
+        "recall@4": 0.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.0,
+        "ndcg@10": 0.0
+      },
+      {
+        "id": "pp-12",
+        "top4": [
+          "billing_operations.md#0",
+          "data_classification.md#1",
+          "error_codes.md#2",
+          "backup_recovery.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6309
+      },
+      {
+        "id": "pp-13",
+        "top4": [
+          "testing_strategy.md#0",
+          "testing_strategy.md#1",
+          "incident_response.md#2",
+          "access_control.md#2"
+        ],
+        "recall@4": 0.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.0,
+        "ndcg@10": 0.0
+      },
+      {
+        "id": "pp-14",
+        "top4": [
+          "cloud_costs.md#0",
+          "cloud_costs.md#1",
+          "backup_recovery.md#1",
+          "onboarding.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6309
+      },
+      {
+        "id": "pp-15",
+        "top4": [
+          "support_escalation.md#0",
+          "error_codes.md#0",
+          "error_codes.md#1",
+          "backup_recovery.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-16",
+        "top4": [
+          "support_escalation.md#0",
+          "observability.md#0",
+          "architecture_overview.md#1",
+          "alert_catalog.md#2"
+        ],
+        "recall@4": 0.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.1,
+        "ndcg@10": 0.2891
+      },
+      {
+        "id": "pp-17",
+        "top4": [
+          "engineering_handbook.md#0",
+          "secrets_management.md#0",
+          "deployment.md#0",
+          "code_review.md#0"
+        ],
+        "recall@4": 0.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.1429,
+        "ndcg@10": 0.3333
+      },
+      {
+        "id": "pp-18",
+        "top4": [
+          "deployment.md#1",
+          "secrets_management.md#1",
+          "code_review.md#0",
+          "access_control.md#1"
+        ],
+        "recall@4": 0.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.0,
+        "ndcg@10": 0.0
+      },
+      {
+        "id": "pp-19",
+        "top4": [
+          "alert_catalog.md#1",
+          "sre_practices.md#2",
+          "access_control.md#2",
+          "data_classification.md#0"
+        ],
+        "recall@4": 0.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.1429,
+        "ndcg@10": 0.3333
+      },
+      {
+        "id": "pp-20",
+        "top4": [
+          "onboarding.md#0",
+          "deployment.md#0",
+          "data_classification.md#0",
+          "privacy.md#1"
+        ],
+        "recall@4": 0.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.1429,
+        "ndcg@10": 0.3333
+      },
+      {
+        "id": "pp-21",
+        "top4": [
+          "webhooks.md#0",
+          "webhooks.md#1",
+          "architecture_overview.md#1",
+          "alert_catalog.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-22",
+        "top4": [
+          "architecture_overview.md#1",
+          "webhooks.md#0",
+          "webhooks.md#1",
+          "api_policies.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6309
+      },
+      {
+        "id": "pp-23",
+        "top4": [
+          "architecture_overview.md#0",
+          "access_control.md#0",
+          "api_policies.md#0",
+          "testing_strategy.md#1"
+        ],
+        "recall@4": 0.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.0,
+        "ndcg@10": 0.0
+      },
+      {
+        "id": "pp-24",
+        "top4": [
+          "deployment.md#1",
+          "error_codes.md#0",
+          "incident_response.md#2",
+          "code_review.md#0"
+        ],
+        "recall@4": 0.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.0,
+        "ndcg@10": 0.0
+      },
+      {
+        "id": "pp-25",
+        "top4": [
+          "deployment.md#1",
+          "incident_response.md#3",
+          "incident_response.md#2",
+          "onboarding.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-26",
+        "top4": [
+          "incident_response.md#0",
+          "kubernetes_platform.md#1",
+          "engineering_handbook.md#0",
+          "deployment.md#0"
+        ],
+        "recall@4": 0.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.1111,
+        "ndcg@10": 0.301
+      },
+      {
+        "id": "pp-27",
+        "top4": [
+          "sre_practices.md#0",
+          "support_escalation.md#0",
+          "api_policies.md#0",
+          "onboarding.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-28",
+        "top4": [
+          "sre_practices.md#1",
+          "kubernetes_platform.md#0",
+          "incident_response.md#2",
+          "cloud_costs.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-29",
+        "top4": [
+          "sre_practices.md#1",
+          "backup_recovery.md#1",
+          "support_escalation.md#1",
+          "alert_catalog.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-30",
+        "top4": [
+          "error_codes.md#2",
+          "engineering_handbook.md#0",
+          "onboarding.md#0",
+          "deployment.md#0"
+        ],
+        "recall@4": 0.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.2,
+        "ndcg@10": 0.3869
+      },
+      {
+        "id": "pp-31",
+        "top4": [
+          "webhooks.md#0",
+          "billing_operations.md#0",
+          "cloud_costs.md#0",
+          "onboarding.md#0"
+        ],
+        "recall@4": 0.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.1429,
+        "ndcg@10": 0.3333
+      },
+      {
+        "id": "pp-32",
+        "top4": [
+          "oncall_runbook.md#0",
+          "secrets_management.md#1",
+          "support_escalation.md#1",
+          "engineering_handbook.md#0"
+        ],
+        "recall@4": 0.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.0,
+        "ndcg@10": 0.0
+      },
+      {
+        "id": "pp-33",
+        "top4": [
+          "onboarding.md#1",
+          "onboarding.md#0",
+          "oncall_runbook.md#0",
+          "sre_practices.md#2"
+        ],
+        "recall@4": 0.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.0,
+        "ndcg@10": 0.0
+      },
+      {
+        "id": "pp-34",
+        "top4": [
+          "observability.md#0",
+          "deployment.md#2",
+          "oncall_runbook.md#1",
+          "secrets_management.md#0"
+        ],
+        "recall@4": 0.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.0,
+        "ndcg@10": 0.0
+      },
+      {
+        "id": "pp-35",
+        "top4": [
+          "error_codes.md#0",
+          "access_control.md#0",
+          "api_policies.md#0",
+          "error_codes.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.3333,
+        "ndcg@10": 0.5
+      },
+      {
+        "id": "pp-36",
+        "top4": [
+          "engineering_handbook.md#0",
+          "oncall_runbook.md#0",
+          "onboarding.md#0",
+          "deployment.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "mh-01",
+        "top4": [
+          "secrets_management.md#0",
+          "api_policies.md#0",
+          "error_codes.md#0",
+          "architecture_overview.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "mh-02",
+        "top4": [
+          "oncall_runbook.md#2",
+          "oncall_runbook.md#1",
+          "alert_catalog.md#0",
+          "alert_catalog.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 0.8772
+      },
+      {
+        "id": "mh-03",
+        "top4": [
+          "privacy.md#0",
+          "security_policy.md#0",
+          "backup_recovery.md#0",
+          "observability.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 0.9197
+      },
+      {
+        "id": "mh-04",
+        "top4": [
+          "incident_response.md#1",
+          "backup_recovery.md#0",
+          "incident_response.md#0",
+          "backup_recovery.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 0.8772
+      },
+      {
+        "id": "mh-05",
+        "top4": [
+          "webhooks.md#1",
+          "webhooks.md#0",
+          "architecture_overview.md#1",
+          "alert_catalog.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6934
+      },
+      {
+        "id": "mh-06",
+        "top4": [
+          "error_codes.md#1",
+          "architecture_overview.md#0",
+          "api_policies.md#0",
+          "kubernetes_platform.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 0.9197
+      },
+      {
+        "id": "mh-07",
+        "top4": [
+          "testing_strategy.md#1",
+          "sre_practices.md#0",
+          "testing_strategy.md#0",
+          "backup_recovery.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "mh-08",
+        "top4": [
+          "support_escalation.md#0",
+          "support_escalation.md#1",
+          "observability.md#1",
+          "error_codes.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 0.9197
+      }
+    ],
+    "hybrid": [
+      {
+        "id": "kw-01",
+        "top4": [
+          "error_codes.md#0",
+          "error_codes.md#2",
+          "api_policies.md#0",
+          "error_codes.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-02",
+        "top4": [
+          "error_codes.md#2",
+          "error_codes.md#1",
+          "support_escalation.md#0",
+          "error_codes.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-03",
+        "top4": [
+          "error_codes.md#1",
+          "api_policies.md#0",
+          "incident_response.md#0",
+          "deployment.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-04",
+        "top4": [
+          "alert_catalog.md#0",
+          "sre_practices.md#2",
+          "sre_practices.md#1",
+          "oncall_runbook.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-05",
+        "top4": [
+          "alert_catalog.md#1",
+          "alert_catalog.md#0",
+          "cloud_costs.md#0",
+          "alert_catalog.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-06",
+        "top4": [
+          "alert_catalog.md#1",
+          "sre_practices.md#1",
+          "alert_catalog.md#0",
+          "sre_practices.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-07",
+        "top4": [
+          "webhooks.md#1",
+          "webhooks.md#0",
+          "api_policies.md#0",
+          "data_classification.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-08",
+        "top4": [
+          "kubernetes_platform.md#0",
+          "backup_recovery.md#1",
+          "testing_strategy.md#1",
+          "kubernetes_platform.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-09",
+        "top4": [
+          "architecture_overview.md#1",
+          "architecture_overview.md#0",
+          "billing_operations.md#0",
+          "observability.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6309
+      },
+      {
+        "id": "kw-10",
+        "top4": [
+          "error_codes.md#1",
+          "error_codes.md#0",
+          "error_codes.md#2",
+          "support_escalation.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-11",
+        "top4": [
+          "error_codes.md#2",
+          "alert_catalog.md#1",
+          "engineering_handbook.md#1",
+          "incident_response.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-12",
+        "top4": [
+          "alert_catalog.md#1",
+          "alert_catalog.md#0",
+          "sre_practices.md#2",
+          "sre_practices.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-13",
+        "top4": [
+          "alert_catalog.md#0",
+          "incident_response.md#2",
+          "alert_catalog.md#1",
+          "deployment.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-14",
+        "top4": [
+          "architecture_overview.md#1",
+          "architecture_overview.md#0",
+          "billing_operations.md#0",
+          "billing_operations.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-15",
+        "top4": [
+          "kubernetes_platform.md#1",
+          "kubernetes_platform.md#0",
+          "deployment.md#0",
+          "alert_catalog.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-16",
+        "top4": [
+          "webhooks.md#1",
+          "webhooks.md#0",
+          "observability.md#0",
+          "billing_operations.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-17",
+        "top4": [
+          "architecture_overview.md#1",
+          "architecture_overview.md#0",
+          "incident_response.md#0",
+          "observability.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-18",
+        "top4": [
+          "data_classification.md#1",
+          "webhooks.md#1",
+          "error_codes.md#1",
+          "access_control.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-19",
+        "top4": [
+          "code_review.md#1",
+          "code_review.md#0",
+          "sre_practices.md#1",
+          "sre_practices.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-20",
+        "top4": [
+          "backup_recovery.md#0",
+          "backup_recovery.md#1",
+          "sre_practices.md#0",
+          "support_escalation.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-01",
+        "top4": [
+          "access_control.md#1",
+          "access_control.md#0",
+          "data_classification.md#0",
+          "onboarding.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-02",
+        "top4": [
+          "privacy.md#1",
+          "privacy.md#0",
+          "access_control.md#2",
+          "access_control.md#1"
+        ],
+        "recall@4": 0.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.1,
+        "ndcg@10": 0.2891
+      },
+      {
+        "id": "pp-03",
+        "top4": [
+          "billing_operations.md#1",
+          "support_escalation.md#1",
+          "support_escalation.md#0",
+          "billing_operations.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-04",
+        "top4": [
+          "error_codes.md#2",
+          "billing_operations.md#0",
+          "error_codes.md#1",
+          "oncall_runbook.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6309
+      },
+      {
+        "id": "pp-05",
+        "top4": [
+          "onboarding.md#0",
+          "onboarding.md#1",
+          "oncall_runbook.md#0",
+          "engineering_handbook.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-06",
+        "top4": [
+          "code_review.md#0",
+          "code_review.md#1",
+          "testing_strategy.md#1",
+          "oncall_runbook.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-07",
+        "top4": [
+          "testing_strategy.md#1",
+          "alert_catalog.md#1",
+          "oncall_runbook.md#1",
+          "sre_practices.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-08",
+        "top4": [
+          "backup_recovery.md#0",
+          "backup_recovery.md#1",
+          "deployment.md#1",
+          "deployment.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6309
+      },
+      {
+        "id": "pp-09",
+        "top4": [
+          "backup_recovery.md#0",
+          "data_classification.md#0",
+          "security_policy.md#0",
+          "data_classification.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-10",
+        "top4": [
+          "kubernetes_platform.md#1",
+          "kubernetes_platform.md#0",
+          "sre_practices.md#1",
+          "deployment.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6309
+      },
+      {
+        "id": "pp-11",
+        "top4": [
+          "deployment.md#2",
+          "alert_catalog.md#2",
+          "access_control.md#1",
+          "oncall_runbook.md#2"
+        ],
+        "recall@4": 0.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.2,
+        "ndcg@10": 0.3869
+      },
+      {
+        "id": "pp-12",
+        "top4": [
+          "data_classification.md#1",
+          "data_classification.md#0",
+          "access_control.md#1",
+          "billing_operations.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-13",
+        "top4": [
+          "testing_strategy.md#1",
+          "access_control.md#2",
+          "testing_strategy.md#0",
+          "deployment.md#0"
+        ],
+        "recall@4": 0.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.1,
+        "ndcg@10": 0.2891
+      },
+      {
+        "id": "pp-14",
+        "top4": [
+          "cloud_costs.md#1",
+          "cloud_costs.md#0",
+          "incident_response.md#3",
+          "sre_practices.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-15",
+        "top4": [
+          "support_escalation.md#0",
+          "alert_catalog.md#0",
+          "support_escalation.md#1",
+          "error_codes.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-16",
+        "top4": [
+          "support_escalation.md#0",
+          "incident_response.md#1",
+          "support_escalation.md#1",
+          "incident_response.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.3333,
+        "ndcg@10": 0.5
+      },
+      {
+        "id": "pp-17",
+        "top4": [
+          "secrets_management.md#0",
+          "secrets_management.md#1",
+          "deployment.md#0",
+          "engineering_handbook.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6309
+      },
+      {
+        "id": "pp-18",
+        "top4": [
+          "access_control.md#1",
+          "deployment.md#1",
+          "security_policy.md#0",
+          "backup_recovery.md#0"
+        ],
+        "recall@4": 0.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.1429,
+        "ndcg@10": 0.3333
+      },
+      {
+        "id": "pp-19",
+        "top4": [
+          "access_control.md#2",
+          "privacy.md#0",
+          "access_control.md#1",
+          "data_classification.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6309
+      },
+      {
+        "id": "pp-20",
+        "top4": [
+          "privacy.md#1",
+          "data_classification.md#0",
+          "privacy.md#0",
+          "access_control.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.3333,
+        "ndcg@10": 0.5
+      },
+      {
+        "id": "pp-21",
+        "top4": [
+          "webhooks.md#0",
+          "webhooks.md#1",
+          "architecture_overview.md#1",
+          "alert_catalog.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-22",
+        "top4": [
+          "webhooks.md#1",
+          "webhooks.md#0",
+          "architecture_overview.md#1",
+          "error_codes.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6309
+      },
+      {
+        "id": "pp-23",
+        "top4": [
+          "architecture_overview.md#0",
+          "privacy.md#0",
+          "testing_strategy.md#1",
+          "access_control.md#2"
+        ],
+        "recall@4": 0.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.1,
+        "ndcg@10": 0.2891
+      },
+      {
+        "id": "pp-24",
+        "top4": [
+          "deployment.md#1",
+          "sre_practices.md#1",
+          "deployment.md#2",
+          "oncall_runbook.md#2"
+        ],
+        "recall@4": 0.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.0,
+        "ndcg@10": 0.0
+      },
+      {
+        "id": "pp-25",
+        "top4": [
+          "deployment.md#1",
+          "backup_recovery.md#1",
+          "access_control.md#2",
+          "incident_response.md#3"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-26",
+        "top4": [
+          "incident_response.md#0",
+          "oncall_runbook.md#2",
+          "oncall_runbook.md#1",
+          "incident_response.md#2"
+        ],
+        "recall@4": 0.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.2,
+        "ndcg@10": 0.3869
+      },
+      {
+        "id": "pp-27",
+        "top4": [
+          "sre_practices.md#0",
+          "sre_practices.md#1",
+          "cloud_costs.md#0",
+          "alert_catalog.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-28",
+        "top4": [
+          "sre_practices.md#1",
+          "cloud_costs.md#1",
+          "cloud_costs.md#0",
+          "deployment.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-29",
+        "top4": [
+          "sre_practices.md#1",
+          "billing_operations.md#0",
+          "backup_recovery.md#1",
+          "oncall_runbook.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-30",
+        "top4": [
+          "error_codes.md#2",
+          "oncall_runbook.md#1",
+          "error_codes.md#0",
+          "alert_catalog.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6309
+      },
+      {
+        "id": "pp-31",
+        "top4": [
+          "access_control.md#2",
+          "security_policy.md#0",
+          "billing_operations.md#0",
+          "data_classification.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6309
+      },
+      {
+        "id": "pp-32",
+        "top4": [
+          "access_control.md#1",
+          "api_policies.md#0",
+          "oncall_runbook.md#0",
+          "error_codes.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6309
+      },
+      {
+        "id": "pp-33",
+        "top4": [
+          "sre_practices.md#2",
+          "secrets_management.md#0",
+          "oncall_runbook.md#2",
+          "access_control.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.25,
+        "ndcg@10": 0.4307
+      },
+      {
+        "id": "pp-34",
+        "top4": [
+          "deployment.md#2",
+          "observability.md#0",
+          "secrets_management.md#0",
+          "architecture_overview.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.25,
+        "ndcg@10": 0.4307
+      },
+      {
+        "id": "pp-35",
+        "top4": [
+          "error_codes.md#0",
+          "api_policies.md#0",
+          "access_control.md#0",
+          "webhooks.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6309
+      },
+      {
+        "id": "pp-36",
+        "top4": [
+          "oncall_runbook.md#0",
+          "engineering_handbook.md#0",
+          "onboarding.md#0",
+          "incident_response.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "mh-01",
+        "top4": [
+          "secrets_management.md#0",
+          "api_policies.md#0",
+          "error_codes.md#0",
+          "access_control.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "mh-02",
+        "top4": [
+          "oncall_runbook.md#2",
+          "alert_catalog.md#1",
+          "alert_catalog.md#0",
+          "oncall_runbook.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "mh-03",
+        "top4": [
+          "privacy.md#0",
+          "backup_recovery.md#0",
+          "security_policy.md#0",
+          "billing_operations.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "mh-04",
+        "top4": [
+          "incident_response.md#1",
+          "backup_recovery.md#1",
+          "incident_response.md#0",
+          "backup_recovery.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "mh-05",
+        "top4": [
+          "webhooks.md#0",
+          "webhooks.md#1",
+          "architecture_overview.md#1",
+          "alert_catalog.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 0.9197
+      },
+      {
+        "id": "mh-06",
+        "top4": [
+          "architecture_overview.md#0",
+          "error_codes.md#1",
+          "api_policies.md#0",
+          "kubernetes_platform.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6934
+      },
+      {
+        "id": "mh-07",
+        "top4": [
+          "sre_practices.md#0",
+          "testing_strategy.md#1",
+          "support_escalation.md#0",
+          "testing_strategy.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "mh-08",
+        "top4": [
+          "support_escalation.md#1",
+          "support_escalation.md#0",
+          "observability.md#1",
+          "oncall_runbook.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 0.9197
+      }
+    ],
+    "dense+rerank": [
+      {
+        "id": "kw-01",
+        "top4": [
+          "error_codes.md#0",
+          "error_codes.md#2",
+          "api_policies.md#0",
+          "error_codes.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-02",
+        "top4": [
+          "error_codes.md#2",
+          "error_codes.md#1",
+          "error_codes.md#0",
+          "support_escalation.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-03",
+        "top4": [
+          "error_codes.md#1",
+          "api_policies.md#0",
+          "sre_practices.md#0",
+          "billing_operations.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-04",
+        "top4": [
+          "alert_catalog.md#0",
+          "sre_practices.md#2",
+          "oncall_runbook.md#1",
+          "sre_practices.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-05",
+        "top4": [
+          "alert_catalog.md#0",
+          "alert_catalog.md#1",
+          "cloud_costs.md#0",
+          "oncall_runbook.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-06",
+        "top4": [
+          "alert_catalog.md#1",
+          "kubernetes_platform.md#1",
+          "sre_practices.md#1",
+          "kubernetes_platform.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-07",
+        "top4": [
+          "webhooks.md#1",
+          "webhooks.md#0",
+          "data_classification.md#1",
+          "billing_operations.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-08",
+        "top4": [
+          "kubernetes_platform.md#0",
+          "testing_strategy.md#1",
+          "backup_recovery.md#1",
+          "kubernetes_platform.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-09",
+        "top4": [
+          "architecture_overview.md#0",
+          "architecture_overview.md#1",
+          "billing_operations.md#0",
+          "incident_response.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-10",
+        "top4": [
+          "error_codes.md#1",
+          "error_codes.md#0",
+          "billing_operations.md#0",
+          "error_codes.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-11",
+        "top4": [
+          "error_codes.md#2",
+          "error_codes.md#0",
+          "sre_practices.md#0",
+          "support_escalation.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-12",
+        "top4": [
+          "alert_catalog.md#1",
+          "sre_practices.md#2",
+          "alert_catalog.md#0",
+          "oncall_runbook.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-13",
+        "top4": [
+          "alert_catalog.md#0",
+          "incident_response.md#2",
+          "webhooks.md#1",
+          "incident_response.md#3"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-14",
+        "top4": [
+          "architecture_overview.md#1",
+          "billing_operations.md#0",
+          "architecture_overview.md#0",
+          "billing_operations.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-15",
+        "top4": [
+          "kubernetes_platform.md#1",
+          "kubernetes_platform.md#0",
+          "testing_strategy.md#1",
+          "deployment.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-16",
+        "top4": [
+          "webhooks.md#1",
+          "webhooks.md#0",
+          "observability.md#1",
+          "observability.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-17",
+        "top4": [
+          "architecture_overview.md#0",
+          "architecture_overview.md#1",
+          "incident_response.md#0",
+          "incident_response.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-18",
+        "top4": [
+          "data_classification.md#1",
+          "webhooks.md#1",
+          "error_codes.md#1",
+          "security_policy.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-19",
+        "top4": [
+          "code_review.md#1",
+          "code_review.md#0",
+          "incident_response.md#3",
+          "incident_response.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-20",
+        "top4": [
+          "backup_recovery.md#0",
+          "backup_recovery.md#1",
+          "support_escalation.md#0",
+          "sre_practices.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-01",
+        "top4": [
+          "access_control.md#1",
+          "privacy.md#0",
+          "oncall_runbook.md#2",
+          "security_policy.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-02",
+        "top4": [
+          "access_control.md#1",
+          "security_policy.md#0",
+          "observability.md#0",
+          "privacy.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.3333,
+        "ndcg@10": 0.5
+      },
+      {
+        "id": "pp-03",
+        "top4": [
+          "billing_operations.md#1",
+          "billing_operations.md#0",
+          "support_escalation.md#1",
+          "support_escalation.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-04",
+        "top4": [
+          "error_codes.md#2",
+          "billing_operations.md#0",
+          "oncall_runbook.md#2",
+          "alert_catalog.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6309
+      },
+      {
+        "id": "pp-05",
+        "top4": [
+          "onboarding.md#0",
+          "oncall_runbook.md#0",
+          "onboarding.md#1",
+          "oncall_runbook.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-06",
+        "top4": [
+          "code_review.md#0",
+          "onboarding.md#0",
+          "code_review.md#1",
+          "oncall_runbook.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-07",
+        "top4": [
+          "testing_strategy.md#1",
+          "alert_catalog.md#1",
+          "oncall_runbook.md#1",
+          "sre_practices.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-08",
+        "top4": [
+          "backup_recovery.md#1",
+          "backup_recovery.md#0",
+          "deployment.md#1",
+          "incident_response.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-09",
+        "top4": [
+          "security_policy.md#0",
+          "backup_recovery.md#0",
+          "kubernetes_platform.md#1",
+          "incident_response.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6309
+      },
+      {
+        "id": "pp-10",
+        "top4": [
+          "kubernetes_platform.md#0",
+          "kubernetes_platform.md#1",
+          "alert_catalog.md#0",
+          "deployment.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-11",
+        "top4": [
+          "access_control.md#1",
+          "incident_response.md#3",
+          "deployment.md#2",
+          "cloud_costs.md#1"
+        ],
+        "recall@4": 0.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.1429,
+        "ndcg@10": 0.3333
+      },
+      {
+        "id": "pp-12",
+        "top4": [
+          "data_classification.md#1",
+          "error_codes.md#2",
+          "billing_operations.md#0",
+          "support_escalation.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-13",
+        "top4": [
+          "testing_strategy.md#1",
+          "testing_strategy.md#0",
+          "deployment.md#0",
+          "access_control.md#2"
+        ],
+        "recall@4": 0.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.1,
+        "ndcg@10": 0.2891
+      },
+      {
+        "id": "pp-14",
+        "top4": [
+          "cloud_costs.md#1",
+          "cloud_costs.md#0",
+          "sre_practices.md#1",
+          "deployment.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-15",
+        "top4": [
+          "support_escalation.md#0",
+          "incident_response.md#0",
+          "privacy.md#0",
+          "alert_catalog.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-16",
+        "top4": [
+          "support_escalation.md#0",
+          "support_escalation.md#1",
+          "incident_response.md#0",
+          "architecture_overview.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6309
+      },
+      {
+        "id": "pp-17",
+        "top4": [
+          "deployment.md#0",
+          "engineering_handbook.md#0",
+          "secrets_management.md#1",
+          "secrets_management.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.3333,
+        "ndcg@10": 0.5
+      },
+      {
+        "id": "pp-18",
+        "top4": [
+          "secrets_management.md#0",
+          "security_policy.md#0",
+          "access_control.md#1",
+          "oncall_runbook.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-19",
+        "top4": [
+          "privacy.md#0",
+          "access_control.md#1",
+          "security_policy.md#0",
+          "privacy.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-20",
+        "top4": [
+          "privacy.md#1",
+          "privacy.md#0",
+          "onboarding.md#0",
+          "data_classification.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6309
+      },
+      {
+        "id": "pp-21",
+        "top4": [
+          "webhooks.md#0",
+          "webhooks.md#1",
+          "architecture_overview.md#1",
+          "incident_response.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-22",
+        "top4": [
+          "webhooks.md#0",
+          "architecture_overview.md#1",
+          "deployment.md#1",
+          "oncall_runbook.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-23",
+        "top4": [
+          "architecture_overview.md#0",
+          "testing_strategy.md#1",
+          "observability.md#1",
+          "webhooks.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.3333,
+        "ndcg@10": 0.5
+      },
+      {
+        "id": "pp-24",
+        "top4": [
+          "deployment.md#1",
+          "oncall_runbook.md#0",
+          "sre_practices.md#1",
+          "deployment.md#2"
+        ],
+        "recall@4": 0.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.1111,
+        "ndcg@10": 0.301
+      },
+      {
+        "id": "pp-25",
+        "top4": [
+          "deployment.md#1",
+          "alert_catalog.md#1",
+          "backup_recovery.md#0",
+          "privacy.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-26",
+        "top4": [
+          "incident_response.md#1",
+          "incident_response.md#0",
+          "deployment.md#1",
+          "kubernetes_platform.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-27",
+        "top4": [
+          "sre_practices.md#0",
+          "sre_practices.md#1",
+          "alert_catalog.md#2",
+          "backup_recovery.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-28",
+        "top4": [
+          "sre_practices.md#1",
+          "cloud_costs.md#1",
+          "deployment.md#0",
+          "cloud_costs.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-29",
+        "top4": [
+          "sre_practices.md#1",
+          "oncall_runbook.md#2",
+          "backup_recovery.md#0",
+          "alert_catalog.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-30",
+        "top4": [
+          "error_codes.md#2",
+          "oncall_runbook.md#1",
+          "error_codes.md#0",
+          "engineering_handbook.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6309
+      },
+      {
+        "id": "pp-31",
+        "top4": [
+          "security_policy.md#0",
+          "privacy.md#0",
+          "access_control.md#1",
+          "observability.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-32",
+        "top4": [
+          "api_policies.md#0",
+          "oncall_runbook.md#0",
+          "error_codes.md#1",
+          "incident_response.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-33",
+        "top4": [
+          "secrets_management.md#1",
+          "privacy.md#0",
+          "access_control.md#1",
+          "secrets_management.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.3333,
+        "ndcg@10": 0.5
+      },
+      {
+        "id": "pp-34",
+        "top4": [
+          "architecture_overview.md#1",
+          "deployment.md#2",
+          "observability.md#0",
+          "alert_catalog.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-35",
+        "top4": [
+          "api_policies.md#0",
+          "webhooks.md#0",
+          "webhooks.md#1",
+          "observability.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-36",
+        "top4": [
+          "oncall_runbook.md#0",
+          "engineering_handbook.md#0",
+          "onboarding.md#1",
+          "onboarding.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "mh-01",
+        "top4": [
+          "secrets_management.md#0",
+          "api_policies.md#0",
+          "error_codes.md#0",
+          "onboarding.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "mh-02",
+        "top4": [
+          "alert_catalog.md#1",
+          "oncall_runbook.md#2",
+          "oncall_runbook.md#1",
+          "alert_catalog.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "mh-03",
+        "top4": [
+          "privacy.md#0",
+          "security_policy.md#0",
+          "backup_recovery.md#0",
+          "testing_strategy.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 0.9197
+      },
+      {
+        "id": "mh-04",
+        "top4": [
+          "backup_recovery.md#1",
+          "incident_response.md#0",
+          "incident_response.md#1",
+          "backup_recovery.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "mh-05",
+        "top4": [
+          "webhooks.md#0",
+          "webhooks.md#1",
+          "architecture_overview.md#1",
+          "alert_catalog.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 0.9197
+      },
+      {
+        "id": "mh-06",
+        "top4": [
+          "error_codes.md#1",
+          "architecture_overview.md#0",
+          "api_policies.md#0",
+          "kubernetes_platform.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 0.9197
+      },
+      {
+        "id": "mh-07",
+        "top4": [
+          "testing_strategy.md#1",
+          "sre_practices.md#0",
+          "testing_strategy.md#0",
+          "code_review.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "mh-08",
+        "top4": [
+          "support_escalation.md#0",
+          "support_escalation.md#1",
+          "observability.md#1",
+          "observability.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 0.9197
+      }
+    ],
+    "hybrid+rerank": [
+      {
+        "id": "kw-01",
+        "top4": [
+          "error_codes.md#0",
+          "sre_practices.md#0",
+          "error_codes.md#2",
+          "api_policies.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-02",
+        "top4": [
+          "error_codes.md#2",
+          "error_codes.md#1",
+          "error_codes.md#0",
+          "support_escalation.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-03",
+        "top4": [
+          "error_codes.md#1",
+          "api_policies.md#0",
+          "sre_practices.md#0",
+          "architecture_overview.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-04",
+        "top4": [
+          "alert_catalog.md#0",
+          "sre_practices.md#2",
+          "oncall_runbook.md#1",
+          "sre_practices.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-05",
+        "top4": [
+          "alert_catalog.md#0",
+          "alert_catalog.md#1",
+          "cloud_costs.md#0",
+          "oncall_runbook.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-06",
+        "top4": [
+          "alert_catalog.md#1",
+          "kubernetes_platform.md#1",
+          "sre_practices.md#1",
+          "kubernetes_platform.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-07",
+        "top4": [
+          "webhooks.md#1",
+          "webhooks.md#0",
+          "data_classification.md#1",
+          "billing_operations.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-08",
+        "top4": [
+          "kubernetes_platform.md#0",
+          "testing_strategy.md#0",
+          "testing_strategy.md#1",
+          "backup_recovery.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-09",
+        "top4": [
+          "architecture_overview.md#0",
+          "architecture_overview.md#1",
+          "billing_operations.md#0",
+          "incident_response.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-10",
+        "top4": [
+          "error_codes.md#1",
+          "error_codes.md#0",
+          "billing_operations.md#0",
+          "error_codes.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-11",
+        "top4": [
+          "error_codes.md#2",
+          "error_codes.md#0",
+          "sre_practices.md#0",
+          "support_escalation.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-12",
+        "top4": [
+          "alert_catalog.md#1",
+          "sre_practices.md#2",
+          "alert_catalog.md#0",
+          "oncall_runbook.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-13",
+        "top4": [
+          "alert_catalog.md#0",
+          "incident_response.md#2",
+          "error_codes.md#0",
+          "incident_response.md#3"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-14",
+        "top4": [
+          "architecture_overview.md#1",
+          "billing_operations.md#0",
+          "architecture_overview.md#0",
+          "incident_response.md#3"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-15",
+        "top4": [
+          "kubernetes_platform.md#1",
+          "kubernetes_platform.md#0",
+          "testing_strategy.md#1",
+          "deployment.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-16",
+        "top4": [
+          "webhooks.md#1",
+          "webhooks.md#0",
+          "observability.md#1",
+          "observability.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-17",
+        "top4": [
+          "architecture_overview.md#0",
+          "architecture_overview.md#1",
+          "incident_response.md#0",
+          "support_escalation.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-18",
+        "top4": [
+          "data_classification.md#1",
+          "webhooks.md#1",
+          "webhooks.md#0",
+          "error_codes.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-19",
+        "top4": [
+          "code_review.md#1",
+          "code_review.md#0",
+          "incident_response.md#3",
+          "access_control.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "kw-20",
+        "top4": [
+          "backup_recovery.md#0",
+          "backup_recovery.md#1",
+          "support_escalation.md#0",
+          "sre_practices.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-01",
+        "top4": [
+          "access_control.md#1",
+          "privacy.md#0",
+          "oncall_runbook.md#2",
+          "security_policy.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-02",
+        "top4": [
+          "access_control.md#1",
+          "security_policy.md#0",
+          "observability.md#0",
+          "privacy.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.3333,
+        "ndcg@10": 0.5
+      },
+      {
+        "id": "pp-03",
+        "top4": [
+          "billing_operations.md#1",
+          "billing_operations.md#0",
+          "support_escalation.md#1",
+          "support_escalation.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-04",
+        "top4": [
+          "error_codes.md#2",
+          "billing_operations.md#0",
+          "oncall_runbook.md#2",
+          "alert_catalog.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6309
+      },
+      {
+        "id": "pp-05",
+        "top4": [
+          "onboarding.md#0",
+          "oncall_runbook.md#0",
+          "onboarding.md#1",
+          "oncall_runbook.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-06",
+        "top4": [
+          "code_review.md#0",
+          "onboarding.md#0",
+          "code_review.md#1",
+          "oncall_runbook.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-07",
+        "top4": [
+          "testing_strategy.md#1",
+          "privacy.md#0",
+          "access_control.md#1",
+          "alert_catalog.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-08",
+        "top4": [
+          "backup_recovery.md#1",
+          "backup_recovery.md#0",
+          "code_review.md#1",
+          "deployment.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-09",
+        "top4": [
+          "security_policy.md#0",
+          "backup_recovery.md#0",
+          "testing_strategy.md#0",
+          "kubernetes_platform.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6309
+      },
+      {
+        "id": "pp-10",
+        "top4": [
+          "kubernetes_platform.md#0",
+          "kubernetes_platform.md#1",
+          "testing_strategy.md#0",
+          "alert_catalog.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-11",
+        "top4": [
+          "access_control.md#1",
+          "incident_response.md#3",
+          "deployment.md#2",
+          "access_control.md#0"
+        ],
+        "recall@4": 0.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.1667,
+        "ndcg@10": 0.3562
+      },
+      {
+        "id": "pp-12",
+        "top4": [
+          "data_classification.md#1",
+          "error_codes.md#2",
+          "billing_operations.md#0",
+          "support_escalation.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-13",
+        "top4": [
+          "testing_strategy.md#1",
+          "testing_strategy.md#0",
+          "deployment.md#0",
+          "access_control.md#2"
+        ],
+        "recall@4": 0.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.0,
+        "ndcg@10": 0.0
+      },
+      {
+        "id": "pp-14",
+        "top4": [
+          "cloud_costs.md#1",
+          "cloud_costs.md#0",
+          "sre_practices.md#1",
+          "deployment.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-15",
+        "top4": [
+          "support_escalation.md#0",
+          "incident_response.md#0",
+          "privacy.md#0",
+          "alert_catalog.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-16",
+        "top4": [
+          "support_escalation.md#0",
+          "support_escalation.md#1",
+          "incident_response.md#0",
+          "architecture_overview.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6309
+      },
+      {
+        "id": "pp-17",
+        "top4": [
+          "deployment.md#0",
+          "engineering_handbook.md#0",
+          "secrets_management.md#1",
+          "secrets_management.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.3333,
+        "ndcg@10": 0.5
+      },
+      {
+        "id": "pp-18",
+        "top4": [
+          "secrets_management.md#0",
+          "security_policy.md#0",
+          "access_control.md#1",
+          "oncall_runbook.md#2"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-19",
+        "top4": [
+          "privacy.md#0",
+          "access_control.md#1",
+          "security_policy.md#0",
+          "privacy.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-20",
+        "top4": [
+          "privacy.md#1",
+          "privacy.md#0",
+          "onboarding.md#0",
+          "data_classification.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6309
+      },
+      {
+        "id": "pp-21",
+        "top4": [
+          "webhooks.md#0",
+          "webhooks.md#1",
+          "architecture_overview.md#1",
+          "incident_response.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-22",
+        "top4": [
+          "webhooks.md#0",
+          "architecture_overview.md#1",
+          "oncall_runbook.md#0",
+          "deployment.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-23",
+        "top4": [
+          "architecture_overview.md#0",
+          "testing_strategy.md#1",
+          "api_policies.md#0",
+          "observability.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.25,
+        "ndcg@10": 0.4307
+      },
+      {
+        "id": "pp-24",
+        "top4": [
+          "deployment.md#1",
+          "oncall_runbook.md#0",
+          "sre_practices.md#1",
+          "deployment.md#2"
+        ],
+        "recall@4": 0.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.1,
+        "ndcg@10": 0.2891
+      },
+      {
+        "id": "pp-25",
+        "top4": [
+          "deployment.md#1",
+          "alert_catalog.md#1",
+          "backup_recovery.md#0",
+          "privacy.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-26",
+        "top4": [
+          "incident_response.md#1",
+          "incident_response.md#0",
+          "deployment.md#1",
+          "kubernetes_platform.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-27",
+        "top4": [
+          "sre_practices.md#0",
+          "sre_practices.md#1",
+          "alert_catalog.md#2",
+          "backup_recovery.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-28",
+        "top4": [
+          "sre_practices.md#1",
+          "cloud_costs.md#1",
+          "testing_strategy.md#1",
+          "deployment.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-29",
+        "top4": [
+          "sre_practices.md#1",
+          "oncall_runbook.md#2",
+          "backup_recovery.md#0",
+          "alert_catalog.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-30",
+        "top4": [
+          "error_codes.md#2",
+          "oncall_runbook.md#1",
+          "error_codes.md#0",
+          "engineering_handbook.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 0.6309
+      },
+      {
+        "id": "pp-31",
+        "top4": [
+          "security_policy.md#0",
+          "privacy.md#0",
+          "webhooks.md#0",
+          "access_control.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-32",
+        "top4": [
+          "api_policies.md#0",
+          "oncall_runbook.md#0",
+          "error_codes.md#1",
+          "incident_response.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-33",
+        "top4": [
+          "onboarding.md#1",
+          "secrets_management.md#1",
+          "privacy.md#0",
+          "access_control.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 0.0,
+        "mrr@10": 0.25,
+        "ndcg@10": 0.4307
+      },
+      {
+        "id": "pp-34",
+        "top4": [
+          "architecture_overview.md#1",
+          "deployment.md#2",
+          "observability.md#0",
+          "alert_catalog.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-35",
+        "top4": [
+          "api_policies.md#0",
+          "webhooks.md#0",
+          "webhooks.md#1",
+          "observability.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "pp-36",
+        "top4": [
+          "oncall_runbook.md#0",
+          "engineering_handbook.md#0",
+          "onboarding.md#1",
+          "onboarding.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "mh-01",
+        "top4": [
+          "secrets_management.md#0",
+          "api_policies.md#0",
+          "error_codes.md#0",
+          "architecture_overview.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "mh-02",
+        "top4": [
+          "alert_catalog.md#1",
+          "oncall_runbook.md#2",
+          "oncall_runbook.md#1",
+          "alert_catalog.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "mh-03",
+        "top4": [
+          "privacy.md#0",
+          "security_policy.md#0",
+          "backup_recovery.md#0",
+          "testing_strategy.md#1"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 0.9197
+      },
+      {
+        "id": "mh-04",
+        "top4": [
+          "backup_recovery.md#1",
+          "incident_response.md#0",
+          "incident_response.md#1",
+          "backup_recovery.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "mh-05",
+        "top4": [
+          "webhooks.md#0",
+          "webhooks.md#1",
+          "architecture_overview.md#1",
+          "alert_catalog.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 0.9197
+      },
+      {
+        "id": "mh-06",
+        "top4": [
+          "error_codes.md#1",
+          "architecture_overview.md#0",
+          "api_policies.md#0",
+          "kubernetes_platform.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 0.9197
+      },
+      {
+        "id": "mh-07",
+        "top4": [
+          "testing_strategy.md#1",
+          "sre_practices.md#0",
+          "testing_strategy.md#0",
+          "code_review.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 1.0
+      },
+      {
+        "id": "mh-08",
+        "top4": [
+          "support_escalation.md#0",
+          "support_escalation.md#1",
+          "observability.md#1",
+          "observability.md#0"
+        ],
+        "recall@4": 1.0,
+        "hit@1": 1.0,
+        "mrr@10": 1.0,
+        "ndcg@10": 0.9197
+      }
+    ]
+  }
+}

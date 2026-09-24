@@ -78,3 +78,15 @@ jobs:
       # invariant regresses (every case completes, every citation resolves).
       - name: Offline evaluation
         run: python -m eval.run_eval --offline --check
+
+      # The cross-encoder is ~90MB from the Hugging Face Hub; cache it between runs.
+      - uses: actions/cache@v4
+        with:
+          path: /tmp/fastembed_cache
+          key: fastembed-${{ hashFiles('app/config.py') }}
+
+      # Retrieval benchmark over 64 labelled questions, replaying the checked-in
+      # Gemini embeddings (no API key needed). Fails if retrieval quality or the
+      # relevance floor regresses below the thresholds in the script.
+      - name: Retrieval benchmark
+        run: python -m eval.run_retrieval_eval --check

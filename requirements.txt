@@ -1,3 +1,3 @@
 # Runtime + dev dependencies are declared in pyproject.toml; this file installs
 # the project itself so `app` is importable everywhere (tests, eval, uvicorn).
--e .[dev]
+-e .[dev,rerank]

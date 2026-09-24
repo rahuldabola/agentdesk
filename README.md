@@ -43,7 +43,7 @@ question
 └────┬─────┘
      ▼
 ┌──────────┐  one MCP stdio session, all (subtask × tool) calls issued concurrently
-│Researcher│  ├─ rag_search : embed query → Chroma top-k → relevance floor
+│Researcher│  ├─ rag_search : embed → dense (or hybrid/reranked) top-k → relevance floor
 └────┬─────┘  └─ web_search : Tavily, else a DuckDuckGo HTML scrape
      │         registers every passage under a short, stable source_id
      ▼
@@ -80,19 +80,32 @@ the (subtasks × tools) calls a single question produces.
 
 ### Why RAG instead of stuffing docs into the prompt
 
-The sample corpus in `data/sample_docs/` is 8 internal-style documents (~10KB, 20 chunks)
-covering on-call, incident response, SRE practice, deployment, access control, and API policy —
-enough overlap between documents that retrieval has to discriminate rather than just return
-whatever exists.
+The sample corpus in `data/sample_docs/` is 24 internal-style documents (~30KB, 55 chunks):
+on-call, incident response, SRE practice, deployment, access control, API policy and error codes,
+webhooks, observability, backups, secrets, billing, privacy, and more. The documents overlap on
+purpose (several mention "30 days", "rotation", "Tier 1"), so retrieval has to tell them apart
+rather than just return whatever exists.
 
 `app/rag/ingest.py` chunks markdown (800 chars, 150 overlap), embeds with Gemini
 `gemini-embedding-001`, and upserts into a persistent Chroma collection configured for
 **cosine** distance. Re-ingesting a file deletes its previous chunks first, so deleting content
 from a source document actually removes it from retrieval.
 
-`app/rag/retriever.py` applies a **relevance floor** (`AGENTDESK_MAX_DISTANCE`, default 0.65).
-Top-k on its own is not a relevance test — an off-topic question still returns k chunks, which
-the Analyst would then treat as evidence. Anything past the floor is dropped instead.
+`app/rag/retriever.py` runs a configurable pipeline:
+
+1. **Candidates**: dense top-20 from Chroma and/or BM25 top-20 (`app/rag/bm25.py`, an Okapi
+   index built from the same chunks, with a tokenizer that keeps identifiers like `AUTH-1003`
+   whole).
+2. **Fusion** (hybrid mode): reciprocal rank fusion, which needs no calibration between cosine
+   distances and BM25 scores.
+3. **Reranking** (optional): a local ONNX cross-encoder (`app/rag/rerank.py`, via fastembed)
+   reorders the candidates.
+4. **Relevance floor** (`AGENTDESK_MAX_DISTANCE`, default 0.40): anything whose cosine distance
+   exceeds it is dropped, in every mode. Top-k alone is not a relevance test: an off-topic
+   question still returns k chunks, which the Analyst would then treat as evidence.
+
+The default is plain dense retrieval with the floor at 0.40. Both choices come from the
+retrieval benchmark below, not from habit.
 
 ## Reliability
 
@@ -114,7 +127,9 @@ the Analyst would then treat as evidence. Anything past the floor is dropped ins
 - **LLM** — Gemini (`app/llm/gemini_client.py`). Every agent decision point (planning, fact
   extraction, critique) is a forced function call via `FunctionCallingConfig(mode="ANY")`,
   so there is no free-text parsing anywhere
-- **Embeddings + vector store** — Gemini `gemini-embedding-001` + Chroma (persistent, cosine)
+- **Retrieval** — Gemini `gemini-embedding-001` + Chroma (persistent, cosine), a BM25 index,
+  reciprocal rank fusion, and an optional ONNX cross-encoder reranker, all benchmarked against
+  each other on a labelled question set
 - **Tool access** — the `mcp` SDK: a real client/server pair over stdio
 - **API** — FastAPI (`app/main.py`): `POST /api/report`, plus `POST /api/report/stream`
   which server-sends each agent's progress as it finishes; both gated behind an optional
@@ -127,7 +142,8 @@ the Analyst would then treat as evidence. Anything past the floor is dropped ins
   locally with search, runs can be cancelled mid-flight, and there's a backend health /
   cold-start indicator, keyboard shortcuts, and a responsive mobile drawer
 - **Quality gates** — ruff (lint + format), pytest with an 85% coverage floor, a stdio
-  subprocess smoke test, and a deterministic offline eval with pass/fail thresholds — all
+  subprocess smoke test, a deterministic offline eval, and a retrieval benchmark, each with
+  pass/fail thresholds — all
   enforced in CI on Python 3.11 and 3.12
 
 ## Setup
@@ -305,6 +321,69 @@ offline run they describe the stub and nothing more; the table labels which is w
 quality itself is measured by neither, and needs an LLM-as-judge faithfulness score against a
 labelled key — noted here as the next step rather than claimed as built.
 
+### Retrieval quality
+
+The pipeline eval above cannot tell whether retrieval found the *right* chunks. So
+`eval/run_retrieval_eval.py` benchmarks the retrieval step on its own:
+
+- **64 labelled questions** in `eval/retrieval_set.json`: 20 **keyword** questions (exact error
+  codes, alert names, service names), 36 **paraphrase** questions that share almost no words
+  with the answer ("how quickly do we cut off a former employee's permissions?"), and 8
+  **multi-doc** questions that need evidence from two files.
+- Each gold answer is a file plus a short evidence string, not a chunk id, so re-chunking the
+  corpus does not invalidate the labels. A test checks that every evidence string exists.
+- **16 unanswerable questions**: 8 plainly off-topic ("how tall is Mount Everest?") and 8
+  near-domain ones that sound internal but have no answer here ("what is the parental leave
+  policy?"). The relevance floor should refuse these.
+
+```bash
+python -m eval.run_retrieval_eval --check                    # replays cached embeddings; runs in CI
+python -m eval.run_retrieval_eval --embeddings live --write  # re-embeds with Gemini, refreshes cache
+```
+
+The Gemini vectors for the corpus and questions are checked in (`eval/embedding_cache.npz`,
+float16). CI therefore reproduces the live numbers exactly, with no API key. `--check` fails
+the build if recall, MRR, or the floor's behaviour regresses. Raw per-question rows:
+[`eval/results_retrieval.json`](eval/results_retrieval.json).
+
+<!-- eval:retrieval:start -->
+_64 labelled questions (20 keyword, 36 paraphrase, 8 multi) and 8 off-topic + 8 near-domain unanswerable ones, over 55 chunks. Embeddings `gemini-embedding-001`; reranker `Xenova/ms-marco-MiniLM-L-6-v2`. Recorded 2026-09-24._
+
+| Retriever | Recall@4 | Hit@1 | MRR@10 | nDCG@10 | Recall@4 keyword | Recall@4 paraphrase | Recall@4 multi-doc | p50 latency |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `dense` (default) | **0.97** | 0.75 | 0.86 | 0.88 | 1.00 | 0.97 | 0.88 | 7 ms |
+| `bm25` | 0.70 | 0.53 | 0.62 | 0.67 | 1.00 | 0.47 | 1.00 | 44 ms |
+| `hybrid` | 0.89 | 0.64 | 0.77 | 0.82 | 1.00 | 0.81 | 1.00 | 19 ms |
+| `dense+rerank` | 0.95 | **0.81** | **0.88** | **0.90** | 1.00 | 0.92 | 1.00 | 1481 ms |
+| `hybrid+rerank` | 0.95 | **0.81** | 0.87 | 0.90 | 1.00 | 0.92 | 1.00 | 1543 ms |
+
+Relevance floor, `dense` retriever (closest correct chunk: distance 0.375 at worst; closest chunk to an unanswerable question: 0.366 near-domain, 0.429 off-topic):
+
+| `AGENTDESK_MAX_DISTANCE` | Answerable questions kept | Off-topic refused | Near-domain refused |
+| --- | --- | --- | --- |
+| 0.650 (previous) | 98% | 0% | 0% |
+| 0.400 (current) | 98% | 100% | 50% |
+<!-- eval:retrieval:end -->
+
+What the numbers say, and what changed because of them:
+
+- **The relevance floor was broken, and this benchmark found it.** The 0.65 floor had been tuned
+  for OpenAI embeddings and was never re-checked after the port to Gemini. It refused **none**
+  of the 16 unanswerable questions, so every off-topic question was answered from unrelated
+  chunks. With Gemini, every correct chunk sits within distance 0.375, and every off-topic
+  question's closest chunk is beyond 0.42. At **0.40** the floor refuses all off-topic
+  questions and half the near-domain ones, and loses no answerable question. The sweep over
+  0.30–0.65 is in the results file.
+- **Hybrid search did not earn its place on this corpus.** `gemini-embedding-001` already
+  retrieves exact identifiers (keyword recall 1.00 with dense alone). Fusing in BM25 rescued the
+  multi-doc questions but cost more on paraphrases, where BM25 alone scores 0.47. So the
+  default stays dense, and hybrid remains a setting (`AGENTDESK_RETRIEVAL_MODE=hybrid`) for
+  corpora with rarer identifiers.
+- **The reranker buys precision at a latency cost.** The cross-encoder lifts Hit@1 from 0.75 to
+  0.81 and MRR from 0.86 to 0.88. But it adds about 1.5 s per query on CPU and slightly lowers
+  Recall@4. The Analyst reads all four chunks, so Recall@4 is what matters here, and the
+  reranker ships disabled (`AGENTDESK_RERANKER=cross-encoder` turns it on).
+
 ## Configuration
 
 All settings are environment variables read at call time (see `app/config.py` and `.env.example`).
@@ -315,7 +394,11 @@ All settings are environment variables read at call time (see `app/config.py` an
 | `TAVILY_API_KEY` | — | optional; without it, web search scrapes DuckDuckGo |
 | `GEMINI_MODEL` | `gemini-flash-lite-latest` | chat/tool-calling model; heavier models hit free-tier rate limits fast under this pipeline's call volume |
 | `AGENTDESK_EMBED_MODEL` | `gemini-embedding-001` | |
-| `AGENTDESK_MAX_DISTANCE` | `0.65` | cosine-distance relevance floor for retrieval |
+| `AGENTDESK_MAX_DISTANCE` | `0.40` | cosine-distance relevance floor, calibrated by the retrieval benchmark |
+| `AGENTDESK_RETRIEVAL_MODE` | `dense` | `dense`, `bm25`, or `hybrid` (reciprocal rank fusion of both) |
+| `AGENTDESK_RERANKER` | `none` | `cross-encoder` enables local reranking; needs `pip install .[rerank]` |
+| `AGENTDESK_RERANK_MODEL` | `Xenova/ms-marco-MiniLM-L-6-v2` | any fastembed cross-encoder |
+| `AGENTDESK_CANDIDATE_K` | `20` | candidates per retriever before fusion, reranking, and the floor |
 | `AGENTDESK_RETRIEVAL_K` | `4` | chunks per subtask |
 | `AGENTDESK_MAX_REVISIONS` | `2` | Critic → Writer rewrites before shipping unverified |
 | `AGENTDESK_MAX_RESEARCH_ROUNDS` | `1` | Critic → Researcher rounds for evidence gaps |
@@ -333,11 +416,13 @@ app/
     base.py           @node decorator: timing, logging, trace entries
   llm/gemini_client.py  forced function-calling + retry policy
   mcp/                server.py (tool process), client.py (session), tools.py (impls)
-  rag/                ingest.py (chunk/embed/upsert), retriever.py (query + floor)
+  rag/                ingest.py (chunk/embed/upsert), retriever.py (candidates → fusion →
+                      rerank → floor), bm25.py, rerank.py
   main.py             FastAPI surface: auth gate, CORS, /api/report(/stream)
 frontend/              Vite + React + three.js UI (3D live pipeline + replay, tabbed report, history)
-eval/                  eval set, scripted stub model, runner, checked-in results
-tests/                 130 tests; doubles.py holds the offline stand-ins
+eval/                  pipeline eval + retrieval benchmark: labelled sets, stub model,
+                       runners, cached embeddings, checked-in results
+tests/                 157 tests; doubles.py holds the offline stand-ins
 scripts/               ingest_docs, run_demo, check_mcp_server
 ```
 
@@ -345,19 +430,24 @@ scripts/               ingest_docs, run_demo, check_mcp_server
 
 Stated plainly, because they are the honest next steps rather than hidden gaps:
 
-- **The live eval has been run against Gemini** (see the table above) — all pipeline metrics are
-  clean and the 0.65 relevance floor holds up for `gemini-embedding-001` distances too. Its
-  `citation_coverage` of 0.67 is lower than the offline stub's 1.00 because 2 of the 6 cases are
-  pure web-search questions that hit the DuckDuckGo-scrape fallback with no `TAVILY_API_KEY` set
-  in this run, not a RAG problem.
+- **The live pipeline eval was run against Gemini** (see the table above), and all its
+  pipeline metrics are clean. Its `citation_coverage` of 0.67 is lower than the offline stub's
+  1.00 because 2 of the 6 cases are pure web-search questions. In that run they hit the
+  DuckDuckGo-scrape fallback because no `TAVILY_API_KEY` was set. It is not a RAG problem.
+- **The relevance floor cannot refuse every near-domain question.** One near-domain question's
+  closest chunk (0.366) is nearer than the least similar correct chunk (0.375), so no distance
+  threshold separates them perfectly. At 0.40, half get through, and catching those is left to
+  the Analyst and Critic.
 - **No answer-quality metric.** Everything measured is structural. Whether a passing report is
   *correct* needs an LLM-judge faithfulness score against a labelled answer key.
 - **Fixed-width chunking** ignores markdown structure; a heading can be separated from the
   paragraph it introduces. Structure-aware splitting would retrieve better.
 - **The Critic sees only the Analyst's facts**, which came from the same model family. It catches
   claims unsupported *by the retrieved evidence*; it cannot catch evidence that is itself wrong.
-- **The corpus is 8 documents.** Big enough that retrieval must discriminate, far short of the
-  scale where chunking strategy and index choice start to matter.
+- **The corpus is 24 documents and the question set is 64 questions, written by the same
+  author.** That is big enough to find a broken floor and to rank retrievers, but small enough
+  that one question is worth 1.5 points of recall. The floor was calibrated on the same
+  questions it is measured on, so 0.40 leaves margin on the side of keeping real answers.
 - **No persistence, and auth is a shared password, not per-user.** Runs are stateless (nothing is
   saved server-side between requests), and `AGENTDESK_APP_PASSWORD` is a single shared secret
   for gating a public deployment, not real multi-user authentication.
