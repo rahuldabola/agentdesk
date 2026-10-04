@@ -1,0 +1,1341 @@
+{
+  "meta": {
+    "model": "gemini-flash-lite-latest",
+    "judge_model": "gemini-3.5-flash-lite",
+    "max_distance": 0.4,
+    "retrieval_mode": "dense"
+  },
+  "summary": {
+    "answerable": 26,
+    "errors": 0,
+    "correctness": 0.923,
+    "fully_correct_rate": 0.923,
+    "correctness_by_type": {
+      "keyword": 0.875,
+      "paraphrase": 1.0,
+      "multi": 0.875
+    },
+    "faithfulness": 0.952,
+    "claims_checked": 42,
+    "gold_cited_rate": 0.962,
+    "unanswerable": 8,
+    "no_fabrication_rate": 1.0,
+    "judge_sanity": 1.0,
+    "mean_latency_s": 17.0
+  },
+  "rows": [
+    {
+      "id": "kw-01",
+      "type": "keyword",
+      "question": "What does error code AUTH-1003 mean?",
+      "report": "Error code AUTH-1003 means that the token was revoked [rag:error_codes.md#0]. This usually happens because the user signed out everywhere or an administrator disabled the account, and clients are required to discard both tokens [rag:error_codes.md#0].",
+      "status": "passed",
+      "notes": [
+        {
+          "source_id": "rag:error_codes.md#0",
+          "content": "# API Error Code Reference\n\nEvery error response carries a machine-readable `code` alongside the HTTP status. Clients should\nbranch on the code, never on the human-readable message, which may change without notice.\n\n## Authentication Errors\n\n- `AUTH-1001` — the bearer token is missing from the request. Returned with HTTP 401.\n- `AUTH-1002` — the token has expired. Refresh it with the refresh token; do not re-prompt the user.\n- `AUTH-1003` — the token was revoked, usually because the user signed out everywhere or an\n  administrator disabled the account. Clients must discard both tokens.\n- `AUTH-1007` — the API key lacks the scope required by the endpoint. The response lists the\n  missing scope in `details.required_scope`.\n\n## Request Errors\n\n- `REQ-2001` — the body is not valid JSON.\n- `REQ"
+        },
+        {
+          "source_id": "rag:error_codes.md#2",
+          "content": "Payment Errors\n\n- `PAY-4012` — the card was declined by the issuer. Safe to retry with a different card only.\n- `PAY-4015` — the payment requires 3-D Secure authentication; redirect the customer to the\n  returned `challenge_url`.\n- `PAY-5030` — the payment processor is unavailable. Retry with exponential backoff; the request\n  is idempotent if an idempotency key was supplied.\n\n## Server Errors\n\n- `SYS-5000` — an unexpected internal error. Includes a `trace_id` that support can use to find\n  the request in the tracing system.\n- `SYS-5031` — the service is in read-only maintenance mode. Writes are rejected, reads succeed."
+        },
+        {
+          "source_id": "rag:error_codes.md#1",
+          "content": "he endpoint. The response lists the\n  missing scope in `details.required_scope`.\n\n## Request Errors\n\n- `REQ-2001` — the body is not valid JSON.\n- `REQ-2004` — a required field is absent; `details.field` names it.\n- `REQ-2009` — the idempotency key was reused with a different request body. The original\n  response is not replayed; the client must generate a new key.\n\n## Throttling\n\n- `RATE-4290` — the per-key request quota was exceeded. Honour the `Retry-After` header.\n- `RATE-4291` — the account-wide concurrency cap of 50 in-flight requests was exceeded. This is\n  separate from the per-minute quota and clears as soon as requests complete.\n\n## Payment Errors\n\n- `PAY-4012` — the card was declined by the issuer. Safe to retry with a different card only.\n- `PAY-4015` — the payment requires 3-D"
+        },
+        {
+          "source_id": "rag:api_policies.md#0",
+          "content": "# API Policies\n\n## Rate Limiting\n\nEach API key is limited to 1,000 requests per minute. Requests beyond this limit receive a\n429 response with a `Retry-After` header.\n\n## Versioning\n\nThe API is versioned via the URL path (`/v1/`, `/v2/`). A version is supported for at least\n12 months after a newer version is released, and deprecation notices are sent 90 days in\nadvance via the developer newsletter.\n\n## Authentication\n\nAll requests must include a bearer token issued via the `/auth/token` endpoint. Tokens\nexpire after 24 hours and must be refreshed using the associated refresh token."
+        },
+        {
+          "source_id": "rag:oncall_runbook.md#2",
+          "content": "mporary\nmitigation, not a fix, and requires a follow-up ticket.\n\n**Certificate expiry.** Certificates auto-renew 30 days before expiry. A renewal failure pages\nat 14 days. Manual renewal is documented in the platform runbook and takes about 10 minutes.\n\n## What Not To Do\n\nDo not make an untested change to production during an incident in the hope that it helps.\nMitigate with a known-good action — roll back, fail over, shed load — and investigate afterwards."
+        }
+      ],
+      "latency_s": 18.6,
+      "grade": "correct",
+      "grade_reason": "The answer accurately explains that AUTH-1003 means the token was revoked, gives the common reasons (signed out everywhere or admin disabled), and mentions the requirement to discard both tokens, fully matching the reference text.",
+      "claims": [
+        {
+          "supported": true,
+          "claim": "Error code AUTH-1003 means that the token was revoked."
+        },
+        {
+          "claim": "This usually happens because the user signed out everywhere or an administrator disabled the account.",
+          "supported": true
+        },
+        {
+          "claim": "Clients are required to discard both tokens.",
+          "supported": true
+        }
+      ],
+      "gold_cited": true,
+      "sanity_grade": "incorrect"
+    },
+    {
+      "id": "kw-02",
+      "type": "keyword",
+      "question": "How should a client handle PAY-4015?",
+      "report": "Based on the provided facts, a client should handle the PAY-4015 error by redirecting the customer to the returned `challenge_url`, as this error indicates that the payment requires 3-D Secure authentication [rag:error_codes.md#2].",
+      "status": "passed",
+      "notes": [
+        {
+          "source_id": "rag:error_codes.md#2",
+          "content": "Payment Errors\n\n- `PAY-4012` — the card was declined by the issuer. Safe to retry with a different card only.\n- `PAY-4015` — the payment requires 3-D Secure authentication; redirect the customer to the\n  returned `challenge_url`.\n- `PAY-5030` — the payment processor is unavailable. Retry with exponential backoff; the request\n  is idempotent if an idempotency key was supplied.\n\n## Server Errors\n\n- `SYS-5000` — an unexpected internal error. Includes a `trace_id` that support can use to find\n  the request in the tracing system.\n- `SYS-5031` — the service is in read-only maintenance mode. Writes are rejected, reads succeed."
+        },
+        {
+          "source_id": "rag:error_codes.md#1",
+          "content": "he endpoint. The response lists the\n  missing scope in `details.required_scope`.\n\n## Request Errors\n\n- `REQ-2001` — the body is not valid JSON.\n- `REQ-2004` — a required field is absent; `details.field` names it.\n- `REQ-2009` — the idempotency key was reused with a different request body. The original\n  response is not replayed; the client must generate a new key.\n\n## Throttling\n\n- `RATE-4290` — the per-key request quota was exceeded. Honour the `Retry-After` header.\n- `RATE-4291` — the account-wide concurrency cap of 50 in-flight requests was exceeded. This is\n  separate from the per-minute quota and clears as soon as requests complete.\n\n## Payment Errors\n\n- `PAY-4012` — the card was declined by the issuer. Safe to retry with a different card only.\n- `PAY-4015` — the payment requires 3-D"
+        },
+        {
+          "source_id": "rag:billing_operations.md#1",
+          "content": "ormal retention policy applies.\n\n## Refunds\n\nSupport may issue refunds up to $500 without approval. Refunds above $500 need approval from a\nbilling operations lead, and refunds above $5,000 need finance approval. Refunds are always issued\nto the original payment method.\n\n## Currency\n\nPrices are stored in minor units (cents) as integers. Floating-point types are never used for\nmoney anywhere in the codebase."
+        },
+        {
+          "source_id": "rag:error_codes.md#0",
+          "content": "# API Error Code Reference\n\nEvery error response carries a machine-readable `code` alongside the HTTP status. Clients should\nbranch on the code, never on the human-readable message, which may change without notice.\n\n## Authentication Errors\n\n- `AUTH-1001` — the bearer token is missing from the request. Returned with HTTP 401.\n- `AUTH-1002` — the token has expired. Refresh it with the refresh token; do not re-prompt the user.\n- `AUTH-1003` — the token was revoked, usually because the user signed out everywhere or an\n  administrator disabled the account. Clients must discard both tokens.\n- `AUTH-1007` — the API key lacks the scope required by the endpoint. The response lists the\n  missing scope in `details.required_scope`.\n\n## Request Errors\n\n- `REQ-2001` — the body is not valid JSON.\n- `REQ"
+        },
+        {
+          "source_id": "rag:oncall_runbook.md#2",
+          "content": "mporary\nmitigation, not a fix, and requires a follow-up ticket.\n\n**Certificate expiry.** Certificates auto-renew 30 days before expiry. A renewal failure pages\nat 14 days. Manual renewal is documented in the platform runbook and takes about 10 minutes.\n\n## What Not To Do\n\nDo not make an untested change to production during an incident in the hope that it helps.\nMitigate with a known-good action — roll back, fail over, shed load — and investigate afterwards."
+        },
+        {
+          "source_id": "rag:secrets_management.md#1",
+          "content": ", and a push containing a recognised secret\npattern is blocked. If a secret reaches a repository anyway, treat it as compromised: rotate it\nfirst, then clean the history. Cleaning history alone is not remediation, since clones and caches\nmay already hold it.\n\n## Local Development\n\nDevelopers use per-developer credentials scoped to development resources. Copying a production\nsecret to a laptop is a policy violation."
+        }
+      ],
+      "latency_s": 16.4,
+      "grade": "incorrect",
+      "grade_reason": "The reference text for PAY-4015 is cut off at 'the payment requires 3-D', and does not mention redirecting to a challenge_url.",
+      "claims": [
+        {
+          "claim": "a client should handle the PAY-4015 error by redirecting the customer to the returned challenge_url",
+          "supported": true
+        },
+        {
+          "supported": true,
+          "claim": "the PAY-4015 error indicates that the payment requires 3-D Secure authentication"
+        }
+      ],
+      "gold_cited": true,
+      "sanity_grade": "incorrect"
+    },
+    {
+      "id": "kw-03",
+      "type": "keyword",
+      "question": "What is RATE-4291?",
+      "report": "Based on the provided facts, RATE-4291 refers to exceeding the account-wide concurrency cap of 50 in-flight requests [rag:error_codes.md#1]. It is separate from the per-minute quota and clears as soon as requests complete [rag:error_codes.md#1].",
+      "status": "passed",
+      "notes": [
+        {
+          "source_id": "rag:api_policies.md#0",
+          "content": "# API Policies\n\n## Rate Limiting\n\nEach API key is limited to 1,000 requests per minute. Requests beyond this limit receive a\n429 response with a `Retry-After` header.\n\n## Versioning\n\nThe API is versioned via the URL path (`/v1/`, `/v2/`). A version is supported for at least\n12 months after a newer version is released, and deprecation notices are sent 90 days in\nadvance via the developer newsletter.\n\n## Authentication\n\nAll requests must include a bearer token issued via the `/auth/token` endpoint. Tokens\nexpire after 24 hours and must be refreshed using the associated refresh token."
+        },
+        {
+          "source_id": "rag:error_codes.md#1",
+          "content": "he endpoint. The response lists the\n  missing scope in `details.required_scope`.\n\n## Request Errors\n\n- `REQ-2001` — the body is not valid JSON.\n- `REQ-2004` — a required field is absent; `details.field` names it.\n- `REQ-2009` — the idempotency key was reused with a different request body. The original\n  response is not replayed; the client must generate a new key.\n\n## Throttling\n\n- `RATE-4290` — the per-key request quota was exceeded. Honour the `Retry-After` header.\n- `RATE-4291` — the account-wide concurrency cap of 50 in-flight requests was exceeded. This is\n  separate from the per-minute quota and clears as soon as requests complete.\n\n## Payment Errors\n\n- `PAY-4012` — the card was declined by the issuer. Safe to retry with a different card only.\n- `PAY-4015` — the payment requires 3-D"
+        },
+        {
+          "source_id": "rag:privacy.md#0",
+          "content": "# Privacy and Data Subject Requests\n\n## Data Subject Requests\n\nCustomers may request a copy of their personal data or its deletion. Requests are logged in the\nprivacy portal and must be completed within 30 days of receipt. Identity is verified before any\ndata is released; a request from an address not on the account is never fulfilled directly.\n\nDeletion requests remove personal data from production systems within 30 days. Backups age out\nunder the normal retention schedule rather than being edited, and a restored backup re-applies the\ndeletion log before it serves traffic.\n\n## Data Protection Officer\n\nThe Data Protection Officer is reachable at privacy@company.example and must be consulted before\nany new processing of personal data for a purpose not covered by the privacy notice.\n\n## Priv"
+        },
+        {
+          "source_id": "rag:billing_operations.md#1",
+          "content": "ormal retention policy applies.\n\n## Refunds\n\nSupport may issue refunds up to $500 without approval. Refunds above $500 need approval from a\nbilling operations lead, and refunds above $5,000 need finance approval. Refunds are always issued\nto the original payment method.\n\n## Currency\n\nPrices are stored in minor units (cents) as integers. Floating-point types are never used for\nmoney anywhere in the codebase."
+        },
+        {
+          "source_id": "rag:alert_catalog.md#2",
+          "content": "hour,\nwhich would exhaust a 28-day budget in about 2 days. Treat it as at least a SEV2."
+        },
+        {
+          "source_id": "rag:access_control.md#2",
+          "content": "aging environments under any\ncircumstances. Engineers needing realistic data use the synthetic data generator, which produces\nstatistically similar records containing no real customer information."
+        },
+        {
+          "source_id": "rag:deployment.md#2",
+          "content": "y default, and roll out by percentage. A flag fully\nrolled out for 30 days is considered permanent and must be removed from the code. Stale flags\nare audited quarterly."
+        }
+      ],
+      "latency_s": 15.9,
+      "grade": "correct",
+      "grade_reason": "The answer accurately and completely captures the definition of RATE-4291 from the reference material.",
+      "claims": [
+        {
+          "supported": true,
+          "claim": "RATE-4291 refers to exceeding the account-wide concurrency cap of 50 in-flight requests"
+        },
+        {
+          "claim": "It is separate from the per-minute quota and clears as soon as requests complete",
+          "supported": true
+        }
+      ],
+      "gold_cited": true,
+      "sanity_grade": "incorrect"
+    },
+    {
+      "id": "kw-04",
+      "type": "keyword",
+      "question": "What triggers the HighConsumerLag alert?",
+      "report": "The HighConsumerLag alert is triggered when a queue consumer group is more than 10,000 messages behind for 10 minutes [rag:alert_catalog.md#0].",
+      "status": "passed",
+      "notes": [
+        {
+          "source_id": "rag:alert_catalog.md#0",
+          "content": "# Alert Catalog\n\nEach alert below links to the first steps a responder should take. Alert names match the\nalerting rules exactly, so they can be searched from a page.\n\n## HighConsumerLag\n\nFires when a queue consumer group is more than 10,000 messages behind for 10 minutes. Check\nwhether consumers are crash-looping before scaling them out; adding replicas to a consumer that is\nfailing on a poison message only multiplies the failures. Poison messages are moved to the\ndead-letter queue with `queue-admin dlq move`.\n\n## DiskPressureCritical\n\nFires when a node's root volume passes 90% utilisation. The usual cause is container logs not\nbeing rotated. Cordon the node, then drain it; do not delete files by hand on a production node.\n\n## CertificateExpiringSoon\n\nFires 14 days before a certificate ex"
+        },
+        {
+          "source_id": "rag:alert_catalog.md#1",
+          "content": ". Cordon the node, then drain it; do not delete files by hand on a production node.\n\n## CertificateExpiringSoon\n\nFires 14 days before a certificate expires, which means automatic renewal at 30 days has already\nfailed. Follow the manual renewal procedure in the platform runbook.\n\n## ReplicationLagHigh\n\nFires when a database read replica is more than 30 seconds behind the primary. Reads that need\nfresh data must be routed to the primary until lag recovers. Persistent lag usually indicates a\nlong-running transaction on the primary.\n\n## ErrorBudgetBurnFast\n\nFires when a service is burning its error budget 14 times faster than sustainable over one hour,\nwhich would exhaust a 28-day budget in about 2 days. Treat it as at least a SEV2."
+        },
+        {
+          "source_id": "rag:sre_practices.md#2",
+          "content": "hold triggers an\nautomation project in the following quarter.\n\n## Monitoring Philosophy\n\nAlert on symptoms, not causes. A page should mean a user is being harmed right now, and it\nshould be actionable — if the responder can only wait, it should not have been a page. Every\nalert links to a runbook. An alert without a runbook is a defect, and is either documented or\ndeleted within two weeks.\n\nDashboards are for investigation; alerts are for interruption. The two are designed separately."
+        },
+        {
+          "source_id": "rag:oncall_runbook.md#1",
+          "content": "vering incidents during the week, alerts that fired without warranting action, deploys still\nbeing watched, and any known-fragile areas. The incoming primary confirms receipt in writing.\n\n## Common Procedures\n\n**Elevated 5xx from the API gateway.** Check the deploy log first — most elevated error rates\nfollow a deploy within the previous 30 minutes. If a recent deploy correlates, roll back before\ninvestigating. Rollback takes about 90 seconds and is always reversible.\n\n**Database connection pool exhaustion.** Symptoms are rising latency with flat CPU. Check for a\nlong-running migration or a query without an index. Increasing pool size is a temporary\nmitigation, not a fix, and requires a follow-up ticket.\n\n**Certificate expiry.** Certificates auto-renew 30 days before expiry. A renewal fail"
+        },
+        {
+          "source_id": "rag:observability.md#1",
+          "content": "ls\nsuch as user IDs or request IDs must never be used as metric labels, because each distinct value\ncreates a new time series and can take down the metrics cluster.\n\n## Tracing\n\nDistributed tracing uses OpenTelemetry. Head-based sampling keeps 10% of traces in production,\nand every trace that contains an error is kept regardless of sampling. Traces are retained for\n14 days.\n\n## Dashboards\n\nEach service owns a golden-signals dashboard showing latency, traffic, errors, and saturation."
+        }
+      ],
+      "latency_s": 15.3,
+      "grade": "correct",
+      "grade_reason": "The answer accurately states the exact trigger conditions given in the reference material.",
+      "claims": [
+        {
+          "supported": true,
+          "claim": "The HighConsumerLag alert is triggered when a queue consumer group is more than 10,000 messages behind for 10 minutes"
+        }
+      ],
+      "gold_cited": true,
+      "sanity_grade": "incorrect"
+    },
+    {
+      "id": "kw-05",
+      "type": "keyword",
+      "question": "What should I do when DiskPressureCritical fires?",
+      "report": "When `DiskPressureCritical` fires, you should take the following actions:\n\n* Cordon the node, and then drain it [rag:alert_catalog.md#0].\n* Do not delete files by hand on a production node [rag:alert_catalog.md#0].",
+      "status": "passed",
+      "notes": [
+        {
+          "source_id": "rag:alert_catalog.md#0",
+          "content": "# Alert Catalog\n\nEach alert below links to the first steps a responder should take. Alert names match the\nalerting rules exactly, so they can be searched from a page.\n\n## HighConsumerLag\n\nFires when a queue consumer group is more than 10,000 messages behind for 10 minutes. Check\nwhether consumers are crash-looping before scaling them out; adding replicas to a consumer that is\nfailing on a poison message only multiplies the failures. Poison messages are moved to the\ndead-letter queue with `queue-admin dlq move`.\n\n## DiskPressureCritical\n\nFires when a node's root volume passes 90% utilisation. The usual cause is container logs not\nbeing rotated. Cordon the node, then drain it; do not delete files by hand on a production node.\n\n## CertificateExpiringSoon\n\nFires 14 days before a certificate ex"
+        },
+        {
+          "source_id": "rag:alert_catalog.md#1",
+          "content": ". Cordon the node, then drain it; do not delete files by hand on a production node.\n\n## CertificateExpiringSoon\n\nFires 14 days before a certificate expires, which means automatic renewal at 30 days has already\nfailed. Follow the manual renewal procedure in the platform runbook.\n\n## ReplicationLagHigh\n\nFires when a database read replica is more than 30 seconds behind the primary. Reads that need\nfresh data must be routed to the primary until lag recovers. Persistent lag usually indicates a\nlong-running transaction on the primary.\n\n## ErrorBudgetBurnFast\n\nFires when a service is burning its error budget 14 times faster than sustainable over one hour,\nwhich would exhaust a 28-day budget in about 2 days. Treat it as at least a SEV2."
+        },
+        {
+          "source_id": "rag:oncall_runbook.md#1",
+          "content": "vering incidents during the week, alerts that fired without warranting action, deploys still\nbeing watched, and any known-fragile areas. The incoming primary confirms receipt in writing.\n\n## Common Procedures\n\n**Elevated 5xx from the API gateway.** Check the deploy log first — most elevated error rates\nfollow a deploy within the previous 30 minutes. If a recent deploy correlates, roll back before\ninvestigating. Rollback takes about 90 seconds and is always reversible.\n\n**Database connection pool exhaustion.** Symptoms are rising latency with flat CPU. Check for a\nlong-running migration or a query without an index. Increasing pool size is a temporary\nmitigation, not a fix, and requires a follow-up ticket.\n\n**Certificate expiry.** Certificates auto-renew 30 days before expiry. A renewal fail"
+        },
+        {
+          "source_id": "rag:sre_practices.md#2",
+          "content": "hold triggers an\nautomation project in the following quarter.\n\n## Monitoring Philosophy\n\nAlert on symptoms, not causes. A page should mean a user is being harmed right now, and it\nshould be actionable — if the responder can only wait, it should not have been a page. Every\nalert links to a runbook. An alert without a runbook is a defect, and is either documented or\ndeleted within two weeks.\n\nDashboards are for investigation; alerts are for interruption. The two are designed separately."
+        },
+        {
+          "source_id": "rag:kubernetes_platform.md#1",
+          "content": "ng 70% CPU utilisation.\nEvery production deployment runs at least 3 replicas spread across availability zones, and has a\nPodDisruptionBudget allowing at most one replica to be unavailable during node maintenance.\n\n## Health Checks\n\nReadiness probes gate traffic; liveness probes restart stuck containers. A liveness probe must\nnever depend on a downstream service, or an outage in that dependency will restart every pod.\n\n## Images\n\nOnly images from the internal registry may run in production. Images are scanned on push, and an\nimage with a critical vulnerability older than 7 days is blocked from new deployments."
+        },
+        {
+          "source_id": "rag:oncall_runbook.md#2",
+          "content": "mporary\nmitigation, not a fix, and requires a follow-up ticket.\n\n**Certificate expiry.** Certificates auto-renew 30 days before expiry. A renewal failure pages\nat 14 days. Manual renewal is documented in the platform runbook and takes about 10 minutes.\n\n## What Not To Do\n\nDo not make an untested change to production during an incident in the hope that it helps.\nMitigate with a known-good action — roll back, fail over, shed load — and investigate afterwards."
+        }
+      ],
+      "latency_s": 15.8,
+      "grade": "correct",
+      "grade_reason": "The answer correctly identifies both required actions (cordon and drain the node, and do not delete files by hand) as specified in the reference material.",
+      "claims": [
+        {
+          "supported": true,
+          "claim": "When DiskPressureCritical fires, you should cordon the node, and then drain it."
+        },
+        {
+          "supported": true,
+          "claim": "When DiskPressureCritical fires, you should not delete files by hand on a production node."
+        }
+      ],
+      "gold_cited": true,
+      "sanity_grade": "incorrect"
+    },
+    {
+      "id": "kw-06",
+      "type": "keyword",
+      "question": "What is the ReplicationLagHigh threshold?",
+      "report": "The ReplicationLagHigh threshold is set when a database read replica is more than 30 seconds behind the primary [rag:alert_catalog.md#1].",
+      "status": "passed",
+      "notes": [
+        {
+          "source_id": "rag:alert_catalog.md#1",
+          "content": ". Cordon the node, then drain it; do not delete files by hand on a production node.\n\n## CertificateExpiringSoon\n\nFires 14 days before a certificate expires, which means automatic renewal at 30 days has already\nfailed. Follow the manual renewal procedure in the platform runbook.\n\n## ReplicationLagHigh\n\nFires when a database read replica is more than 30 seconds behind the primary. Reads that need\nfresh data must be routed to the primary until lag recovers. Persistent lag usually indicates a\nlong-running transaction on the primary.\n\n## ErrorBudgetBurnFast\n\nFires when a service is burning its error budget 14 times faster than sustainable over one hour,\nwhich would exhaust a 28-day budget in about 2 days. Treat it as at least a SEV2."
+        },
+        {
+          "source_id": "rag:alert_catalog.md#0",
+          "content": "# Alert Catalog\n\nEach alert below links to the first steps a responder should take. Alert names match the\nalerting rules exactly, so they can be searched from a page.\n\n## HighConsumerLag\n\nFires when a queue consumer group is more than 10,000 messages behind for 10 minutes. Check\nwhether consumers are crash-looping before scaling them out; adding replicas to a consumer that is\nfailing on a poison message only multiplies the failures. Poison messages are moved to the\ndead-letter queue with `queue-admin dlq move`.\n\n## DiskPressureCritical\n\nFires when a node's root volume passes 90% utilisation. The usual cause is container logs not\nbeing rotated. Cordon the node, then drain it; do not delete files by hand on a production node.\n\n## CertificateExpiringSoon\n\nFires 14 days before a certificate ex"
+        },
+        {
+          "source_id": "rag:sre_practices.md#0",
+          "content": "# SRE Practices\n\n## Service Level Objectives\n\nEvery user-facing service defines an SLO covering availability and latency. Availability is\nmeasured as the ratio of successful requests to total requests over a rolling 28-day window.\nLatency SLOs are expressed at the 99th percentile, never the mean, because the mean hides the\ntail that users actually notice.\n\nCurrent targets:\n\n- Tier 1 services (auth, API gateway, billing): 99.95% availability, p99 under 300ms\n- Tier 2 services (search, notifications): 99.9% availability, p99 under 800ms\n- Tier 3 internal services: 99.5% availability, no latency SLO\n\n## Error Budgets\n\nAn SLO implies an error budget: 99.95% over 28 days permits roughly 20 minutes of downtime.\nWhile a service is within budget, the team ships freely. When a service exhausts its"
+        },
+        {
+          "source_id": "rag:sre_practices.md#2",
+          "content": "hold triggers an\nautomation project in the following quarter.\n\n## Monitoring Philosophy\n\nAlert on symptoms, not causes. A page should mean a user is being harmed right now, and it\nshould be actionable — if the responder can only wait, it should not have been a page. Every\nalert links to a runbook. An alert without a runbook is a defect, and is either documented or\ndeleted within two weeks.\n\nDashboards are for investigation; alerts are for interruption. The two are designed separately."
+        }
+      ],
+      "latency_s": 15.6,
+      "grade": "correct",
+      "grade_reason": "The answer correctly identifies the threshold for ReplicationLagHigh as being more than 30 seconds behind the primary, as stated in the reference material.",
+      "claims": [
+        {
+          "claim": "The ReplicationLagHigh threshold is set when a database read replica is more than 30 seconds behind the primary",
+          "supported": true
+        }
+      ],
+      "gold_cited": true,
+      "sanity_grade": "incorrect"
+    },
+    {
+      "id": "kw-07",
+      "type": "keyword",
+      "question": "How is the X-Signature-256 header computed?",
+      "report": "The `X-Signature-256` header is computed by taking an HMAC-SHA256 of the raw request body, which is keyed with the endpoint's signing secret [rag:webhooks.md#1].",
+      "status": "passed",
+      "notes": [
+        {
+          "source_id": "rag:webhooks.md#1",
+          "content": "ery for 5 consecutive days is disabled automatically and the\naccount owner is emailed.\n\n## Signatures\n\nEvery request carries an `X-Signature-256` header: an HMAC-SHA256 of the raw request body, keyed\nwith the endpoint's signing secret. Receivers must verify the signature against the raw bytes\nbefore parsing JSON. Requests also carry `X-Webhook-Timestamp`; reject any request whose\ntimestamp is more than 5 minutes old to prevent replay attacks.\n\n## Throughput\n\nEach endpoint receives at most 25 concurrent deliveries. Events for a single object are\ndelivered in order; events across different objects are not ordered relative to each other."
+        },
+        {
+          "source_id": "rag:webhooks.md#0",
+          "content": "# Webhooks\n\n## Delivery\n\nWebhook events are delivered as HTTP POST requests with a JSON body. An endpoint must respond\nwith a 2xx status within 10 seconds, or the delivery is treated as failed. Events are delivered\nat least once, so receivers must deduplicate using the `event_id` field.\n\n## Retries\n\nFailed deliveries are retried with exponential backoff over 72 hours: after 1 minute, 5 minutes,\n30 minutes, 2 hours, and then every 6 hours until the window closes. After the final failure the\nevent is moved to the dead-letter view in the developer dashboard, where it can be replayed\nmanually for up to 30 days.\n\nAn endpoint that fails every delivery for 5 consecutive days is disabled automatically and the\naccount owner is emailed.\n\n## Signatures\n\nEvery request carries an `X-Signature-256` head"
+        },
+        {
+          "source_id": "rag:privacy.md#0",
+          "content": "# Privacy and Data Subject Requests\n\n## Data Subject Requests\n\nCustomers may request a copy of their personal data or its deletion. Requests are logged in the\nprivacy portal and must be completed within 30 days of receipt. Identity is verified before any\ndata is released; a request from an address not on the account is never fulfilled directly.\n\nDeletion requests remove personal data from production systems within 30 days. Backups age out\nunder the normal retention schedule rather than being edited, and a restored backup re-applies the\ndeletion log before it serves traffic.\n\n## Data Protection Officer\n\nThe Data Protection Officer is reachable at privacy@company.example and must be consulted before\nany new processing of personal data for a purpose not covered by the privacy notice.\n\n## Priv"
+        },
+        {
+          "source_id": "rag:api_policies.md#0",
+          "content": "# API Policies\n\n## Rate Limiting\n\nEach API key is limited to 1,000 requests per minute. Requests beyond this limit receive a\n429 response with a `Retry-After` header.\n\n## Versioning\n\nThe API is versioned via the URL path (`/v1/`, `/v2/`). A version is supported for at least\n12 months after a newer version is released, and deprecation notices are sent 90 days in\nadvance via the developer newsletter.\n\n## Authentication\n\nAll requests must include a bearer token issued via the `/auth/token` endpoint. Tokens\nexpire after 24 hours and must be refreshed using the associated refresh token."
+        },
+        {
+          "source_id": "rag:security_policy.md#0",
+          "content": "# Security Policy\n\n## Data Retention\n\nCustomer data is retained for 90 days after account deletion, after which it is permanently\npurged from all systems including backups.\n\n## Access Control\n\nProduction database access requires a VPN connection plus hardware-key 2FA, and all access\nis logged and reviewed weekly by the security team.\n\n## Vulnerability Reporting\n\nSecurity vulnerabilities should be reported to security@company.example. Critical\nvulnerabilities are patched within 24 hours; medium/low severity within 30 days."
+        }
+      ],
+      "latency_s": 14.9,
+      "grade": "correct",
+      "grade_reason": "The answer accurately states that the X-Signature-256 header is computed as an HMAC-SHA256 of the raw request body, keyed with the endpoint's signing secret, matching the reference material.",
+      "claims": [
+        {
+          "claim": "The X-Signature-256 header is computed by taking an HMAC-SHA256 of the raw request body, which is keyed with the endpoint's signing secret",
+          "supported": true
+        }
+      ],
+      "gold_cited": true,
+      "sanity_grade": "incorrect"
+    },
+    {
+      "id": "kw-08",
+      "type": "keyword",
+      "question": "What runs in stage-east-1?",
+      "report": "Staging runs in stage-east-1, which mirrors production topology at a smaller scale [rag:kubernetes_platform.md#0].",
+      "status": "passed",
+      "notes": [
+        {
+          "source_id": "rag:kubernetes_platform.md#0",
+          "content": "# Kubernetes Platform\n\n## Clusters\n\nProduction runs in two clusters, `prod-east-1` and `prod-west-2`. Staging runs in `stage-east-1`,\nwhich mirrors production topology at smaller scale. Each team gets one namespace per environment,\nnamed after the team, and cannot create resources outside it.\n\n## Resource Requests\n\nEvery container must declare CPU and memory requests and a memory limit. CPU limits are not set,\nbecause CPU throttling under a limit causes latency spikes that are hard to diagnose. Pods without\nrequests are rejected by the admission controller.\n\n## Autoscaling\n\nServices scale horizontally with the HorizontalPodAutoscaler, targeting 70% CPU utilisation.\nEvery production deployment runs at least 3 replicas spread across availability zones, and has a\nPodDisruptionBudget allowing"
+        },
+        {
+          "source_id": "rag:architecture_overview.md#1",
+          "content": "It reads from the ledger but never writes\n  balance changes directly.\n- `notify-svc` — email, SMS, and push notifications, with per-user preference checks.\n- `search-svc` — full-text search over customer records, rebuilt from the event bus.\n\n## Event Bus\n\nEvents are published to Kafka topics named `<domain>.<entity>.<event>`, for example\n`billing.invoice.paid`. Topics retain events for 7 days. Consumers must be idempotent, since\nevents can be redelivered after a consumer restart.\n\n## Datastores\n\nTransactional data lives in PostgreSQL. Caching uses Redis with a default TTL of 5 minutes;\nnothing may treat the cache as a source of truth."
+        },
+        {
+          "source_id": "rag:kubernetes_platform.md#1",
+          "content": "ng 70% CPU utilisation.\nEvery production deployment runs at least 3 replicas spread across availability zones, and has a\nPodDisruptionBudget allowing at most one replica to be unavailable during node maintenance.\n\n## Health Checks\n\nReadiness probes gate traffic; liveness probes restart stuck containers. A liveness probe must\nnever depend on a downstream service, or an outage in that dependency will restart every pod.\n\n## Images\n\nOnly images from the internal registry may run in production. Images are scanned on push, and an\nimage with a critical vulnerability older than 7 days is blocked from new deployments."
+        },
+        {
+          "source_id": "rag:architecture_overview.md#0",
+          "content": "# Architecture Overview\n\n## Request Path\n\nPublic traffic enters through the CDN, which terminates TLS and forwards to the API gateway. The\ngateway authenticates the request, enforces per-key rate limits, and routes to backend services.\nServices communicate synchronously over gRPC with a default deadline of 2 seconds, and\nasynchronously through the event bus.\n\n## Core Services\n\n- `identity-svc` — users, sessions, API keys, and token issuance.\n- `ledger-svc` — the double-entry ledger that records every balance change. It is the source of\n  truth for money; no other service stores balances.\n- `billing-svc` — invoices, subscriptions, and dunning. It reads from the ledger but never writes\n  balance changes directly.\n- `notify-svc` — email, SMS, and push notifications, with per-user preference c"
+        },
+        {
+          "source_id": "rag:deployment.md#0",
+          "content": "# Deployment Pipeline\n\n## Standard Path\n\nAll services deploy via GitHub Actions on merge to `main`. The pipeline runs the test suite,\nbuilds a container image, pushes it to the registry, and rolls out using a blue-green strategy.\nAutomatic rollback triggers if the error rate exceeds 2% during the first 5 minutes after\ncutover.\n\nDeploys are expected to be boring. A team deploying several times a day is healthier than one\ndeploying once a sprint, because small changes are easier to reason about when something breaks.\n\n## Freeze Windows\n\nDeploys are frozen from 16:00 Friday until 09:00 Monday, and during the last three business days\nof each quarter. Freezes exist because the people who understand a change are least available to\nfix it at those times. Emergency fixes during a freeze require si"
+        },
+        {
+          "source_id": "rag:engineering_handbook.md#0",
+          "content": "# Engineering Handbook\n\n## Deployment Process\n\nAll services deploy via GitHub Actions on merge to `main`. A deployment first runs the test\nsuite, then builds a Docker image, then rolls out via a blue-green strategy with automatic\nrollback if error rates exceed 2% in the first 5 minutes.\n\n## On-Call Rotation\n\nThe on-call rotation is weekly, starting every Monday at 9:00 AM local time. The primary\non-call engineer is paged first; if there is no acknowledgment within 10 minutes, the\nsecondary on-call engineer is paged.\n\n## Incident Severity Levels\n\n- SEV-1: full outage or data loss, page immediately, war room required.\n- SEV-2: partial degradation affecting a subset of users, page during business hours.\n- SEV-3: minor issue with a workaround available, ticket only, no page."
+        }
+      ],
+      "latency_s": 17.1,
+      "grade": "correct",
+      "grade_reason": "The answer accurately states that staging runs in stage-east-1 and mirrors the production topology at a smaller scale, matching the reference material.",
+      "claims": [
+        {
+          "claim": "Staging runs in stage-east-1, which mirrors production topology at a smaller scale",
+          "supported": true
+        }
+      ],
+      "gold_cited": true,
+      "sanity_grade": "incorrect"
+    },
+    {
+      "id": "pp-01",
+      "type": "paraphrase",
+      "question": "How quickly do we cut off a former employee's permissions?",
+      "report": "Based on the provided facts, former employees' permissions are handled in the following timeframe:\n\n* Access is revoked within 1 hour of their departure being recorded in the HR system [rag:access_control.md#1].\n* Shared credentials that the departing employee could have known are rotated within 24 hours [rag:access_control.md#1].",
+      "status": "passed",
+      "notes": [
+        {
+          "source_id": "rag:access_control.md#1",
+          "content": "hibited in every environment, development included.\n\n## Reviews\n\nAccess is reviewed quarterly. Managers attest to the entitlements held by their reports, and any\nentitlement unused for 90 days is revoked automatically. Revocation is reversible — the point is\nto keep the standing surface small, not to make people fill in forms.\n\n## Offboarding\n\nAccess is revoked within 1 hour of a departure being recorded in the HR system. This is automated\nand does not wait for a ticket. Shared credentials the departing employee could have known are\nrotated within 24 hours.\n\n## Production Data\n\nProduction customer data may not be copied into development or staging environments under any\ncircumstances. Engineers needing realistic data use the synthetic data generator, which produces\nstatistically similar re"
+        },
+        {
+          "source_id": "rag:privacy.md#0",
+          "content": "# Privacy and Data Subject Requests\n\n## Data Subject Requests\n\nCustomers may request a copy of their personal data or its deletion. Requests are logged in the\nprivacy portal and must be completed within 30 days of receipt. Identity is verified before any\ndata is released; a request from an address not on the account is never fulfilled directly.\n\nDeletion requests remove personal data from production systems within 30 days. Backups age out\nunder the normal retention schedule rather than being edited, and a restored backup re-applies the\ndeletion log before it serves traffic.\n\n## Data Protection Officer\n\nThe Data Protection Officer is reachable at privacy@company.example and must be consulted before\nany new processing of personal data for a purpose not covered by the privacy notice.\n\n## Priv"
+        },
+        {
+          "source_id": "rag:access_control.md#0",
+          "content": "# Access Control\n\n## Principle\n\nAccess is granted on the principle of least privilege and is time-bounded by default. Standing\nproduction access is limited to the platform team; everyone else requests elevated access through\nthe access broker, which grants it for a maximum of 8 hours and logs every session.\n\n## Authentication\n\nAll employees authenticate through the company identity provider with hardware-backed\nmulti-factor authentication. SMS-based second factors were retired and are no longer accepted\nanywhere. Service accounts authenticate with short-lived tokens issued by the workload identity\nsystem; long-lived static credentials are prohibited in every environment, development included.\n\n## Reviews\n\nAccess is reviewed quarterly. Managers attest to the entitlements held by their repor"
+        },
+        {
+          "source_id": "rag:security_policy.md#0",
+          "content": "# Security Policy\n\n## Data Retention\n\nCustomer data is retained for 90 days after account deletion, after which it is permanently\npurged from all systems including backups.\n\n## Access Control\n\nProduction database access requires a VPN connection plus hardware-key 2FA, and all access\nis logged and reviewed weekly by the security team.\n\n## Vulnerability Reporting\n\nSecurity vulnerabilities should be reported to security@company.example. Critical\nvulnerabilities are patched within 24 hours; medium/low severity within 30 days."
+        },
+        {
+          "source_id": "rag:onboarding.md#0",
+          "content": "# Engineer Onboarding\n\n## First Week\n\nNew engineers receive a laptop with the standard image already enrolled in device management.\nOn day one they are assigned an onboarding buddy from their team, who is their first point of\ncontact for questions for the first six weeks. By the end of the first week a new engineer should\nhave the development environment running and a small change merged to production.\n\n## First Month\n\nIn the first month new engineers complete the security awareness training, the incident response\ntraining, and read the runbooks for their team's services. They shadow one on-call week as an\nobserver before joining the rotation; nobody joins the on-call rotation within their first 8 weeks.\n\n## Access\n\nAccess is requested through the access broker using role templates, so a n"
+        }
+      ],
+      "latency_s": 17.1,
+      "grade": "correct",
+      "grade_reason": "The answer accurately states both timeframes (1 hour for access revocation upon HR system recording, and 24 hours for shared credential rotation) as given in the reference material.",
+      "claims": [
+        {
+          "claim": "Access is revoked within 1 hour of their departure being recorded in the HR system",
+          "supported": true
+        },
+        {
+          "claim": "Shared credentials that the departing employee could have known are rotated within 24 hours",
+          "supported": true
+        }
+      ],
+      "gold_cited": true,
+      "sanity_grade": "incorrect"
+    },
+    {
+      "id": "pp-02",
+      "type": "paraphrase",
+      "question": "How long do we keep the record of who did what, for compliance purposes?",
+      "report": "For compliance purposes, the record of who did what (audit logs) is retained for 7 years [rag:observability.md#0].",
+      "status": "passed",
+      "notes": [
+        {
+          "source_id": "rag:security_policy.md#0",
+          "content": "# Security Policy\n\n## Data Retention\n\nCustomer data is retained for 90 days after account deletion, after which it is permanently\npurged from all systems including backups.\n\n## Access Control\n\nProduction database access requires a VPN connection plus hardware-key 2FA, and all access\nis logged and reviewed weekly by the security team.\n\n## Vulnerability Reporting\n\nSecurity vulnerabilities should be reported to security@company.example. Critical\nvulnerabilities are patched within 24 hours; medium/low severity within 30 days."
+        },
+        {
+          "source_id": "rag:observability.md#0",
+          "content": "# Logging, Metrics and Tracing\n\n## Logging\n\nServices log structured JSON to stdout; the log shipper handles collection. Every line carries\n`service`, `env`, `trace_id`, and `level`. Application logs are retained for 30 days in hot\nstorage and 13 months in cold storage. Audit logs are a separate stream, are immutable, and are\nretained for 7 years.\n\nLogging personal data is prohibited. Email addresses, phone numbers, and payment details must be\nmasked before they reach a log line; the shared logging library does this for known field names.\n\n## Metrics\n\nMetrics are exported in Prometheus format and scraped every 15 seconds. High-cardinality labels\nsuch as user IDs or request IDs must never be used as metric labels, because each distinct value\ncreates a new time series and can take down the me"
+        },
+        {
+          "source_id": "rag:privacy.md#0",
+          "content": "# Privacy and Data Subject Requests\n\n## Data Subject Requests\n\nCustomers may request a copy of their personal data or its deletion. Requests are logged in the\nprivacy portal and must be completed within 30 days of receipt. Identity is verified before any\ndata is released; a request from an address not on the account is never fulfilled directly.\n\nDeletion requests remove personal data from production systems within 30 days. Backups age out\nunder the normal retention schedule rather than being edited, and a restored backup re-applies the\ndeletion log before it serves traffic.\n\n## Data Protection Officer\n\nThe Data Protection Officer is reachable at privacy@company.example and must be consulted before\nany new processing of personal data for a purpose not covered by the privacy notice.\n\n## Priv"
+        },
+        {
+          "source_id": "rag:access_control.md#1",
+          "content": "hibited in every environment, development included.\n\n## Reviews\n\nAccess is reviewed quarterly. Managers attest to the entitlements held by their reports, and any\nentitlement unused for 90 days is revoked automatically. Revocation is reversible — the point is\nto keep the standing surface small, not to make people fill in forms.\n\n## Offboarding\n\nAccess is revoked within 1 hour of a departure being recorded in the HR system. This is automated\nand does not wait for a ticket. Shared credentials the departing employee could have known are\nrotated within 24 hours.\n\n## Production Data\n\nProduction customer data may not be copied into development or staging environments under any\ncircumstances. Engineers needing realistic data use the synthetic data generator, which produces\nstatistically similar re"
+        },
+        {
+          "source_id": "rag:observability.md#1",
+          "content": "ls\nsuch as user IDs or request IDs must never be used as metric labels, because each distinct value\ncreates a new time series and can take down the metrics cluster.\n\n## Tracing\n\nDistributed tracing uses OpenTelemetry. Head-based sampling keeps 10% of traces in production,\nand every trace that contains an error is kept regardless of sampling. Traces are retained for\n14 days.\n\n## Dashboards\n\nEach service owns a golden-signals dashboard showing latency, traffic, errors, and saturation."
+        }
+      ],
+      "latency_s": 18.3,
+      "grade": "correct",
+      "grade_reason": "The answer correctly states that audit logs (records of who did what) are retained for 7 years, matching the reference material.",
+      "claims": [
+        {
+          "supported": false,
+          "claim": "For compliance purposes, the record of who did what (audit logs) is retained for 7 years"
+        }
+      ],
+      "gold_cited": true,
+      "sanity_grade": "incorrect"
+    },
+    {
+      "id": "pp-03",
+      "type": "paraphrase",
+      "question": "How much money can a support agent give back to a customer without asking anyone?",
+      "report": "A support agent can issue refunds up to $500 without asking anyone (without approval) [rag:billing_operations.md#1][rag:billing_operations.md#0].",
+      "status": "passed",
+      "notes": [
+        {
+          "source_id": "rag:billing_operations.md#1",
+          "content": "ormal retention policy applies.\n\n## Refunds\n\nSupport may issue refunds up to $500 without approval. Refunds above $500 need approval from a\nbilling operations lead, and refunds above $5,000 need finance approval. Refunds are always issued\nto the original payment method.\n\n## Currency\n\nPrices are stored in minor units (cents) as integers. Floating-point types are never used for\nmoney anywhere in the codebase."
+        },
+        {
+          "source_id": "rag:support_escalation.md#0",
+          "content": "# Customer Support Escalation\n\n## Support Tiers\n\nTier 1 support handles account questions, billing questions, and known issues with documented\nworkarounds. Tier 2 support reproduces reported bugs, gathers logs and trace IDs, and files\nengineering tickets. Only Tier 2 may escalate to engineering.\n\n## Response Targets\n\nEnterprise customers receive a first response within 1 hour for urgent tickets and within\n4 business hours for normal tickets. Standard-plan customers receive a first response within\n1 business day. These are response targets, not resolution targets.\n\n## Escalating to Engineering\n\nAn escalation must include the customer's account ID, the `trace_id` from a failing request, the\nsteps to reproduce, and the business impact. Escalations missing a trace ID are returned to\nsupport. E"
+        },
+        {
+          "source_id": "rag:billing_operations.md#0",
+          "content": "# Billing Operations\n\n## Invoicing\n\nInvoices are generated on the customer's billing anniversary at 00:00 UTC. Usage-based charges\nare computed from the ledger at that moment, so usage recorded after midnight lands on the next\ninvoice. Invoices are immutable once issued; corrections are made with a credit note.\n\n## Failed Payments and Dunning\n\nWhen an automatic payment fails, the dunning process retries the card on days 1, 3, 5 and 7 after\nthe failure, emailing the customer before each retry. If every retry fails, the subscription moves\nto past-due and paid features are suspended on day 14. The account is not deleted; data is kept\nuntil the normal retention policy applies.\n\n## Refunds\n\nSupport may issue refunds up to $500 without approval. Refunds above $500 need approval from a\nbilling op"
+        },
+        {
+          "source_id": "rag:privacy.md#0",
+          "content": "# Privacy and Data Subject Requests\n\n## Data Subject Requests\n\nCustomers may request a copy of their personal data or its deletion. Requests are logged in the\nprivacy portal and must be completed within 30 days of receipt. Identity is verified before any\ndata is released; a request from an address not on the account is never fulfilled directly.\n\nDeletion requests remove personal data from production systems within 30 days. Backups age out\nunder the normal retention schedule rather than being edited, and a restored backup re-applies the\ndeletion log before it serves traffic.\n\n## Data Protection Officer\n\nThe Data Protection Officer is reachable at privacy@company.example and must be consulted before\nany new processing of personal data for a purpose not covered by the privacy notice.\n\n## Priv"
+        },
+        {
+          "source_id": "rag:incident_response.md#1",
+          "content": "5%, or a\nsingle-tenant issue with a viable workaround. File a ticket; no page. Handled in the next\nbusiness day triage.\n\n**SEV4** — Cosmetic defects, documentation errors, and issues with no customer impact. Tracked\nin the normal backlog.\n\n## Declaring an Incident\n\nAnyone may declare an incident. Over-declaring is explicitly preferred to under-declaring, and\nthere is no penalty for a severity that is later downgraded. The declarer becomes Incident\nCommander until they formally hand off. The Incident Commander does not debug — the job is\ncoordination, communication, and deciding when to page for more help.\n\n## Roles\n\n- **Incident Commander** — owns the incident, runs the bridge, and decides between mitigation\n  and root-cause investigation. Mitigation always wins during an active incident."
+        }
+      ],
+      "latency_s": 16.5,
+      "grade": "correct",
+      "grade_reason": "The answer correctly states that support agents can issue refunds up to $500 without approval, matching the reference material.",
+      "claims": [
+        {
+          "supported": true,
+          "claim": "A support agent can issue refunds up to $500 without asking anyone (without approval)"
+        }
+      ],
+      "gold_cited": true,
+      "sanity_grade": "incorrect"
+    },
+    {
+      "id": "pp-04",
+      "type": "paraphrase",
+      "question": "What happens when a customer's card keeps getting declined at renewal time?",
+      "report": "When a customer's card is declined at renewal time, the following process occurs:\n\n* **Retry Process:** An automatic dunning process retries the card on days 1, 3, 5, and 7 following the failure [rag:billing_operations.md#0]. The customer is emailed prior to each retry [rag:billing_operations.md#0].\n* **Past-Due and Suspension:** If all retry attempts fail, the subscription is moved to a past-due status and paid features are suspended on day 14 [rag:billing_operations.md#0].\n* **Account Status:** The account is not deleted due to payment failures; instead, data is retained until the normal retention policy applies [rag:billing_operations.md#0].",
+      "status": "passed",
+      "notes": [
+        {
+          "source_id": "rag:billing_operations.md#0",
+          "content": "# Billing Operations\n\n## Invoicing\n\nInvoices are generated on the customer's billing anniversary at 00:00 UTC. Usage-based charges\nare computed from the ledger at that moment, so usage recorded after midnight lands on the next\ninvoice. Invoices are immutable once issued; corrections are made with a credit note.\n\n## Failed Payments and Dunning\n\nWhen an automatic payment fails, the dunning process retries the card on days 1, 3, 5 and 7 after\nthe failure, emailing the customer before each retry. If every retry fails, the subscription moves\nto past-due and paid features are suspended on day 14. The account is not deleted; data is kept\nuntil the normal retention policy applies.\n\n## Refunds\n\nSupport may issue refunds up to $500 without approval. Refunds above $500 need approval from a\nbilling op"
+        },
+        {
+          "source_id": "rag:billing_operations.md#1",
+          "content": "ormal retention policy applies.\n\n## Refunds\n\nSupport may issue refunds up to $500 without approval. Refunds above $500 need approval from a\nbilling operations lead, and refunds above $5,000 need finance approval. Refunds are always issued\nto the original payment method.\n\n## Currency\n\nPrices are stored in minor units (cents) as integers. Floating-point types are never used for\nmoney anywhere in the codebase."
+        },
+        {
+          "source_id": "rag:privacy.md#0",
+          "content": "# Privacy and Data Subject Requests\n\n## Data Subject Requests\n\nCustomers may request a copy of their personal data or its deletion. Requests are logged in the\nprivacy portal and must be completed within 30 days of receipt. Identity is verified before any\ndata is released; a request from an address not on the account is never fulfilled directly.\n\nDeletion requests remove personal data from production systems within 30 days. Backups age out\nunder the normal retention schedule rather than being edited, and a restored backup re-applies the\ndeletion log before it serves traffic.\n\n## Data Protection Officer\n\nThe Data Protection Officer is reachable at privacy@company.example and must be consulted before\nany new processing of personal data for a purpose not covered by the privacy notice.\n\n## Priv"
+        },
+        {
+          "source_id": "rag:support_escalation.md#0",
+          "content": "# Customer Support Escalation\n\n## Support Tiers\n\nTier 1 support handles account questions, billing questions, and known issues with documented\nworkarounds. Tier 2 support reproduces reported bugs, gathers logs and trace IDs, and files\nengineering tickets. Only Tier 2 may escalate to engineering.\n\n## Response Targets\n\nEnterprise customers receive a first response within 1 hour for urgent tickets and within\n4 business hours for normal tickets. Standard-plan customers receive a first response within\n1 business day. These are response targets, not resolution targets.\n\n## Escalating to Engineering\n\nAn escalation must include the customer's account ID, the `trace_id` from a failing request, the\nsteps to reproduce, and the business impact. Escalations missing a trace ID are returned to\nsupport. E"
+        },
+        {
+          "source_id": "rag:error_codes.md#2",
+          "content": "Payment Errors\n\n- `PAY-4012` — the card was declined by the issuer. Safe to retry with a different card only.\n- `PAY-4015` — the payment requires 3-D Secure authentication; redirect the customer to the\n  returned `challenge_url`.\n- `PAY-5030` — the payment processor is unavailable. Retry with exponential backoff; the request\n  is idempotent if an idempotency key was supplied.\n\n## Server Errors\n\n- `SYS-5000` — an unexpected internal error. Includes a `trace_id` that support can use to find\n  the request in the tracing system.\n- `SYS-5031` — the service is in read-only maintenance mode. Writes are rejected, reads succeed."
+        },
+        {
+          "source_id": "rag:architecture_overview.md#1",
+          "content": "It reads from the ledger but never writes\n  balance changes directly.\n- `notify-svc` — email, SMS, and push notifications, with per-user preference checks.\n- `search-svc` — full-text search over customer records, rebuilt from the event bus.\n\n## Event Bus\n\nEvents are published to Kafka topics named `<domain>.<entity>.<event>`, for example\n`billing.invoice.paid`. Topics retain events for 7 days. Consumers must be idempotent, since\nevents can be redelivered after a consumer restart.\n\n## Datastores\n\nTransactional data lives in PostgreSQL. Caching uses Redis with a default TTL of 5 minutes;\nnothing may treat the cache as a source of truth."
+        }
+      ],
+      "latency_s": 16.8,
+      "grade": "correct",
+      "grade_reason": "The answer accurately and comprehensively covers the retry process, suspension, and account status upon card failure based on the reference material.",
+      "claims": [
+        {
+          "claim": "An automatic dunning process retries the card on days 1, 3, 5, and 7 following the failure",
+          "supported": true
+        },
+        {
+          "supported": true,
+          "claim": "The customer is emailed prior to each retry"
+        },
+        {
+          "claim": "If all retry attempts fail, the subscription is moved to a past-due status and paid features are suspended on day 14",
+          "supported": true
+        },
+        {
+          "claim": "The account is not deleted due to payment failures; instead, data is retained until the normal retention policy applies",
+          "supported": true
+        }
+      ],
+      "gold_cited": true,
+      "sanity_grade": "incorrect"
+    },
+    {
+      "id": "pp-05",
+      "type": "paraphrase",
+      "question": "When can a new hire start taking pages?",
+      "report": "Based on the provided facts, a new hire cannot join the on-call rotation (and therefore cannot start taking pages) within their first 8 weeks [rag:onboarding.md#0][rag:onboarding.md#1].",
+      "status": "passed",
+      "notes": [
+        {
+          "source_id": "rag:oncall_runbook.md#0",
+          "content": "# On-call Runbook\n\n## Rotation\n\nOn-call is a weekly rotation running Monday 09:00 UTC to the following Monday 09:00 UTC. Each\nservice has a primary and a secondary. The primary acknowledges pages within 5 minutes; an\nunacknowledged page escalates to the secondary after 10 minutes, then to the engineering manager\nafter a further 10 minutes.\n\nNobody is on-call more than one week in any four-week period. Engineers paged outside business\nhours take compensatory time off in the following week, and this is expected rather than optional.\n\n## Handover\n\nHandover happens Monday morning before the rotation flips. The outgoing primary writes a summary\ncovering incidents during the week, alerts that fired without warranting action, deploys still\nbeing watched, and any known-fragile areas. The incoming"
+        },
+        {
+          "source_id": "rag:onboarding.md#0",
+          "content": "# Engineer Onboarding\n\n## First Week\n\nNew engineers receive a laptop with the standard image already enrolled in device management.\nOn day one they are assigned an onboarding buddy from their team, who is their first point of\ncontact for questions for the first six weeks. By the end of the first week a new engineer should\nhave the development environment running and a small change merged to production.\n\n## First Month\n\nIn the first month new engineers complete the security awareness training, the incident response\ntraining, and read the runbooks for their team's services. They shadow one on-call week as an\nobserver before joining the rotation; nobody joins the on-call rotation within their first 8 weeks.\n\n## Access\n\nAccess is requested through the access broker using role templates, so a n"
+        },
+        {
+          "source_id": "rag:onboarding.md#1",
+          "content": "; nobody joins the on-call rotation within their first 8 weeks.\n\n## Access\n\nAccess is requested through the access broker using role templates, so a new backend engineer\ngets the same baseline entitlements as their peers without custom tickets.\n\n## Feedback\n\nThe onboarding checklist is owned by the developer experience team. New engineers are asked for\nfeedback at 30 and 90 days, and every friction point reported is either fixed or explained in the\nchecklist."
+        },
+        {
+          "source_id": "rag:engineering_handbook.md#0",
+          "content": "# Engineering Handbook\n\n## Deployment Process\n\nAll services deploy via GitHub Actions on merge to `main`. A deployment first runs the test\nsuite, then builds a Docker image, then rolls out via a blue-green strategy with automatic\nrollback if error rates exceed 2% in the first 5 minutes.\n\n## On-Call Rotation\n\nThe on-call rotation is weekly, starting every Monday at 9:00 AM local time. The primary\non-call engineer is paged first; if there is no acknowledgment within 10 minutes, the\nsecondary on-call engineer is paged.\n\n## Incident Severity Levels\n\n- SEV-1: full outage or data loss, page immediately, war room required.\n- SEV-2: partial degradation affecting a subset of users, page during business hours.\n- SEV-3: minor issue with a workaround available, ticket only, no page."
+        },
+        {
+          "source_id": "rag:oncall_runbook.md#1",
+          "content": "vering incidents during the week, alerts that fired without warranting action, deploys still\nbeing watched, and any known-fragile areas. The incoming primary confirms receipt in writing.\n\n## Common Procedures\n\n**Elevated 5xx from the API gateway.** Check the deploy log first — most elevated error rates\nfollow a deploy within the previous 30 minutes. If a recent deploy correlates, roll back before\ninvestigating. Rollback takes about 90 seconds and is always reversible.\n\n**Database connection pool exhaustion.** Symptoms are rising latency with flat CPU. Check for a\nlong-running migration or a query without an index. Increasing pool size is a temporary\nmitigation, not a fix, and requires a follow-up ticket.\n\n**Certificate expiry.** Certificates auto-renew 30 days before expiry. A renewal fail"
+        }
+      ],
+      "latency_s": 19.2,
+      "grade": "correct",
+      "grade_reason": "The answer correctly states that a new hire cannot join the on-call rotation within their first 8 weeks, accurately reflecting the reference material.",
+      "claims": [
+        {
+          "supported": true,
+          "claim": "a new hire cannot join the on-call rotation within their first 8 weeks"
+        }
+      ],
+      "gold_cited": true,
+      "sanity_grade": "incorrect"
+    },
+    {
+      "id": "pp-06",
+      "type": "paraphrase",
+      "question": "How big should a change be before I ask a colleague to look at it?",
+      "report": "Pull requests should be small enough to be reviewed in a single sitting [rag:code_review.md#0]. As a specific guideline, this means the change should be under 400 changed lines, excluding generated files [rag:code_review.md#0].",
+      "status": "passed",
+      "notes": [
+        {
+          "source_id": "rag:code_review.md#0",
+          "content": "# Code Review Guidelines\n\n## Requirements\n\nEvery change to a production repository goes through a pull request. Changes to Tier 1 services\nneed two approvals, at least one from a code owner; everything else needs one. Authors may not\napprove their own changes, and approvals are dismissed automatically when new commits are pushed.\n\n## Size\n\nPull requests should be small enough to review in one sitting — as a guideline, under 400 changed\nlines excluding generated files. Large refactors are split into a sequence of mechanical changes\nthat each keep the build green.\n\n## Turnaround\n\nReviewers respond within one business day. A response can be a review, a question, or a note\nthat someone else is better placed to review, but silence is not acceptable. Blocking a change\nrequires an explanation of"
+        },
+        {
+          "source_id": "rag:engineering_handbook.md#0",
+          "content": "# Engineering Handbook\n\n## Deployment Process\n\nAll services deploy via GitHub Actions on merge to `main`. A deployment first runs the test\nsuite, then builds a Docker image, then rolls out via a blue-green strategy with automatic\nrollback if error rates exceed 2% in the first 5 minutes.\n\n## On-Call Rotation\n\nThe on-call rotation is weekly, starting every Monday at 9:00 AM local time. The primary\non-call engineer is paged first; if there is no acknowledgment within 10 minutes, the\nsecondary on-call engineer is paged.\n\n## Incident Severity Levels\n\n- SEV-1: full outage or data loss, page immediately, war room required.\n- SEV-2: partial degradation affecting a subset of users, page during business hours.\n- SEV-3: minor issue with a workaround available, ticket only, no page."
+        },
+        {
+          "source_id": "rag:deployment.md#1",
+          "content": "ter. Freezes exist because the people who understand a change are least available to\nfix it at those times. Emergency fixes during a freeze require sign-off from the on-call\nengineering manager and a note in the incident channel.\n\n## Database Migrations\n\nMigrations deploy separately from application code and must be backwards-compatible with the\ncurrently running version. Adding a column is safe; dropping one requires two deploys — first\nstop writing to it, then remove it in a later release. A migration that locks a table for more\nthan one second must run during a maintenance window.\n\n## Feature Flags\n\nRisky changes ship behind a flag, dark by default, and roll out by percentage. A flag fully\nrolled out for 30 days is considered permanent and must be removed from the code. Stale flags\nare"
+        },
+        {
+          "source_id": "rag:code_review.md#1",
+          "content": "view, a question, or a note\nthat someone else is better placed to review, but silence is not acceptable. Blocking a change\nrequires an explanation of what would unblock it.\n\n## What Reviewers Check\n\nCorrectness first, then whether the change is tested, then clarity. Style issues that a linter\ncould catch belong in the linter configuration, not in review comments. Comments prefixed with\n`nit:` are optional and never block a merge.\n\n## Merging\n\nBranches are squash-merged so that the main branch history has one commit per change. The CI\npipeline must be green; overriding a failed check requires a written justification in the pull\nrequest."
+        },
+        {
+          "source_id": "rag:deployment.md#2",
+          "content": "y default, and roll out by percentage. A flag fully\nrolled out for 30 days is considered permanent and must be removed from the code. Stale flags\nare audited quarterly."
+        }
+      ],
+      "latency_s": 17.6,
+      "grade": "correct",
+      "grade_reason": "The answer correctly states that pull requests should be small enough to review in one sitting and provides the specific guideline of under 400 changed lines excluding generated files, matching the reference material.",
+      "claims": [
+        {
+          "claim": "Pull requests should be small enough to be reviewed in a single sitting",
+          "supported": true
+        },
+        {
+          "claim": "As a specific guideline, this means the change should be under 400 changed lines, excluding generated files",
+          "supported": true
+        }
+      ],
+      "gold_cited": true,
+      "sanity_grade": "incorrect"
+    },
+    {
+      "id": "pp-07",
+      "type": "paraphrase",
+      "question": "How long can an unreliable check keep being ignored before it is thrown away?",
+      "report": "An unreliable check (quarantined flaky test) can be ignored for up to 14 days before it is deleted, provided it is not fixed within that timeframe [rag:testing_strategy.md#1].",
+      "status": "passed",
+      "notes": [
+        {
+          "source_id": "rag:testing_strategy.md#1",
+          "content": "ee flaky failures in a week: they keep running but no longer\nblock merges, and a ticket is filed with the owning team. A quarantined test that is not fixed\nwithin 14 days is deleted.\n\n## Test Data\n\nTests never use production data. Fixtures are generated by factories, and integration tests use\nthe synthetic data generator for realistic volumes.\n\n## Performance Tests\n\nChanges to Tier 1 request paths run a load test in staging before release. A regression of more\nthan 10% in p99 latency blocks the release until it is explained."
+        },
+        {
+          "source_id": "rag:testing_strategy.md#0",
+          "content": "# Testing Strategy\n\n## Test Pyramid\n\nMost tests are unit tests that run in milliseconds without network or disk. Integration tests\nexercise a service against real dependencies started in containers. End-to-end tests are few,\ncover only critical user journeys such as sign-up and checkout, and run against staging.\n\n## Coverage\n\nNew code in Tier 1 services must keep line coverage at or above 80%. Coverage is a floor, not a\ngoal: a test that executes a line without asserting on its behaviour adds nothing.\n\n## Flaky Tests\n\nA test that fails and then passes on retry without a code change is flaky. Flaky tests are\nquarantined automatically after three flaky failures in a week: they keep running but no longer\nblock merges, and a ticket is filed with the owning team. A quarantined test that is not"
+        },
+        {
+          "source_id": "rag:deployment.md#2",
+          "content": "y default, and roll out by percentage. A flag fully\nrolled out for 30 days is considered permanent and must be removed from the code. Stale flags\nare audited quarterly."
+        },
+        {
+          "source_id": "rag:sre_practices.md#1",
+          "content": "get: 99.95% over 28 days permits roughly 20 minutes of downtime.\nWhile a service is within budget, the team ships freely. When a service exhausts its budget,\nfeature work stops and reliability work takes priority until the budget recovers. This is\nautomatic and does not require a manager approval.\n\nError budget policy exists to make the reliability-versus-velocity tradeoff explicit, rather\nthan leaving it to whoever argues most persuasively in a planning meeting.\n\n## Toil\n\nToil is manual, repetitive work that scales linearly with service growth and produces no lasting\nvalue. Teams cap toil at 50% of engineering time. Anything above that threshold triggers an\nautomation project in the following quarter.\n\n## Monitoring Philosophy\n\nAlert on symptoms, not causes. A page should mean a user is b"
+        }
+      ],
+      "latency_s": 15.6,
+      "grade": "correct",
+      "grade_reason": "The answer correctly identifies the 14-day limit for a quarantined flaky test before deletion, as stated in the reference material.",
+      "claims": [
+        {
+          "supported": true,
+          "claim": "An unreliable check (quarantined flaky test) can be ignored for up to 14 days before it is deleted, provided it is not fixed within that timeframe"
+        }
+      ],
+      "gold_cited": true,
+      "sanity_grade": "incorrect"
+    },
+    {
+      "id": "pp-08",
+      "type": "paraphrase",
+      "question": "If our main region goes dark, who decides to switch to the other one?",
+      "report": "If the main region goes dark, the decision to switch to the secondary region is a manual decision made by the Incident Commander [rag:backup_recovery.md#1].",
+      "status": "passed",
+      "notes": [
+        {
+          "source_id": "rag:oncall_runbook.md#1",
+          "content": "vering incidents during the week, alerts that fired without warranting action, deploys still\nbeing watched, and any known-fragile areas. The incoming primary confirms receipt in writing.\n\n## Common Procedures\n\n**Elevated 5xx from the API gateway.** Check the deploy log first — most elevated error rates\nfollow a deploy within the previous 30 minutes. If a recent deploy correlates, roll back before\ninvestigating. Rollback takes about 90 seconds and is always reversible.\n\n**Database connection pool exhaustion.** Symptoms are rising latency with flat CPU. Check for a\nlong-running migration or a query without an index. Increasing pool size is a temporary\nmitigation, not a fix, and requires a follow-up ticket.\n\n**Certificate expiry.** Certificates auto-renew 30 days before expiry. A renewal fail"
+        },
+        {
+          "source_id": "rag:incident_response.md#2",
+          "content": "— owns the incident, runs the bridge, and decides between mitigation\n  and root-cause investigation. Mitigation always wins during an active incident.\n- **Communications Lead** — owns the status page and customer-facing updates. Assigned for all\n  SEV1 and SEV2 incidents.\n- **Scribe** — maintains the timeline in the incident channel. Every state change, hypothesis,\n  and action gets a timestamped entry.\n\n## Postmortems\n\nEvery SEV1 and SEV2 requires a written postmortem within 5 business days. Postmortems are\nblameless: they describe what the system allowed to happen, not who typed the command. Each\npostmortem must produce at least one concrete action item with a named owner and a due date.\nAction items are tracked to completion and reviewed monthly.\n\nA SEV3 gets a postmortem only if the sa"
+        },
+        {
+          "source_id": "rag:engineering_handbook.md#0",
+          "content": "# Engineering Handbook\n\n## Deployment Process\n\nAll services deploy via GitHub Actions on merge to `main`. A deployment first runs the test\nsuite, then builds a Docker image, then rolls out via a blue-green strategy with automatic\nrollback if error rates exceed 2% in the first 5 minutes.\n\n## On-Call Rotation\n\nThe on-call rotation is weekly, starting every Monday at 9:00 AM local time. The primary\non-call engineer is paged first; if there is no acknowledgment within 10 minutes, the\nsecondary on-call engineer is paged.\n\n## Incident Severity Levels\n\n- SEV-1: full outage or data loss, page immediately, war room required.\n- SEV-2: partial degradation affecting a subset of users, page during business hours.\n- SEV-3: minor issue with a workaround available, ticket only, no page."
+        },
+        {
+          "source_id": "rag:backup_recovery.md#1",
+          "content": "s\n\nA backup that has never been restored is not a backup. Every Tier 1 database is restored into an\nisolated environment once a quarter, and the drill records the time taken against the RTO. A\ndrill that misses its RTO is treated as a SEV3 and gets an action item.\n\n## Regional Failover\n\nThe platform runs active-passive across two regions. Failover to the secondary region is a\nmanual decision made by the Incident Commander, because an automatic failover triggered by a\nnetwork partition can cause split-brain writes. The failover runbook is exercised twice a year\nduring a scheduled game day."
+        },
+        {
+          "source_id": "rag:incident_response.md#1",
+          "content": "5%, or a\nsingle-tenant issue with a viable workaround. File a ticket; no page. Handled in the next\nbusiness day triage.\n\n**SEV4** — Cosmetic defects, documentation errors, and issues with no customer impact. Tracked\nin the normal backlog.\n\n## Declaring an Incident\n\nAnyone may declare an incident. Over-declaring is explicitly preferred to under-declaring, and\nthere is no penalty for a severity that is later downgraded. The declarer becomes Incident\nCommander until they formally hand off. The Incident Commander does not debug — the job is\ncoordination, communication, and deciding when to page for more help.\n\n## Roles\n\n- **Incident Commander** — owns the incident, runs the bridge, and decides between mitigation\n  and root-cause investigation. Mitigation always wins during an active incident."
+        }
+      ],
+      "latency_s": 25.6,
+      "grade": "correct",
+      "grade_reason": "The answer accurately states that the decision is made manually by the Incident Commander, directly matching the reference material.",
+      "claims": [
+        {
+          "supported": true,
+          "claim": "If the main region goes dark, the decision to switch to the secondary region is a manual decision made by the Incident Commander"
+        }
+      ],
+      "gold_cited": true,
+      "sanity_grade": "incorrect"
+    },
+    {
+      "id": "pp-09",
+      "type": "paraphrase",
+      "question": "How much data can we afford to lose for our most critical systems?",
+      "report": "Based on the provided facts, the recovery point objective (RPO)—which represents the maximum amount of data we can afford to lose—for our most critical systems (Tier 1 systems) is 5 minutes [rag:backup_recovery.md#0].",
+      "status": "passed",
+      "notes": [
+        {
+          "source_id": "rag:backup_recovery.md#0",
+          "content": "# Backup and Disaster Recovery\n\n## Objectives\n\nTier 1 systems have a recovery point objective (RPO) of 5 minutes and a recovery time objective\n(RTO) of 1 hour. Tier 2 systems have an RPO of 1 hour and an RTO of 4 hours. Tier 3 systems are\nrestored on a best-effort basis within 24 hours.\n\n## Backups\n\nPrimary databases stream write-ahead logs continuously to object storage, which is what makes\nthe 5-minute RPO achievable. Full snapshots are taken nightly and retained for 35 days. Monthly\nsnapshots are retained for one year. Backups are copied to a second region and encrypted with a\nkey that is not stored in the primary region.\n\n## Restore Drills\n\nA backup that has never been restored is not a backup. Every Tier 1 database is restored into an\nisolated environment once a quarter, and the drill"
+        },
+        {
+          "source_id": "rag:backup_recovery.md#1",
+          "content": "s\n\nA backup that has never been restored is not a backup. Every Tier 1 database is restored into an\nisolated environment once a quarter, and the drill records the time taken against the RTO. A\ndrill that misses its RTO is treated as a SEV3 and gets an action item.\n\n## Regional Failover\n\nThe platform runs active-passive across two regions. Failover to the secondary region is a\nmanual decision made by the Incident Commander, because an automatic failover triggered by a\nnetwork partition can cause split-brain writes. The failover runbook is exercised twice a year\nduring a scheduled game day."
+        },
+        {
+          "source_id": "rag:engineering_handbook.md#0",
+          "content": "# Engineering Handbook\n\n## Deployment Process\n\nAll services deploy via GitHub Actions on merge to `main`. A deployment first runs the test\nsuite, then builds a Docker image, then rolls out via a blue-green strategy with automatic\nrollback if error rates exceed 2% in the first 5 minutes.\n\n## On-Call Rotation\n\nThe on-call rotation is weekly, starting every Monday at 9:00 AM local time. The primary\non-call engineer is paged first; if there is no acknowledgment within 10 minutes, the\nsecondary on-call engineer is paged.\n\n## Incident Severity Levels\n\n- SEV-1: full outage or data loss, page immediately, war room required.\n- SEV-2: partial degradation affecting a subset of users, page during business hours.\n- SEV-3: minor issue with a workaround available, ticket only, no page."
+        },
+        {
+          "source_id": "rag:oncall_runbook.md#1",
+          "content": "vering incidents during the week, alerts that fired without warranting action, deploys still\nbeing watched, and any known-fragile areas. The incoming primary confirms receipt in writing.\n\n## Common Procedures\n\n**Elevated 5xx from the API gateway.** Check the deploy log first — most elevated error rates\nfollow a deploy within the previous 30 minutes. If a recent deploy correlates, roll back before\ninvestigating. Rollback takes about 90 seconds and is always reversible.\n\n**Database connection pool exhaustion.** Symptoms are rising latency with flat CPU. Check for a\nlong-running migration or a query without an index. Increasing pool size is a temporary\nmitigation, not a fix, and requires a follow-up ticket.\n\n**Certificate expiry.** Certificates auto-renew 30 days before expiry. A renewal fail"
+        },
+        {
+          "source_id": "rag:alert_catalog.md#2",
+          "content": "hour,\nwhich would exhaust a 28-day budget in about 2 days. Treat it as at least a SEV2."
+        },
+        {
+          "source_id": "rag:sre_practices.md#1",
+          "content": "get: 99.95% over 28 days permits roughly 20 minutes of downtime.\nWhile a service is within budget, the team ships freely. When a service exhausts its budget,\nfeature work stops and reliability work takes priority until the budget recovers. This is\nautomatic and does not require a manager approval.\n\nError budget policy exists to make the reliability-versus-velocity tradeoff explicit, rather\nthan leaving it to whoever argues most persuasively in a planning meeting.\n\n## Toil\n\nToil is manual, repetitive work that scales linearly with service growth and produces no lasting\nvalue. Teams cap toil at 50% of engineering time. Anything above that threshold triggers an\nautomation project in the following quarter.\n\n## Monitoring Philosophy\n\nAlert on symptoms, not causes. A page should mean a user is b"
+        }
+      ],
+      "latency_s": 15.8,
+      "grade": "correct",
+      "grade_reason": "The answer correctly identifies Tier 1 as the most critical systems and states the RPO is 5 minutes, matching the reference material.",
+      "claims": [
+        {
+          "claim": "the recovery point objective (RPO) for Tier 1 systems is 5 minutes",
+          "supported": true
+        }
+      ],
+      "gold_cited": true,
+      "sanity_grade": "incorrect"
+    },
+    {
+      "id": "pp-10",
+      "type": "paraphrase",
+      "question": "Why don't we cap processor usage on containers?",
+      "report": "Based on the provided facts, CPU limits are not set on containers because doing so causes CPU throttling, which leads to latency spikes that are difficult to diagnose [rag:kubernetes_platform.md#0].",
+      "status": "passed",
+      "notes": [
+        {
+          "source_id": "rag:kubernetes_platform.md#1",
+          "content": "ng 70% CPU utilisation.\nEvery production deployment runs at least 3 replicas spread across availability zones, and has a\nPodDisruptionBudget allowing at most one replica to be unavailable during node maintenance.\n\n## Health Checks\n\nReadiness probes gate traffic; liveness probes restart stuck containers. A liveness probe must\nnever depend on a downstream service, or an outage in that dependency will restart every pod.\n\n## Images\n\nOnly images from the internal registry may run in production. Images are scanned on push, and an\nimage with a critical vulnerability older than 7 days is blocked from new deployments."
+        },
+        {
+          "source_id": "rag:kubernetes_platform.md#0",
+          "content": "# Kubernetes Platform\n\n## Clusters\n\nProduction runs in two clusters, `prod-east-1` and `prod-west-2`. Staging runs in `stage-east-1`,\nwhich mirrors production topology at smaller scale. Each team gets one namespace per environment,\nnamed after the team, and cannot create resources outside it.\n\n## Resource Requests\n\nEvery container must declare CPU and memory requests and a memory limit. CPU limits are not set,\nbecause CPU throttling under a limit causes latency spikes that are hard to diagnose. Pods without\nrequests are rejected by the admission controller.\n\n## Autoscaling\n\nServices scale horizontally with the HorizontalPodAutoscaler, targeting 70% CPU utilisation.\nEvery production deployment runs at least 3 replicas spread across availability zones, and has a\nPodDisruptionBudget allowing"
+        },
+        {
+          "source_id": "rag:cloud_costs.md#1",
+          "content": "ide 08:00–20:00 on weekdays unless a team opts out\nwith a reason. Idle load balancers and unattached disks are cleaned up automatically after 14 days.\n\n## Cost Reviews\n\nTeams whose spend grows more than 25% quarter over quarter present the cause at the monthly cost\nreview. Growth that tracks customer growth is expected; growth that does not is investigated."
+        },
+        {
+          "source_id": "rag:sre_practices.md#1",
+          "content": "get: 99.95% over 28 days permits roughly 20 minutes of downtime.\nWhile a service is within budget, the team ships freely. When a service exhausts its budget,\nfeature work stops and reliability work takes priority until the budget recovers. This is\nautomatic and does not require a manager approval.\n\nError budget policy exists to make the reliability-versus-velocity tradeoff explicit, rather\nthan leaving it to whoever argues most persuasively in a planning meeting.\n\n## Toil\n\nToil is manual, repetitive work that scales linearly with service growth and produces no lasting\nvalue. Teams cap toil at 50% of engineering time. Anything above that threshold triggers an\nautomation project in the following quarter.\n\n## Monitoring Philosophy\n\nAlert on symptoms, not causes. A page should mean a user is b"
+        },
+        {
+          "source_id": "rag:alert_catalog.md#2",
+          "content": "hour,\nwhich would exhaust a 28-day budget in about 2 days. Treat it as at least a SEV2."
+        }
+      ],
+      "latency_s": 14.7,
+      "grade": "correct",
+      "grade_reason": "The answer accurately states that CPU limits are not set because CPU throttling causes hard-to-diagnose latency spikes, matching the reference material.",
+      "claims": [
+        {
+          "claim": "CPU limits are not set on containers because doing so causes CPU throttling, which leads to latency spikes that are difficult to diagnose",
+          "supported": true
+        }
+      ],
+      "gold_cited": true,
+      "sanity_grade": "incorrect"
+    },
+    {
+      "id": "mh-01",
+      "type": "multi",
+      "question": "Compare how often third-party API keys rotate with how long bearer tokens last.",
+      "report": "Based on the provided facts, third-party API keys and bearer tokens have significantly different lifespans:\n\n* **Third-party API keys** rotate every 90 days [rag:secrets_management.md#0].\n* **Bearer tokens** expire much more quickly, lasting for 24 hours [rag:api_policies.md#0].",
+      "status": "passed",
+      "notes": [
+        {
+          "source_id": "rag:secrets_management.md#0",
+          "content": "# Secrets Management\n\n## Where Secrets Live\n\nAll secrets are stored in the central vault. Applications read them at startup through the\nworkload identity integration; secrets are never baked into container images, committed to\nrepositories, or passed as build arguments.\n\n## Rotation\n\nDatabase passwords rotate every 30 days automatically. Third-party API keys rotate every 90 days,\nand the owning team is notified 14 days before a key expires. TLS private keys rotate with their\ncertificates. Any secret that may have been exposed is rotated immediately, regardless of schedule.\n\n## Leaked Secrets\n\nRepositories are scanned for secrets on every push, and a push containing a recognised secret\npattern is blocked. If a secret reaches a repository anyway, treat it as compromised: rotate it\nfirst, the"
+        },
+        {
+          "source_id": "rag:api_policies.md#0",
+          "content": "# API Policies\n\n## Rate Limiting\n\nEach API key is limited to 1,000 requests per minute. Requests beyond this limit receive a\n429 response with a `Retry-After` header.\n\n## Versioning\n\nThe API is versioned via the URL path (`/v1/`, `/v2/`). A version is supported for at least\n12 months after a newer version is released, and deprecation notices are sent 90 days in\nadvance via the developer newsletter.\n\n## Authentication\n\nAll requests must include a bearer token issued via the `/auth/token` endpoint. Tokens\nexpire after 24 hours and must be refreshed using the associated refresh token."
+        },
+        {
+          "source_id": "rag:access_control.md#1",
+          "content": "hibited in every environment, development included.\n\n## Reviews\n\nAccess is reviewed quarterly. Managers attest to the entitlements held by their reports, and any\nentitlement unused for 90 days is revoked automatically. Revocation is reversible — the point is\nto keep the standing surface small, not to make people fill in forms.\n\n## Offboarding\n\nAccess is revoked within 1 hour of a departure being recorded in the HR system. This is automated\nand does not wait for a ticket. Shared credentials the departing employee could have known are\nrotated within 24 hours.\n\n## Production Data\n\nProduction customer data may not be copied into development or staging environments under any\ncircumstances. Engineers needing realistic data use the synthetic data generator, which produces\nstatistically similar re"
+        },
+        {
+          "source_id": "rag:security_policy.md#0",
+          "content": "# Security Policy\n\n## Data Retention\n\nCustomer data is retained for 90 days after account deletion, after which it is permanently\npurged from all systems including backups.\n\n## Access Control\n\nProduction database access requires a VPN connection plus hardware-key 2FA, and all access\nis logged and reviewed weekly by the security team.\n\n## Vulnerability Reporting\n\nSecurity vulnerabilities should be reported to security@company.example. Critical\nvulnerabilities are patched within 24 hours; medium/low severity within 30 days."
+        },
+        {
+          "source_id": "rag:observability.md#0",
+          "content": "# Logging, Metrics and Tracing\n\n## Logging\n\nServices log structured JSON to stdout; the log shipper handles collection. Every line carries\n`service`, `env`, `trace_id`, and `level`. Application logs are retained for 30 days in hot\nstorage and 13 months in cold storage. Audit logs are a separate stream, are immutable, and are\nretained for 7 years.\n\nLogging personal data is prohibited. Email addresses, phone numbers, and payment details must be\nmasked before they reach a log line; the shared logging library does this for known field names.\n\n## Metrics\n\nMetrics are exported in Prometheus format and scraped every 15 seconds. High-cardinality labels\nsuch as user IDs or request IDs must never be used as metric labels, because each distinct value\ncreates a new time series and can take down the me"
+        },
+        {
+          "source_id": "rag:access_control.md#0",
+          "content": "# Access Control\n\n## Principle\n\nAccess is granted on the principle of least privilege and is time-bounded by default. Standing\nproduction access is limited to the platform team; everyone else requests elevated access through\nthe access broker, which grants it for a maximum of 8 hours and logs every session.\n\n## Authentication\n\nAll employees authenticate through the company identity provider with hardware-backed\nmulti-factor authentication. SMS-based second factors were retired and are no longer accepted\nanywhere. Service accounts authenticate with short-lived tokens issued by the workload identity\nsystem; long-lived static credentials are prohibited in every environment, development included.\n\n## Reviews\n\nAccess is reviewed quarterly. Managers attest to the entitlements held by their repor"
+        }
+      ],
+      "latency_s": 16.6,
+      "grade": "correct",
+      "grade_reason": "The answer accurately compares third-party API keys (rotate every 90 days) with bearer tokens (expire after 24 hours) based on the reference material.",
+      "claims": [
+        {
+          "supported": true,
+          "claim": "Third-party API keys rotate every 90 days"
+        },
+        {
+          "claim": "Bearer tokens expire much more quickly, lasting for 24 hours",
+          "supported": true
+        }
+      ],
+      "gold_cited": true,
+      "sanity_grade": "incorrect"
+    },
+    {
+      "id": "mh-02",
+      "type": "multi",
+      "question": "When do certificates auto-renew, and when does the expiring-certificate alert fire?",
+      "report": "Based on the provided facts:\n\n* **Auto-renewal:** Certificates auto-renew 30 days before expiry [rag:oncall_runbook.md#2].\n* **Expiring-certificate alert:** The expiring-certificate alert (CertificateExpiringSoon) fires 14 days before a certificate expires [rag:alert_catalog.md#1].",
+      "status": "passed",
+      "notes": [
+        {
+          "source_id": "rag:oncall_runbook.md#2",
+          "content": "mporary\nmitigation, not a fix, and requires a follow-up ticket.\n\n**Certificate expiry.** Certificates auto-renew 30 days before expiry. A renewal failure pages\nat 14 days. Manual renewal is documented in the platform runbook and takes about 10 minutes.\n\n## What Not To Do\n\nDo not make an untested change to production during an incident in the hope that it helps.\nMitigate with a known-good action — roll back, fail over, shed load — and investigate afterwards."
+        },
+        {
+          "source_id": "rag:cloud_costs.md#1",
+          "content": "ide 08:00–20:00 on weekdays unless a team opts out\nwith a reason. Idle load balancers and unattached disks are cleaned up automatically after 14 days.\n\n## Cost Reviews\n\nTeams whose spend grows more than 25% quarter over quarter present the cause at the monthly cost\nreview. Growth that tracks customer growth is expected; growth that does not is investigated."
+        },
+        {
+          "source_id": "rag:billing_operations.md#0",
+          "content": "# Billing Operations\n\n## Invoicing\n\nInvoices are generated on the customer's billing anniversary at 00:00 UTC. Usage-based charges\nare computed from the ledger at that moment, so usage recorded after midnight lands on the next\ninvoice. Invoices are immutable once issued; corrections are made with a credit note.\n\n## Failed Payments and Dunning\n\nWhen an automatic payment fails, the dunning process retries the card on days 1, 3, 5 and 7 after\nthe failure, emailing the customer before each retry. If every retry fails, the subscription moves\nto past-due and paid features are suspended on day 14. The account is not deleted; data is kept\nuntil the normal retention policy applies.\n\n## Refunds\n\nSupport may issue refunds up to $500 without approval. Refunds above $500 need approval from a\nbilling op"
+        },
+        {
+          "source_id": "rag:alert_catalog.md#1",
+          "content": ". Cordon the node, then drain it; do not delete files by hand on a production node.\n\n## CertificateExpiringSoon\n\nFires 14 days before a certificate expires, which means automatic renewal at 30 days has already\nfailed. Follow the manual renewal procedure in the platform runbook.\n\n## ReplicationLagHigh\n\nFires when a database read replica is more than 30 seconds behind the primary. Reads that need\nfresh data must be routed to the primary until lag recovers. Persistent lag usually indicates a\nlong-running transaction on the primary.\n\n## ErrorBudgetBurnFast\n\nFires when a service is burning its error budget 14 times faster than sustainable over one hour,\nwhich would exhaust a 28-day budget in about 2 days. Treat it as at least a SEV2."
+        },
+        {
+          "source_id": "rag:alert_catalog.md#0",
+          "content": "# Alert Catalog\n\nEach alert below links to the first steps a responder should take. Alert names match the\nalerting rules exactly, so they can be searched from a page.\n\n## HighConsumerLag\n\nFires when a queue consumer group is more than 10,000 messages behind for 10 minutes. Check\nwhether consumers are crash-looping before scaling them out; adding replicas to a consumer that is\nfailing on a poison message only multiplies the failures. Poison messages are moved to the\ndead-letter queue with `queue-admin dlq move`.\n\n## DiskPressureCritical\n\nFires when a node's root volume passes 90% utilisation. The usual cause is container logs not\nbeing rotated. Cordon the node, then drain it; do not delete files by hand on a production node.\n\n## CertificateExpiringSoon\n\nFires 14 days before a certificate ex"
+        },
+        {
+          "source_id": "rag:sre_practices.md#2",
+          "content": "hold triggers an\nautomation project in the following quarter.\n\n## Monitoring Philosophy\n\nAlert on symptoms, not causes. A page should mean a user is being harmed right now, and it\nshould be actionable — if the responder can only wait, it should not have been a page. Every\nalert links to a runbook. An alert without a runbook is a defect, and is either documented or\ndeleted within two weeks.\n\nDashboards are for investigation; alerts are for interruption. The two are designed separately."
+        }
+      ],
+      "latency_s": 15.7,
+      "grade": "correct",
+      "grade_reason": "The answer accurately states that certificates auto-renew 30 days before expiry and the alert fires 14 days before expiry, matching the reference material.",
+      "claims": [
+        {
+          "claim": "Certificates auto-renew 30 days before expiry",
+          "supported": true
+        },
+        {
+          "claim": "The expiring-certificate alert (CertificateExpiringSoon) fires 14 days before a certificate expires",
+          "supported": true
+        }
+      ],
+      "gold_cited": true,
+      "sanity_grade": "incorrect"
+    },
+    {
+      "id": "mh-03",
+      "type": "multi",
+      "question": "How do data deletion requests interact with how long nightly backups are kept?",
+      "report": "Based on the provided facts, data deletion requests interact with nightly backups in the following ways:\n\n* **Retention Schedule:** When a data deletion request is processed, nightly backups are not edited; instead, they simply age out according to the normal retention schedule [rag:privacy.md#0].\n* **Restoration:** If a backup is restored, the deletion log is re-applied to it before the backup is allowed to serve traffic [rag:privacy.md#0].",
+      "status": "passed",
+      "notes": [
+        {
+          "source_id": "rag:privacy.md#0",
+          "content": "# Privacy and Data Subject Requests\n\n## Data Subject Requests\n\nCustomers may request a copy of their personal data or its deletion. Requests are logged in the\nprivacy portal and must be completed within 30 days of receipt. Identity is verified before any\ndata is released; a request from an address not on the account is never fulfilled directly.\n\nDeletion requests remove personal data from production systems within 30 days. Backups age out\nunder the normal retention schedule rather than being edited, and a restored backup re-applies the\ndeletion log before it serves traffic.\n\n## Data Protection Officer\n\nThe Data Protection Officer is reachable at privacy@company.example and must be consulted before\nany new processing of personal data for a purpose not covered by the privacy notice.\n\n## Priv"
+        },
+        {
+          "source_id": "rag:backup_recovery.md#0",
+          "content": "# Backup and Disaster Recovery\n\n## Objectives\n\nTier 1 systems have a recovery point objective (RPO) of 5 minutes and a recovery time objective\n(RTO) of 1 hour. Tier 2 systems have an RPO of 1 hour and an RTO of 4 hours. Tier 3 systems are\nrestored on a best-effort basis within 24 hours.\n\n## Backups\n\nPrimary databases stream write-ahead logs continuously to object storage, which is what makes\nthe 5-minute RPO achievable. Full snapshots are taken nightly and retained for 35 days. Monthly\nsnapshots are retained for one year. Backups are copied to a second region and encrypted with a\nkey that is not stored in the primary region.\n\n## Restore Drills\n\nA backup that has never been restored is not a backup. Every Tier 1 database is restored into an\nisolated environment once a quarter, and the drill"
+        },
+        {
+          "source_id": "rag:security_policy.md#0",
+          "content": "# Security Policy\n\n## Data Retention\n\nCustomer data is retained for 90 days after account deletion, after which it is permanently\npurged from all systems including backups.\n\n## Access Control\n\nProduction database access requires a VPN connection plus hardware-key 2FA, and all access\nis logged and reviewed weekly by the security team.\n\n## Vulnerability Reporting\n\nSecurity vulnerabilities should be reported to security@company.example. Critical\nvulnerabilities are patched within 24 hours; medium/low severity within 30 days."
+        },
+        {
+          "source_id": "rag:access_control.md#2",
+          "content": "aging environments under any\ncircumstances. Engineers needing realistic data use the synthetic data generator, which produces\nstatistically similar records containing no real customer information."
+        }
+      ],
+      "latency_s": 26.2,
+      "grade": "correct",
+      "grade_reason": "The answer accurately captures both points from the reference material: that backups age out according to their normal retention schedule rather than being edited, and that restored backups have the deletion log re-applied before serving traffic.",
+      "claims": [
+        {
+          "supported": true,
+          "claim": "When a data deletion request is processed, nightly backups are not edited; instead, they simply age out according to the normal retention schedule."
+        },
+        {
+          "supported": true,
+          "claim": "If a backup is restored, the deletion log is re-applied to it before the backup is allowed to serve traffic."
+        }
+      ],
+      "gold_cited": true,
+      "sanity_grade": "incorrect"
+    },
+    {
+      "id": "mh-04",
+      "type": "multi",
+      "question": "What severity is a failed restore drill, and how is an incident of that severity handled?",
+      "report": "A failed restore drill (specifically one that misses its RTO) is treated as a SEV3 severity [rag:backup_recovery.md#1]. \n\nA SEV3 incident is handled by filing a ticket with no page, and it is addressed during the next business day triage [rag:incident_response.md#0].",
+      "status": "passed",
+      "notes": [
+        {
+          "source_id": "rag:backup_recovery.md#1",
+          "content": "s\n\nA backup that has never been restored is not a backup. Every Tier 1 database is restored into an\nisolated environment once a quarter, and the drill records the time taken against the RTO. A\ndrill that misses its RTO is treated as a SEV3 and gets an action item.\n\n## Regional Failover\n\nThe platform runs active-passive across two regions. Failover to the secondary region is a\nmanual decision made by the Incident Commander, because an automatic failover triggered by a\nnetwork partition can cause split-brain writes. The failover runbook is exercised twice a year\nduring a scheduled game day."
+        },
+        {
+          "source_id": "rag:engineering_handbook.md#1",
+          "content": "on affecting a subset of users, page during business hours.\n- SEV-3: minor issue with a workaround available, ticket only, no page."
+        },
+        {
+          "source_id": "rag:incident_response.md#0",
+          "content": "# Incident Response\n\n## Severity Levels\n\n**SEV1** — Complete outage of a customer-facing service, confirmed data loss, or an active\nsecurity breach. Page the on-call primary immediately, open a bridge within 5 minutes, and\nnotify the executive on duty. Customer communication goes out within 30 minutes of declaration.\n\n**SEV2** — Major degradation affecting more than 20% of requests, or a complete outage of an\ninternal service that blocks engineering work. Page during business hours; open a bridge within\n15 minutes. The status page is updated within 1 hour.\n\n**SEV3** — Partial degradation affecting a subset of users, elevated error rates below 5%, or a\nsingle-tenant issue with a viable workaround. File a ticket; no page. Handled in the next\nbusiness day triage.\n\n**SEV4** — Cosmetic defects,"
+        },
+        {
+          "source_id": "rag:backup_recovery.md#0",
+          "content": "# Backup and Disaster Recovery\n\n## Objectives\n\nTier 1 systems have a recovery point objective (RPO) of 5 minutes and a recovery time objective\n(RTO) of 1 hour. Tier 2 systems have an RPO of 1 hour and an RTO of 4 hours. Tier 3 systems are\nrestored on a best-effort basis within 24 hours.\n\n## Backups\n\nPrimary databases stream write-ahead logs continuously to object storage, which is what makes\nthe 5-minute RPO achievable. Full snapshots are taken nightly and retained for 35 days. Monthly\nsnapshots are retained for one year. Backups are copied to a second region and encrypted with a\nkey that is not stored in the primary region.\n\n## Restore Drills\n\nA backup that has never been restored is not a backup. Every Tier 1 database is restored into an\nisolated environment once a quarter, and the drill"
+        },
+        {
+          "source_id": "rag:incident_response.md#1",
+          "content": "5%, or a\nsingle-tenant issue with a viable workaround. File a ticket; no page. Handled in the next\nbusiness day triage.\n\n**SEV4** — Cosmetic defects, documentation errors, and issues with no customer impact. Tracked\nin the normal backlog.\n\n## Declaring an Incident\n\nAnyone may declare an incident. Over-declaring is explicitly preferred to under-declaring, and\nthere is no penalty for a severity that is later downgraded. The declarer becomes Incident\nCommander until they formally hand off. The Incident Commander does not debug — the job is\ncoordination, communication, and deciding when to page for more help.\n\n## Roles\n\n- **Incident Commander** — owns the incident, runs the bridge, and decides between mitigation\n  and root-cause investigation. Mitigation always wins during an active incident."
+        },
+        {
+          "source_id": "rag:incident_response.md#2",
+          "content": "— owns the incident, runs the bridge, and decides between mitigation\n  and root-cause investigation. Mitigation always wins during an active incident.\n- **Communications Lead** — owns the status page and customer-facing updates. Assigned for all\n  SEV1 and SEV2 incidents.\n- **Scribe** — maintains the timeline in the incident channel. Every state change, hypothesis,\n  and action gets a timestamped entry.\n\n## Postmortems\n\nEvery SEV1 and SEV2 requires a written postmortem within 5 business days. Postmortems are\nblameless: they describe what the system allowed to happen, not who typed the command. Each\npostmortem must produce at least one concrete action item with a named owner and a due date.\nAction items are tracked to completion and reviewed monthly.\n\nA SEV3 gets a postmortem only if the sa"
+        },
+        {
+          "source_id": "rag:engineering_handbook.md#0",
+          "content": "# Engineering Handbook\n\n## Deployment Process\n\nAll services deploy via GitHub Actions on merge to `main`. A deployment first runs the test\nsuite, then builds a Docker image, then rolls out via a blue-green strategy with automatic\nrollback if error rates exceed 2% in the first 5 minutes.\n\n## On-Call Rotation\n\nThe on-call rotation is weekly, starting every Monday at 9:00 AM local time. The primary\non-call engineer is paged first; if there is no acknowledgment within 10 minutes, the\nsecondary on-call engineer is paged.\n\n## Incident Severity Levels\n\n- SEV-1: full outage or data loss, page immediately, war room required.\n- SEV-2: partial degradation affecting a subset of users, page during business hours.\n- SEV-3: minor issue with a workaround available, ticket only, no page."
+        }
+      ],
+      "latency_s": 16.1,
+      "grade": "correct",
+      "grade_reason": "The answer correctly identifies the severity as SEV3 and explains how it is handled according to the provided reference materials.",
+      "claims": [
+        {
+          "supported": true,
+          "claim": "A failed restore drill (specifically one that misses its RTO) is treated as a SEV3 severity"
+        },
+        {
+          "supported": true,
+          "claim": "A SEV3 incident is handled by filing a ticket with no page, and it is addressed during the next business day triage"
+        }
+      ],
+      "gold_cited": true,
+      "sanity_grade": "incorrect"
+    },
+    {
+      "id": "mh-05",
+      "type": "multi",
+      "question": "How must webhook receivers and Kafka consumers each cope with duplicate deliveries?",
+      "report": "Based on the provided facts, webhook receivers and Kafka consumers must cope with duplicate deliveries in the following ways:\n\n* **Webhook receivers** must deduplicate using the `event_id` field because events are delivered at least once [rag:webhooks.md#0].\n* **Kafka consumers** must be idempotent because events can be redelivered after a consumer restart [rag:architecture_overview.md#1].",
+      "status": "passed",
+      "notes": [
+        {
+          "source_id": "rag:webhooks.md#0",
+          "content": "# Webhooks\n\n## Delivery\n\nWebhook events are delivered as HTTP POST requests with a JSON body. An endpoint must respond\nwith a 2xx status within 10 seconds, or the delivery is treated as failed. Events are delivered\nat least once, so receivers must deduplicate using the `event_id` field.\n\n## Retries\n\nFailed deliveries are retried with exponential backoff over 72 hours: after 1 minute, 5 minutes,\n30 minutes, 2 hours, and then every 6 hours until the window closes. After the final failure the\nevent is moved to the dead-letter view in the developer dashboard, where it can be replayed\nmanually for up to 30 days.\n\nAn endpoint that fails every delivery for 5 consecutive days is disabled automatically and the\naccount owner is emailed.\n\n## Signatures\n\nEvery request carries an `X-Signature-256` head"
+        },
+        {
+          "source_id": "rag:webhooks.md#1",
+          "content": "ery for 5 consecutive days is disabled automatically and the\naccount owner is emailed.\n\n## Signatures\n\nEvery request carries an `X-Signature-256` header: an HMAC-SHA256 of the raw request body, keyed\nwith the endpoint's signing secret. Receivers must verify the signature against the raw bytes\nbefore parsing JSON. Requests also carry `X-Webhook-Timestamp`; reject any request whose\ntimestamp is more than 5 minutes old to prevent replay attacks.\n\n## Throughput\n\nEach endpoint receives at most 25 concurrent deliveries. Events for a single object are\ndelivered in order; events across different objects are not ordered relative to each other."
+        },
+        {
+          "source_id": "rag:architecture_overview.md#1",
+          "content": "It reads from the ledger but never writes\n  balance changes directly.\n- `notify-svc` — email, SMS, and push notifications, with per-user preference checks.\n- `search-svc` — full-text search over customer records, rebuilt from the event bus.\n\n## Event Bus\n\nEvents are published to Kafka topics named `<domain>.<entity>.<event>`, for example\n`billing.invoice.paid`. Topics retain events for 7 days. Consumers must be idempotent, since\nevents can be redelivered after a consumer restart.\n\n## Datastores\n\nTransactional data lives in PostgreSQL. Caching uses Redis with a default TTL of 5 minutes;\nnothing may treat the cache as a source of truth."
+        },
+        {
+          "source_id": "rag:oncall_runbook.md#1",
+          "content": "vering incidents during the week, alerts that fired without warranting action, deploys still\nbeing watched, and any known-fragile areas. The incoming primary confirms receipt in writing.\n\n## Common Procedures\n\n**Elevated 5xx from the API gateway.** Check the deploy log first — most elevated error rates\nfollow a deploy within the previous 30 minutes. If a recent deploy correlates, roll back before\ninvestigating. Rollback takes about 90 seconds and is always reversible.\n\n**Database connection pool exhaustion.** Symptoms are rising latency with flat CPU. Check for a\nlong-running migration or a query without an index. Increasing pool size is a temporary\nmitigation, not a fix, and requires a follow-up ticket.\n\n**Certificate expiry.** Certificates auto-renew 30 days before expiry. A renewal fail"
+        },
+        {
+          "source_id": "rag:observability.md#0",
+          "content": "# Logging, Metrics and Tracing\n\n## Logging\n\nServices log structured JSON to stdout; the log shipper handles collection. Every line carries\n`service`, `env`, `trace_id`, and `level`. Application logs are retained for 30 days in hot\nstorage and 13 months in cold storage. Audit logs are a separate stream, are immutable, and are\nretained for 7 years.\n\nLogging personal data is prohibited. Email addresses, phone numbers, and payment details must be\nmasked before they reach a log line; the shared logging library does this for known field names.\n\n## Metrics\n\nMetrics are exported in Prometheus format and scraped every 15 seconds. High-cardinality labels\nsuch as user IDs or request IDs must never be used as metric labels, because each distinct value\ncreates a new time series and can take down the me"
+        }
+      ],
+      "latency_s": 14.9,
+      "grade": "correct",
+      "grade_reason": "The answer correctly states that webhook receivers must deduplicate using the `event_id` field and that Kafka consumers must be idempotent, matching the provided reference material.",
+      "claims": [
+        {
+          "supported": true,
+          "claim": "Webhook receivers must deduplicate using the event_id field because events are delivered at least once"
+        },
+        {
+          "claim": "Kafka consumers must be idempotent because events can be redelivered after a consumer restart",
+          "supported": true
+        }
+      ],
+      "gold_cited": true,
+      "sanity_grade": "incorrect"
+    },
+    {
+      "id": "mh-06",
+      "type": "multi",
+      "question": "How does the per-key rate limit relate to the account-wide concurrency cap?",
+      "report": "The provided facts do not contain any information about the per-key rate limit or the account-wide concurrency cap, nor do they explain how the two relate to one another. \n\nTo fully answer the question, information regarding both limits and their systemic relationship is missing.",
+      "status": "passed",
+      "notes": [
+        {
+          "source_id": "rag:architecture_overview.md#1",
+          "content": "It reads from the ledger but never writes\n  balance changes directly.\n- `notify-svc` — email, SMS, and push notifications, with per-user preference checks.\n- `search-svc` — full-text search over customer records, rebuilt from the event bus.\n\n## Event Bus\n\nEvents are published to Kafka topics named `<domain>.<entity>.<event>`, for example\n`billing.invoice.paid`. Topics retain events for 7 days. Consumers must be idempotent, since\nevents can be redelivered after a consumer restart.\n\n## Datastores\n\nTransactional data lives in PostgreSQL. Caching uses Redis with a default TTL of 5 minutes;\nnothing may treat the cache as a source of truth."
+        },
+        {
+          "source_id": "rag:api_policies.md#0",
+          "content": "# API Policies\n\n## Rate Limiting\n\nEach API key is limited to 1,000 requests per minute. Requests beyond this limit receive a\n429 response with a `Retry-After` header.\n\n## Versioning\n\nThe API is versioned via the URL path (`/v1/`, `/v2/`). A version is supported for at least\n12 months after a newer version is released, and deprecation notices are sent 90 days in\nadvance via the developer newsletter.\n\n## Authentication\n\nAll requests must include a bearer token issued via the `/auth/token` endpoint. Tokens\nexpire after 24 hours and must be refreshed using the associated refresh token."
+        },
+        {
+          "source_id": "rag:architecture_overview.md#0",
+          "content": "# Architecture Overview\n\n## Request Path\n\nPublic traffic enters through the CDN, which terminates TLS and forwards to the API gateway. The\ngateway authenticates the request, enforces per-key rate limits, and routes to backend services.\nServices communicate synchronously over gRPC with a default deadline of 2 seconds, and\nasynchronously through the event bus.\n\n## Core Services\n\n- `identity-svc` — users, sessions, API keys, and token issuance.\n- `ledger-svc` — the double-entry ledger that records every balance change. It is the source of\n  truth for money; no other service stores balances.\n- `billing-svc` — invoices, subscriptions, and dunning. It reads from the ledger but never writes\n  balance changes directly.\n- `notify-svc` — email, SMS, and push notifications, with per-user preference c"
+        },
+        {
+          "source_id": "rag:observability.md#1",
+          "content": "ls\nsuch as user IDs or request IDs must never be used as metric labels, because each distinct value\ncreates a new time series and can take down the metrics cluster.\n\n## Tracing\n\nDistributed tracing uses OpenTelemetry. Head-based sampling keeps 10% of traces in production,\nand every trace that contains an error is kept regardless of sampling. Traces are retained for\n14 days.\n\n## Dashboards\n\nEach service owns a golden-signals dashboard showing latency, traffic, errors, and saturation."
+        },
+        {
+          "source_id": "rag:kubernetes_platform.md#0",
+          "content": "# Kubernetes Platform\n\n## Clusters\n\nProduction runs in two clusters, `prod-east-1` and `prod-west-2`. Staging runs in `stage-east-1`,\nwhich mirrors production topology at smaller scale. Each team gets one namespace per environment,\nnamed after the team, and cannot create resources outside it.\n\n## Resource Requests\n\nEvery container must declare CPU and memory requests and a memory limit. CPU limits are not set,\nbecause CPU throttling under a limit causes latency spikes that are hard to diagnose. Pods without\nrequests are rejected by the admission controller.\n\n## Autoscaling\n\nServices scale horizontally with the HorizontalPodAutoscaler, targeting 70% CPU utilisation.\nEvery production deployment runs at least 3 replicas spread across availability zones, and has a\nPodDisruptionBudget allowing"
+        },
+        {
+          "source_id": "rag:webhooks.md#1",
+          "content": "ery for 5 consecutive days is disabled automatically and the\naccount owner is emailed.\n\n## Signatures\n\nEvery request carries an `X-Signature-256` header: an HMAC-SHA256 of the raw request body, keyed\nwith the endpoint's signing secret. Receivers must verify the signature against the raw bytes\nbefore parsing JSON. Requests also carry `X-Webhook-Timestamp`; reject any request whose\ntimestamp is more than 5 minutes old to prevent replay attacks.\n\n## Throughput\n\nEach endpoint receives at most 25 concurrent deliveries. Events for a single object are\ndelivered in order; events across different objects are not ordered relative to each other."
+        },
+        {
+          "source_id": "rag:alert_catalog.md#2",
+          "content": "hour,\nwhich would exhaust a 28-day budget in about 2 days. Treat it as at least a SEV2."
+        }
+      ],
+      "latency_s": 15.1,
+      "grade": "incorrect",
+      "grade_reason": "The reference material actually does contain information about both the per-key rate limit and the account-wide concurrency cap (stating they are separate), so the student's claim that the facts contain no information is wrong.",
+      "claims": [],
+      "gold_cited": false,
+      "sanity_grade": "incorrect"
+    },
+    {
+      "id": "mh-07",
+      "type": "multi",
+      "question": "What are the latency SLOs for Tier 1 services, and what p99 regression blocks a release?",
+      "report": "Based on the provided facts, the latency SLOs and release blocking criteria are as follows:\n\n* **Latency SLOs for Tier 1 services:** Tier 1 services have a p99 latency SLO of under 300ms [rag:sre_practices.md#0].\n* **p99 regression that blocks a release:** A regression of more than 10% in p99 latency blocks a release until it is explained [rag:testing_strategy.md#1].",
+      "status": "passed",
+      "notes": [
+        {
+          "source_id": "rag:sre_practices.md#0",
+          "content": "# SRE Practices\n\n## Service Level Objectives\n\nEvery user-facing service defines an SLO covering availability and latency. Availability is\nmeasured as the ratio of successful requests to total requests over a rolling 28-day window.\nLatency SLOs are expressed at the 99th percentile, never the mean, because the mean hides the\ntail that users actually notice.\n\nCurrent targets:\n\n- Tier 1 services (auth, API gateway, billing): 99.95% availability, p99 under 300ms\n- Tier 2 services (search, notifications): 99.9% availability, p99 under 800ms\n- Tier 3 internal services: 99.5% availability, no latency SLO\n\n## Error Budgets\n\nAn SLO implies an error budget: 99.95% over 28 days permits roughly 20 minutes of downtime.\nWhile a service is within budget, the team ships freely. When a service exhausts its"
+        },
+        {
+          "source_id": "rag:sre_practices.md#1",
+          "content": "get: 99.95% over 28 days permits roughly 20 minutes of downtime.\nWhile a service is within budget, the team ships freely. When a service exhausts its budget,\nfeature work stops and reliability work takes priority until the budget recovers. This is\nautomatic and does not require a manager approval.\n\nError budget policy exists to make the reliability-versus-velocity tradeoff explicit, rather\nthan leaving it to whoever argues most persuasively in a planning meeting.\n\n## Toil\n\nToil is manual, repetitive work that scales linearly with service growth and produces no lasting\nvalue. Teams cap toil at 50% of engineering time. Anything above that threshold triggers an\nautomation project in the following quarter.\n\n## Monitoring Philosophy\n\nAlert on symptoms, not causes. A page should mean a user is b"
+        },
+        {
+          "source_id": "rag:support_escalation.md#0",
+          "content": "# Customer Support Escalation\n\n## Support Tiers\n\nTier 1 support handles account questions, billing questions, and known issues with documented\nworkarounds. Tier 2 support reproduces reported bugs, gathers logs and trace IDs, and files\nengineering tickets. Only Tier 2 may escalate to engineering.\n\n## Response Targets\n\nEnterprise customers receive a first response within 1 hour for urgent tickets and within\n4 business hours for normal tickets. Standard-plan customers receive a first response within\n1 business day. These are response targets, not resolution targets.\n\n## Escalating to Engineering\n\nAn escalation must include the customer's account ID, the `trace_id` from a failing request, the\nsteps to reproduce, and the business impact. Escalations missing a trace ID are returned to\nsupport. E"
+        },
+        {
+          "source_id": "rag:observability.md#1",
+          "content": "ls\nsuch as user IDs or request IDs must never be used as metric labels, because each distinct value\ncreates a new time series and can take down the metrics cluster.\n\n## Tracing\n\nDistributed tracing uses OpenTelemetry. Head-based sampling keeps 10% of traces in production,\nand every trace that contains an error is kept regardless of sampling. Traces are retained for\n14 days.\n\n## Dashboards\n\nEach service owns a golden-signals dashboard showing latency, traffic, errors, and saturation."
+        },
+        {
+          "source_id": "rag:testing_strategy.md#1",
+          "content": "ee flaky failures in a week: they keep running but no longer\nblock merges, and a ticket is filed with the owning team. A quarantined test that is not fixed\nwithin 14 days is deleted.\n\n## Test Data\n\nTests never use production data. Fixtures are generated by factories, and integration tests use\nthe synthetic data generator for realistic volumes.\n\n## Performance Tests\n\nChanges to Tier 1 request paths run a load test in staging before release. A regression of more\nthan 10% in p99 latency blocks the release until it is explained."
+        },
+        {
+          "source_id": "rag:deployment.md#2",
+          "content": "y default, and roll out by percentage. A flag fully\nrolled out for 30 days is considered permanent and must be removed from the code. Stale flags\nare audited quarterly."
+        }
+      ],
+      "latency_s": 14.4,
+      "grade": "correct",
+      "grade_reason": "The answer correctly identifies the Tier 1 latency SLO (p99 under 300ms) and the p99 regression that blocks a release (>10% regression) based on the reference text.",
+      "claims": [
+        {
+          "claim": "Tier 1 services have a p99 latency SLO of under 300ms",
+          "supported": true
+        },
+        {
+          "supported": true,
+          "claim": "A regression of more than 10% in p99 latency blocks a release until it is explained"
+        }
+      ],
+      "gold_cited": true,
+      "sanity_grade": "incorrect"
+    },
+    {
+      "id": "mh-08",
+      "type": "multi",
+      "question": "What must a support escalation include, and how long are traces kept for looking them up?",
+      "report": "A support escalation must include the customer's account ID, the trace_id from a failing request, the steps to reproduce, and the business impact [rag:support_escalation.md#0]. Traces are kept for 14 days for looking them up [rag:observability.md#1].",
+      "status": "passed",
+      "notes": [
+        {
+          "source_id": "rag:support_escalation.md#1",
+          "content": "ID, the `trace_id` from a failing request, the\nsteps to reproduce, and the business impact. Escalations missing a trace ID are returned to\nsupport. Engineering acknowledges an escalation within 4 business hours.\n\nIf an escalation reveals an issue affecting many customers, the engineer declares an incident\nrather than working it as a ticket.\n\n## Customer Communication\n\nEngineers do not contact customers directly. All updates go through the support agent who owns\nthe ticket, so the customer hears one consistent voice."
+        },
+        {
+          "source_id": "rag:support_escalation.md#0",
+          "content": "# Customer Support Escalation\n\n## Support Tiers\n\nTier 1 support handles account questions, billing questions, and known issues with documented\nworkarounds. Tier 2 support reproduces reported bugs, gathers logs and trace IDs, and files\nengineering tickets. Only Tier 2 may escalate to engineering.\n\n## Response Targets\n\nEnterprise customers receive a first response within 1 hour for urgent tickets and within\n4 business hours for normal tickets. Standard-plan customers receive a first response within\n1 business day. These are response targets, not resolution targets.\n\n## Escalating to Engineering\n\nAn escalation must include the customer's account ID, the `trace_id` from a failing request, the\nsteps to reproduce, and the business impact. Escalations missing a trace ID are returned to\nsupport. E"
+        },
+        {
+          "source_id": "rag:incident_response.md#1",
+          "content": "5%, or a\nsingle-tenant issue with a viable workaround. File a ticket; no page. Handled in the next\nbusiness day triage.\n\n**SEV4** — Cosmetic defects, documentation errors, and issues with no customer impact. Tracked\nin the normal backlog.\n\n## Declaring an Incident\n\nAnyone may declare an incident. Over-declaring is explicitly preferred to under-declaring, and\nthere is no penalty for a severity that is later downgraded. The declarer becomes Incident\nCommander until they formally hand off. The Incident Commander does not debug — the job is\ncoordination, communication, and deciding when to page for more help.\n\n## Roles\n\n- **Incident Commander** — owns the incident, runs the bridge, and decides between mitigation\n  and root-cause investigation. Mitigation always wins during an active incident."
+        },
+        {
+          "source_id": "rag:oncall_runbook.md#1",
+          "content": "vering incidents during the week, alerts that fired without warranting action, deploys still\nbeing watched, and any known-fragile areas. The incoming primary confirms receipt in writing.\n\n## Common Procedures\n\n**Elevated 5xx from the API gateway.** Check the deploy log first — most elevated error rates\nfollow a deploy within the previous 30 minutes. If a recent deploy correlates, roll back before\ninvestigating. Rollback takes about 90 seconds and is always reversible.\n\n**Database connection pool exhaustion.** Symptoms are rising latency with flat CPU. Check for a\nlong-running migration or a query without an index. Increasing pool size is a temporary\nmitigation, not a fix, and requires a follow-up ticket.\n\n**Certificate expiry.** Certificates auto-renew 30 days before expiry. A renewal fail"
+        },
+        {
+          "source_id": "rag:observability.md#0",
+          "content": "# Logging, Metrics and Tracing\n\n## Logging\n\nServices log structured JSON to stdout; the log shipper handles collection. Every line carries\n`service`, `env`, `trace_id`, and `level`. Application logs are retained for 30 days in hot\nstorage and 13 months in cold storage. Audit logs are a separate stream, are immutable, and are\nretained for 7 years.\n\nLogging personal data is prohibited. Email addresses, phone numbers, and payment details must be\nmasked before they reach a log line; the shared logging library does this for known field names.\n\n## Metrics\n\nMetrics are exported in Prometheus format and scraped every 15 seconds. High-cardinality labels\nsuch as user IDs or request IDs must never be used as metric labels, because each distinct value\ncreates a new time series and can take down the me"
+        },
+        {
+          "source_id": "rag:observability.md#1",
+          "content": "ls\nsuch as user IDs or request IDs must never be used as metric labels, because each distinct value\ncreates a new time series and can take down the metrics cluster.\n\n## Tracing\n\nDistributed tracing uses OpenTelemetry. Head-based sampling keeps 10% of traces in production,\nand every trace that contains an error is kept regardless of sampling. Traces are retained for\n14 days.\n\n## Dashboards\n\nEach service owns a golden-signals dashboard showing latency, traffic, errors, and saturation."
+        }
+      ],
+      "latency_s": 16.4,
+      "grade": "correct",
+      "grade_reason": "The answer correctly lists all required components of a support escalation and accurately states the 14-day retention period for traces based on the reference material.",
+      "claims": [
+        {
+          "claim": "A support escalation must include the customer's account ID, the trace_id from a failing request, the steps to reproduce, and the business impact",
+          "supported": true
+        },
+        {
+          "supported": false,
+          "claim": "Traces are kept for 14 days for looking them up"
+        }
+      ],
+      "gold_cited": true,
+      "sanity_grade": "incorrect"
+    }
+  ],
+  "negative_rows": [
+    {
+      "type": "off-topic",
+      "question": "What is the best pizza topping?",
+      "report": "The provided facts do not contain any information about what the best pizza topping is. Therefore, I cannot answer the question.",
+      "status": "passed",
+      "notes": [],
+      "latency_s": 42.8,
+      "no_fabrication": true
+    },
+    {
+      "type": "off-topic",
+      "question": "Who won the 2022 FIFA World Cup?",
+      "report": "The provided facts are insufficient to answer the question, as no facts have been provided.",
+      "status": "passed",
+      "notes": [],
+      "latency_s": 11.2,
+      "no_fabrication": true
+    },
+    {
+      "type": "off-topic",
+      "question": "How do I bake sourdough bread at home?",
+      "report": "Based on the provided facts, there is no information available on how to bake sourdough bread at home. Therefore, I cannot answer the question.",
+      "status": "passed",
+      "notes": [],
+      "latency_s": 14.5,
+      "no_fabrication": true
+    },
+    {
+      "type": "off-topic",
+      "question": "What is the capital of Australia?",
+      "report": "The provided facts are insufficient to answer the question, as no facts were provided. Therefore, I cannot state what the capital of Australia is based on the given information.",
+      "status": "passed",
+      "notes": [],
+      "latency_s": 13.1,
+      "no_fabrication": true
+    },
+    {
+      "type": "near-domain",
+      "question": "What is the parental leave policy?",
+      "report": "The provided facts do not contain any information about the parental leave policy. Therefore, the facts are insufficient to answer the question. What is missing is the company's policy documentation regarding parental leave.",
+      "status": "passed",
+      "notes": [
+        {
+          "source_id": "rag:privacy.md#0",
+          "content": "# Privacy and Data Subject Requests\n\n## Data Subject Requests\n\nCustomers may request a copy of their personal data or its deletion. Requests are logged in the\nprivacy portal and must be completed within 30 days of receipt. Identity is verified before any\ndata is released; a request from an address not on the account is never fulfilled directly.\n\nDeletion requests remove personal data from production systems within 30 days. Backups age out\nunder the normal retention schedule rather than being edited, and a restored backup re-applies the\ndeletion log before it serves traffic.\n\n## Data Protection Officer\n\nThe Data Protection Officer is reachable at privacy@company.example and must be consulted before\nany new processing of personal data for a purpose not covered by the privacy notice.\n\n## Priv"
+        },
+        {
+          "source_id": "rag:access_control.md#1",
+          "content": "hibited in every environment, development included.\n\n## Reviews\n\nAccess is reviewed quarterly. Managers attest to the entitlements held by their reports, and any\nentitlement unused for 90 days is revoked automatically. Revocation is reversible — the point is\nto keep the standing surface small, not to make people fill in forms.\n\n## Offboarding\n\nAccess is revoked within 1 hour of a departure being recorded in the HR system. This is automated\nand does not wait for a ticket. Shared credentials the departing employee could have known are\nrotated within 24 hours.\n\n## Production Data\n\nProduction customer data may not be copied into development or staging environments under any\ncircumstances. Engineers needing realistic data use the synthetic data generator, which produces\nstatistically similar re"
+        },
+        {
+          "source_id": "rag:api_policies.md#0",
+          "content": "# API Policies\n\n## Rate Limiting\n\nEach API key is limited to 1,000 requests per minute. Requests beyond this limit receive a\n429 response with a `Retry-After` header.\n\n## Versioning\n\nThe API is versioned via the URL path (`/v1/`, `/v2/`). A version is supported for at least\n12 months after a newer version is released, and deprecation notices are sent 90 days in\nadvance via the developer newsletter.\n\n## Authentication\n\nAll requests must include a bearer token issued via the `/auth/token` endpoint. Tokens\nexpire after 24 hours and must be refreshed using the associated refresh token."
+        },
+        {
+          "source_id": "rag:access_control.md#0",
+          "content": "# Access Control\n\n## Principle\n\nAccess is granted on the principle of least privilege and is time-bounded by default. Standing\nproduction access is limited to the platform team; everyone else requests elevated access through\nthe access broker, which grants it for a maximum of 8 hours and logs every session.\n\n## Authentication\n\nAll employees authenticate through the company identity provider with hardware-backed\nmulti-factor authentication. SMS-based second factors were retired and are no longer accepted\nanywhere. Service accounts authenticate with short-lived tokens issued by the workload identity\nsystem; long-lived static credentials are prohibited in every environment, development included.\n\n## Reviews\n\nAccess is reviewed quarterly. Managers attest to the entitlements held by their repor"
+        },
+        {
+          "source_id": "rag:engineering_handbook.md#0",
+          "content": "# Engineering Handbook\n\n## Deployment Process\n\nAll services deploy via GitHub Actions on merge to `main`. A deployment first runs the test\nsuite, then builds a Docker image, then rolls out via a blue-green strategy with automatic\nrollback if error rates exceed 2% in the first 5 minutes.\n\n## On-Call Rotation\n\nThe on-call rotation is weekly, starting every Monday at 9:00 AM local time. The primary\non-call engineer is paged first; if there is no acknowledgment within 10 minutes, the\nsecondary on-call engineer is paged.\n\n## Incident Severity Levels\n\n- SEV-1: full outage or data loss, page immediately, war room required.\n- SEV-2: partial degradation affecting a subset of users, page during business hours.\n- SEV-3: minor issue with a workaround available, ticket only, no page."
+        },
+        {
+          "source_id": "rag:onboarding.md#0",
+          "content": "# Engineer Onboarding\n\n## First Week\n\nNew engineers receive a laptop with the standard image already enrolled in device management.\nOn day one they are assigned an onboarding buddy from their team, who is their first point of\ncontact for questions for the first six weeks. By the end of the first week a new engineer should\nhave the development environment running and a small change merged to production.\n\n## First Month\n\nIn the first month new engineers complete the security awareness training, the incident response\ntraining, and read the runbooks for their team's services. They shadow one on-call week as an\nobserver before joining the rotation; nobody joins the on-call rotation within their first 8 weeks.\n\n## Access\n\nAccess is requested through the access broker using role templates, so a n"
+        }
+      ],
+      "latency_s": 14.3,
+      "no_fabrication": true
+    },
+    {
+      "type": "near-domain",
+      "question": "How do I book a meeting room in the office?",
+      "report": "Based on the provided facts, there is no information available on how to book a meeting room in the office. Therefore, this question cannot be answered using the available facts.",
+      "status": "passed",
+      "notes": [
+        {
+          "source_id": "rag:privacy.md#0",
+          "content": "# Privacy and Data Subject Requests\n\n## Data Subject Requests\n\nCustomers may request a copy of their personal data or its deletion. Requests are logged in the\nprivacy portal and must be completed within 30 days of receipt. Identity is verified before any\ndata is released; a request from an address not on the account is never fulfilled directly.\n\nDeletion requests remove personal data from production systems within 30 days. Backups age out\nunder the normal retention schedule rather than being edited, and a restored backup re-applies the\ndeletion log before it serves traffic.\n\n## Data Protection Officer\n\nThe Data Protection Officer is reachable at privacy@company.example and must be consulted before\nany new processing of personal data for a purpose not covered by the privacy notice.\n\n## Priv"
+        },
+        {
+          "source_id": "rag:engineering_handbook.md#0",
+          "content": "# Engineering Handbook\n\n## Deployment Process\n\nAll services deploy via GitHub Actions on merge to `main`. A deployment first runs the test\nsuite, then builds a Docker image, then rolls out via a blue-green strategy with automatic\nrollback if error rates exceed 2% in the first 5 minutes.\n\n## On-Call Rotation\n\nThe on-call rotation is weekly, starting every Monday at 9:00 AM local time. The primary\non-call engineer is paged first; if there is no acknowledgment within 10 minutes, the\nsecondary on-call engineer is paged.\n\n## Incident Severity Levels\n\n- SEV-1: full outage or data loss, page immediately, war room required.\n- SEV-2: partial degradation affecting a subset of users, page during business hours.\n- SEV-3: minor issue with a workaround available, ticket only, no page."
+        },
+        {
+          "source_id": "rag:api_policies.md#0",
+          "content": "# API Policies\n\n## Rate Limiting\n\nEach API key is limited to 1,000 requests per minute. Requests beyond this limit receive a\n429 response with a `Retry-After` header.\n\n## Versioning\n\nThe API is versioned via the URL path (`/v1/`, `/v2/`). A version is supported for at least\n12 months after a newer version is released, and deprecation notices are sent 90 days in\nadvance via the developer newsletter.\n\n## Authentication\n\nAll requests must include a bearer token issued via the `/auth/token` endpoint. Tokens\nexpire after 24 hours and must be refreshed using the associated refresh token."
+        },
+        {
+          "source_id": "rag:access_control.md#1",
+          "content": "hibited in every environment, development included.\n\n## Reviews\n\nAccess is reviewed quarterly. Managers attest to the entitlements held by their reports, and any\nentitlement unused for 90 days is revoked automatically. Revocation is reversible — the point is\nto keep the standing surface small, not to make people fill in forms.\n\n## Offboarding\n\nAccess is revoked within 1 hour of a departure being recorded in the HR system. This is automated\nand does not wait for a ticket. Shared credentials the departing employee could have known are\nrotated within 24 hours.\n\n## Production Data\n\nProduction customer data may not be copied into development or staging environments under any\ncircumstances. Engineers needing realistic data use the synthetic data generator, which produces\nstatistically similar re"
+        },
+        {
+          "source_id": "rag:cloud_costs.md#1",
+          "content": "ide 08:00–20:00 on weekdays unless a team opts out\nwith a reason. Idle load balancers and unattached disks are cleaned up automatically after 14 days.\n\n## Cost Reviews\n\nTeams whose spend grows more than 25% quarter over quarter present the cause at the monthly cost\nreview. Growth that tracks customer growth is expected; growth that does not is investigated."
+        },
+        {
+          "source_id": "rag:oncall_runbook.md#1",
+          "content": "vering incidents during the week, alerts that fired without warranting action, deploys still\nbeing watched, and any known-fragile areas. The incoming primary confirms receipt in writing.\n\n## Common Procedures\n\n**Elevated 5xx from the API gateway.** Check the deploy log first — most elevated error rates\nfollow a deploy within the previous 30 minutes. If a recent deploy correlates, roll back before\ninvestigating. Rollback takes about 90 seconds and is always reversible.\n\n**Database connection pool exhaustion.** Symptoms are rising latency with flat CPU. Check for a\nlong-running migration or a query without an index. Increasing pool size is a temporary\nmitigation, not a fix, and requires a follow-up ticket.\n\n**Certificate expiry.** Certificates auto-renew 30 days before expiry. A renewal fail"
+        },
+        {
+          "source_id": "rag:cloud_costs.md#0",
+          "content": "# Cloud Cost Management\n\n## Budgets\n\nEach team has a monthly cloud budget set during annual planning. An alert fires at 80% of budget\nand again at 100%. Overspend above 10% of budget requires a written explanation to the finance\npartner in the following month's review.\n\n## Tagging\n\nEvery cloud resource carries `team`, `service`, and `env` tags. Untagged resources are reported\nweekly, and resources that remain untagged for 30 days are scheduled for deletion after the owning\naccount is notified.\n\n## Savings\n\nSteady-state compute is covered by one-year committed-use discounts, reviewed each quarter.\nNon-production environments scale to zero outside 08:00–20:00 on weekdays unless a team opts out\nwith a reason. Idle load balancers and unattached disks are cleaned up automatically after 14 days."
+        }
+      ],
+      "latency_s": 15.0,
+      "no_fabrication": true
+    },
+    {
+      "type": "near-domain",
+      "question": "What is the company's stock ticker symbol?",
+      "report": "Based on the provided facts, the company's stock ticker symbol is not mentioned. Therefore, the facts are insufficient to answer the question, and the information is missing.",
+      "status": "passed",
+      "notes": [
+        {
+          "source_id": "rag:privacy.md#0",
+          "content": "# Privacy and Data Subject Requests\n\n## Data Subject Requests\n\nCustomers may request a copy of their personal data or its deletion. Requests are logged in the\nprivacy portal and must be completed within 30 days of receipt. Identity is verified before any\ndata is released; a request from an address not on the account is never fulfilled directly.\n\nDeletion requests remove personal data from production systems within 30 days. Backups age out\nunder the normal retention schedule rather than being edited, and a restored backup re-applies the\ndeletion log before it serves traffic.\n\n## Data Protection Officer\n\nThe Data Protection Officer is reachable at privacy@company.example and must be consulted before\nany new processing of personal data for a purpose not covered by the privacy notice.\n\n## Priv"
+        },
+        {
+          "source_id": "rag:privacy.md#1",
+          "content": "at privacy@company.example and must be consulted before\nany new processing of personal data for a purpose not covered by the privacy notice.\n\n## Privacy Reviews\n\nNew features that collect a new category of personal data require a privacy impact assessment\nbefore launch. The assessment records the purpose, the retention period, and who can access the\ndata.\n\n## Sub-processors\n\nVendors that process customer personal data are listed publicly as sub-processors. Customers are\nnotified 30 days before a new sub-processor begins processing their data."
+        },
+        {
+          "source_id": "rag:data_classification.md#0",
+          "content": "# Data Classification\n\nAll data is labelled with one of four classes. When a dataset mixes classes, the whole dataset\ntakes the most sensitive class present.\n\n## Classes\n\n**Public** — information intended for release, such as marketing pages and published\ndocumentation. No handling restrictions.\n\n**Internal** — ordinary business information: design docs, meeting notes, most source code.\nMay be shared with any employee, but not outside the company without approval.\n\n**Confidential** — customer personal data, contracts, financial results before announcement,\nand security findings. Encrypted at rest and in transit, accessible on a need-to-know basis,\nand never stored on personal devices.\n\n**Restricted** — payment card data, government identifiers, authentication secrets, and\nencryption keys."
+        },
+        {
+          "source_id": "rag:engineering_handbook.md#0",
+          "content": "# Engineering Handbook\n\n## Deployment Process\n\nAll services deploy via GitHub Actions on merge to `main`. A deployment first runs the test\nsuite, then builds a Docker image, then rolls out via a blue-green strategy with automatic\nrollback if error rates exceed 2% in the first 5 minutes.\n\n## On-Call Rotation\n\nThe on-call rotation is weekly, starting every Monday at 9:00 AM local time. The primary\non-call engineer is paged first; if there is no acknowledgment within 10 minutes, the\nsecondary on-call engineer is paged.\n\n## Incident Severity Levels\n\n- SEV-1: full outage or data loss, page immediately, war room required.\n- SEV-2: partial degradation affecting a subset of users, page during business hours.\n- SEV-3: minor issue with a workaround available, ticket only, no page."
+        }
+      ],
+      "latency_s": 16.3,
+      "no_fabrication": true
+    },
+    {
+      "type": "near-domain",
+      "question": "How many days of paid vacation do engineers get?",
+      "report": "Based on the provided facts, there is no information available regarding how many days of paid vacation engineers get. Therefore, the facts are insufficient to answer the question.",
+      "status": "passed",
+      "notes": [
+        {
+          "source_id": "rag:engineering_handbook.md#0",
+          "content": "# Engineering Handbook\n\n## Deployment Process\n\nAll services deploy via GitHub Actions on merge to `main`. A deployment first runs the test\nsuite, then builds a Docker image, then rolls out via a blue-green strategy with automatic\nrollback if error rates exceed 2% in the first 5 minutes.\n\n## On-Call Rotation\n\nThe on-call rotation is weekly, starting every Monday at 9:00 AM local time. The primary\non-call engineer is paged first; if there is no acknowledgment within 10 minutes, the\nsecondary on-call engineer is paged.\n\n## Incident Severity Levels\n\n- SEV-1: full outage or data loss, page immediately, war room required.\n- SEV-2: partial degradation affecting a subset of users, page during business hours.\n- SEV-3: minor issue with a workaround available, ticket only, no page."
+        },
+        {
+          "source_id": "rag:privacy.md#0",
+          "content": "# Privacy and Data Subject Requests\n\n## Data Subject Requests\n\nCustomers may request a copy of their personal data or its deletion. Requests are logged in the\nprivacy portal and must be completed within 30 days of receipt. Identity is verified before any\ndata is released; a request from an address not on the account is never fulfilled directly.\n\nDeletion requests remove personal data from production systems within 30 days. Backups age out\nunder the normal retention schedule rather than being edited, and a restored backup re-applies the\ndeletion log before it serves traffic.\n\n## Data Protection Officer\n\nThe Data Protection Officer is reachable at privacy@company.example and must be consulted before\nany new processing of personal data for a purpose not covered by the privacy notice.\n\n## Priv"
+        },
+        {
+          "source_id": "rag:onboarding.md#0",
+          "content": "# Engineer Onboarding\n\n## First Week\n\nNew engineers receive a laptop with the standard image already enrolled in device management.\nOn day one they are assigned an onboarding buddy from their team, who is their first point of\ncontact for questions for the first six weeks. By the end of the first week a new engineer should\nhave the development environment running and a small change merged to production.\n\n## First Month\n\nIn the first month new engineers complete the security awareness training, the incident response\ntraining, and read the runbooks for their team's services. They shadow one on-call week as an\nobserver before joining the rotation; nobody joins the on-call rotation within their first 8 weeks.\n\n## Access\n\nAccess is requested through the access broker using role templates, so a n"
+        },
+        {
+          "source_id": "rag:api_policies.md#0",
+          "content": "# API Policies\n\n## Rate Limiting\n\nEach API key is limited to 1,000 requests per minute. Requests beyond this limit receive a\n429 response with a `Retry-After` header.\n\n## Versioning\n\nThe API is versioned via the URL path (`/v1/`, `/v2/`). A version is supported for at least\n12 months after a newer version is released, and deprecation notices are sent 90 days in\nadvance via the developer newsletter.\n\n## Authentication\n\nAll requests must include a bearer token issued via the `/auth/token` endpoint. Tokens\nexpire after 24 hours and must be refreshed using the associated refresh token."
+        }
+      ],
+      "latency_s": 15.4,
+      "no_fabrication": true
+    }
+  ]
+}

@@ -15,8 +15,10 @@ questions from the labelled retrieval set, and grades each report:
   no_fabrication  deterministic, unanswerable questions only: the report
                   cites no internal document (it may still answer from the web)
 
-The judge is a different, stronger model than the one under test
-(AGENTDESK_JUDGE_MODEL), so the pipeline is not grading its own homework, and
+The judge is a different model from the one under test
+(AGENTDESK_JUDGE_MODEL; the default is a flash-lite model because stronger ones
+exceed the free tier's daily quota), so the pipeline is not grading its own
+homework, and
 its reliability is measured rather than assumed: every answerable question is
 also judged against a report written for a *different* question, which a
 working judge must mark incorrect (`judge_sanity`).
@@ -394,7 +396,7 @@ def main() -> int:
         description=__doc__, formatter_class=argparse.RawTextHelpFormatter
     )
     parser.add_argument(
-        "--judge-model", default=os.environ.get("AGENTDESK_JUDGE_MODEL", "gemini-3.5-flash")
+        "--judge-model", default=os.environ.get("AGENTDESK_JUDGE_MODEL", "gemini-3.5-flash-lite")
     )
     parser.add_argument("--pause", type=float, default=3.0, help="seconds between pipeline runs")
     parser.add_argument("--limit", type=int, help="only the first N answerable questions (smoke)")
