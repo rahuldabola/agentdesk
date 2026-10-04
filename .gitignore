@@ -12,3 +12,6 @@ htmlcov/
 build/
 dist/
 .ruff_cache/
+
+# downloaded benchmark datasets
+eval/.cache/

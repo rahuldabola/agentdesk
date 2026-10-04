@@ -1,71 +1,193 @@
-# AgentDesk — Multi-Agent Research & Report Orchestrator
+# AgentDesk — Multi-Agent Research Assistant That Shows Its Sources
 
 [![CI](https://github.com/rahuldabola/agentdesk/actions/workflows/tests.yml/badge.svg)](https://github.com/rahuldabola/agentdesk/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue.svg)](pyproject.toml)
 
-A LangGraph state machine that turns a question into a **cited, fact-checked report**. Tools
-are reached over the Model Context Protocol; grounding comes from a RAG pipeline over a local
-knowledge base; and a Critic agent can send work back for a rewrite *or* for more research.
+**Ask a question. Five AI agents plan, research, analyse, write and fact-check a report, and
+every sentence in it links to the exact document or web page it came from.**
 
-Every sentence in the output traces to a `source_id`, and every `source_id` resolves to a real
-file and chunk or a real URL — so the report is auditable, not just plausible.
+**🔗 Try it live:** [agentdesk-research.vercel.app](https://agentdesk-research.vercel.app)
+&nbsp;·&nbsp; password: `phazl77NW8pw` &nbsp;·&nbsp;
+[API](https://agentdesk-production-9e6c.up.railway.app)
 
-**🔗 Live demo:** [agentdesk-research.vercel.app](https://agentdesk-research.vercel.app) (password-protected —
-phazl77NW8pw ) · API: [agentdesk-production-9e6c.up.railway.app](https://agentdesk-production-9e6c.up.railway.app)
+> New here? Read **[What it does](#what-it-does)**, then **[How it works](#how-it-works)**.
+> Want to run it? Jump to **[Quick start](#quick-start)**.
 
 ---
 
-## The problem this solves
+## What it does
 
-One LLM call answering a research question either hallucinates unsupported claims or gives a
-shallow, uncited answer. AgentDesk splits the work across five specialised agents, grounds each
-claim in a retrievable source, and then checks the draft against those sources before returning it.
+A single chatbot answering a research question tends to either make things up or give a vague
+answer with no sources. AgentDesk avoids both:
+
+1. A **Planner** splits your question into smaller research tasks.
+2. A **Researcher** looks each one up in a private knowledge base (RAG) and on the web.
+3. An **Analyst** pulls out individual facts, each tied to the source it came from.
+4. A **Writer** drafts the report using only those facts.
+5. A **Critic** checks the draft against the sources. If a claim is unsupported it sends the
+   draft back, either for a **rewrite** or, if evidence is missing, for **more research**.
+
+You get a report like this (shortened):
+
+```
+Q: What is our API rate limit?
+
+Each API key is limited to 1,000 requests per minute [rag:api_policies.md#0].
+
+Sources
+  [rag:api_policies.md#0]  api_policies.md, chunk 0
+```
+
+Every `[source_id]` resolves to a real file chunk or URL, so the report can be audited.
+
+## Results at a glance
+
+| What was measured | Result |
+| --- | --- |
+| Finding the right document (64 labelled questions) | **97%** Recall@4 (the right chunk is in the top 4) |
+| Refusing off-topic questions | **0% → 100%**, found and fixed by the benchmark |
+| Offline tests | **166 tests, 92% coverage**, no API keys needed |
+| Real production bugs found by deploying | **2**, both fixed with regression tests |
+| Answer quality (26 questions, LLM judge) | **0.92** correctness · **0.95** faithfulness · **100%** no made-up answers to unanswerable questions · [details](#answer-quality-llm-judge) |
+| Public benchmark (BEIR SciFact) | harness built, [not run yet](#public-benchmark-beir-scifact) |
+
+**Stack:** LangGraph · MCP (real stdio client/server) · FastAPI · Gemini · Chroma · BM25 ·
+React + three.js · Docker · GitHub Actions · Railway + Vercel
+
+## How it works
+
+```mermaid
+flowchart LR
+    UI["React + three.js UI<br/>(Vercel)"] -- "SSE stream" --> API["FastAPI<br/>(Railway)"]
+    API --> G
+
+    subgraph G["LangGraph state machine"]
+        direction TB
+        P[Planner] --> R[Researcher] --> A[Analyst] --> W[Writer] --> C{Critic}
+        C -- "rewrite" --> W
+        C -- "missing evidence" --> R
+    end
+
+    R <-- "MCP over stdio" --> T["MCP tool server"]
+    T --> RAG["rag_search<br/>dense · BM25 · RRF · rerank<br/>+ relevance floor"]
+    T --> WEB["web_search<br/>Tavily → DuckDuckGo"]
+    RAG --> DB[("Chroma<br/>gemini-embedding-001")]
+
+    subgraph EVAL["Evaluation"]
+        direction TB
+        E1["pipeline eval (CI)<br/>citations resolve, loops end"]
+        E2["retrieval benchmark (CI)<br/>64 labelled questions"]
+        E3["answer eval (live)<br/>LLM judge: correctness, faithfulness"]
+    end
+    EVAL -.-> G
+```
+
+| Agent | Job | Guardrail |
+| --- | --- | --- |
+| **Planner** | Breaks the question into subtasks; decides whether to use the knowledge base, the web, or both | Output is a forced function call, never free text |
+| **Researcher** | Runs every (subtask × tool) lookup concurrently over one MCP session; registers each passage under a stable `source_id` | Owns the source registry |
+| **Analyst** | Extracts atomic facts, each bound to a `source_id` | Drops any fact citing an id that was never retrieved |
+| **Writer** | Drafts the report from the facts, citing inline | Can only use what the Analyst passed on |
+| **Critic** | Verifies the draft against the evidence and returns pass/revise | Routes "badly written" to the Writer and "missing evidence" to the Researcher; both loops are capped |
 
 Two design choices do most of the work:
 
-1. **Citations are structural, not stylistic.** The Researcher owns a source registry. The
-   Analyst may only cite ids that exist in it — facts citing anything else are dropped before
-   the Writer ever sees them. The API resolves the ids the *finished report* actually contains,
-   so a caller gets the bibliography the reader can verify, not the one the Writer was offered.
+1. **Citations are structural, not stylistic.** The Analyst may only cite ids that exist in the
+   Researcher's registry, and the API returns the bibliography of ids the *finished report*
+   actually contains. A reader gets what they can verify, not what the Writer was offered.
 2. **The self-correction loop can gather new evidence.** A draft can fail because the Writer
-   overreached, or because the evidence was never retrieved. Only the first is fixable by
-   rewriting, so the Critic routes those two failures to different places.
+   overreached or because the evidence was never retrieved. Only the first is fixable by
+   rewriting, so the Critic sends the two failures to different places.
 
-## Architecture
+State flows through a `langgraph.graph.StateGraph`. `research_notes` and `trace` carry reducers,
+so a second research round **accumulates** evidence instead of overwriting the first.
 
-```
-question
-   │
-   ▼
-┌──────────┐  decomposes into subtasks; decides use_rag / use_web
-│ Planner  │
-└────┬─────┘
-     ▼
-┌──────────┐  one MCP stdio session, all (subtask × tool) calls issued concurrently
-│Researcher│  ├─ rag_search : embed → dense (or hybrid/reranked) top-k → relevance floor
-└────┬─────┘  └─ web_search : Tavily, else a DuckDuckGo HTML scrape
-     │         registers every passage under a short, stable source_id
-     ▼
-┌──────────┐  extracts atomic claims, each bound to a source_id
-│ Analyst  │  drops any fact citing an id that was never retrieved
-└────┬─────┘
-     ▼
-┌──────────┐  drafts the report from the facts, citing inline
-│  Writer  │◄──────────────────────┐
-└────┬─────┘                       │
-     ▼                             │ verdict=revise, evidence is adequate
-┌──────────┐───────────────────────┘ (bounded by AGENTDESK_MAX_REVISIONS)
-│  Critic  │
-└────┬─────┘───────────────────────┐ verdict=revise, evidence is missing
-     │ verdict=pass, or caps hit   │ (bounded by AGENTDESK_MAX_RESEARCH_ROUNDS)
-     ▼                             ▼
-  final report              back to Researcher
+## Quick start
+
+```bash
+python -m venv .venv
+.venv\Scripts\activate            # or: source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env              # add GEMINI_API_KEY (free at aistudio.google.com/apikey)
+
+python -m scripts.ingest_docs     # embed the sample knowledge base
+python -m scripts.run_demo "What is our on-call rotation and how does it compare to typical SRE practice?"
 ```
 
-State flows through a `langgraph.graph.StateGraph`. `research_notes` and `trace` carry reducers
-(`merge_notes`, `operator.add`), so a second research round **accumulates** evidence rather than
-overwriting the first round's findings.
+Run the API and the web UI:
+
+```bash
+uvicorn app.main:app --reload                       # terminal 1: API on :8000
+cd frontend && npm install
+echo "VITE_API_BASE_URL=http://localhost:8000" > .env.local
+npm run dev                                         # terminal 2: UI
+```
+
+Or with Docker: `docker build -t agentdesk . && docker run -p 8000:8000 --env-file .env agentdesk`
+
+<details>
+<summary><b>Sample CLI output and API usage</b></summary>
+
+```
+=== TRACE ===
+  planner            4ms  2 subtasks, use_rag=True, use_web=True
+  researcher        96ms  initial: 7 notes from 2 subtask(s), 7 source(s)
+  analyst            3ms  extracted 7 facts from 7 notes
+  writer             3ms  drafted 823 chars from 7 facts (revision 0)
+  critic             2ms  pass (0 flagged claims)
+
+=== REPORT (passed) ===
+On-call is a weekly rotation starting Monday [rag:engineering_handbook.md#1]. This matches
+the rotation length most commonly recommended for SRE teams [web:1].
+
+=== CITATIONS (3) ===
+  [rag:engineering_handbook.md#1] engineering_handbook.md chunk 1
+  [web:1] https://sre.google/workbook/on-call/
+```
+
+```bash
+curl -X POST localhost:8000/api/report -H 'content-type: application/json' \
+     -d '{"question": "What is our API rate limit?"}'
+```
+
+```jsonc
+{
+  "status": "passed",                  // or "revision_limit_reached"
+  "report": "Each API key is limited to 1,000 requests per minute [rag:api_policies.md#0].",
+  "citations": [
+    {"source_id": "rag:api_policies.md#0", "type": "rag", "file": "api_policies.md",
+     "chunk_index": 0, "score": 0.71}
+  ],
+  "revisions": 0,
+  "research_rounds": 0,
+  "critic": {"verdict": "pass", "feedback": "...", "unsupported_claims": []},
+  "trace": [{"node": "planner", "detail": "2 subtasks, use_rag=True, use_web=False",
+             "elapsed_ms": 812.4}]
+}
+```
+
+For long runs, stream progress instead of holding a blank connection open:
+
+```bash
+curl -N -X POST localhost:8000/api/report/stream -H 'content-type: application/json' \
+     -d '{"question": "What is our incident severity scheme?"}'
+```
+
+```
+event: progress
+data: {"node": "planner", "detail": "3 subtasks, use_rag=True, use_web=False", "elapsed_ms": 812.4}
+
+event: report
+data: {"status": "passed", "report": "...", "citations": [...], "trace": [...]}
+```
+
+A failure mid-stream arrives as a terminal `error` event rather than a severed connection.
+</details>
+
+---
+
+## Design deep-dives
 
 ### Why MCP instead of calling the tools directly
 
@@ -122,125 +244,22 @@ retrieval benchmark below, not from habit.
 
 ## Tech stack
 
-- **Orchestration** — LangGraph (`app/graph.py`): an explicit state machine with reducers and
-  conditional edges, not a fixed chain
-- **LLM** — Gemini (`app/llm/gemini_client.py`). Every agent decision point (planning, fact
-  extraction, critique) is a forced function call via `FunctionCallingConfig(mode="ANY")`,
-  so there is no free-text parsing anywhere
-- **Retrieval** — Gemini `gemini-embedding-001` + Chroma (persistent, cosine), a BM25 index,
-  reciprocal rank fusion, and an optional ONNX cross-encoder reranker, all benchmarked against
-  each other on a labelled question set
-- **Tool access** — the `mcp` SDK: a real client/server pair over stdio
-- **API** — FastAPI (`app/main.py`): `POST /api/report`, plus `POST /api/report/stream`
-  which server-sends each agent's progress as it finishes; both gated behind an optional
-  shared-password header (`AGENTDESK_APP_PASSWORD`) for public deployments
-- **Frontend** — `frontend/`: a Vite + React + three.js UI. An interactive 3D scene shows
-  the five agents orbiting the orchestrator and lights up each hand-off live as the stream
-  arrives; finished runs can be replayed step by step on a timeline scrubber. Reports open
-  in tabs (report with hoverable citation chips, filterable sources, an execution
-  timeline, and the Critic's verdict) and export to Markdown or PDF. History persists
-  locally with search, runs can be cancelled mid-flight, and there's a backend health /
-  cold-start indicator, keyboard shortcuts, and a responsive mobile drawer
-- **Quality gates** — ruff (lint + format), pytest with an 85% coverage floor, a stdio
-  subprocess smoke test, a deterministic offline eval, and a retrieval benchmark, each with
-  pass/fail thresholds — all
-  enforced in CI on Python 3.11 and 3.12
-
-## Setup
-
-```bash
-python -m venv .venv
-.venv\Scripts\activate            # or: source .venv/bin/activate
-pip install -r requirements.txt   # installs the project + dev extras
-cp .env.example .env              # fill in GEMINI_API_KEY (get one at aistudio.google.com/apikey)
-
-python -m scripts.ingest_docs     # embeds data/sample_docs/*.md into ./chroma_db
-python -m scripts.run_demo "What is our on-call rotation and how does it compare to typical SRE practice?"
-```
-
-### Running the frontend locally
-
-```bash
-cd frontend
-npm install
-echo "VITE_API_BASE_URL=http://localhost:8000" > .env.local
-npm run dev                       # then, in another terminal: uvicorn app.main:app --reload
-```
-
-Sample run (shape of the output; text abridged):
-
-```
-=== TRACE ===
-  planner            4ms  2 subtasks, use_rag=True, use_web=True
-  researcher        96ms  initial: 7 notes from 2 subtask(s), 7 source(s)
-  analyst            3ms  extracted 7 facts from 7 notes
-  writer             3ms  drafted 823 chars from 7 facts (revision 0)
-  critic             2ms  pass (0 flagged claims)
-
-=== REPORT (passed) ===
-On-call is a weekly rotation starting Monday [rag:engineering_handbook.md#1]. This matches
-the rotation length most commonly recommended for SRE teams [web:1].
-
-=== CITATIONS (3) ===
-  [rag:engineering_handbook.md#1] engineering_handbook.md chunk 1
-  [web:1] https://sre.google/workbook/on-call/
-```
-
-As an API:
-
-```bash
-uvicorn app.main:app --reload
-curl -X POST localhost:8000/api/report -H 'content-type: application/json' \
-     -d '{"question": "What is our API rate limit?"}'
-```
-
-```jsonc
-{
-  "status": "passed",                  // or "revision_limit_reached"
-  "report": "Each API key is limited to 1,000 requests per minute [rag:api_policies.md#0].",
-  "citations": [
-    {"source_id": "rag:api_policies.md#0", "type": "rag", "file": "api_policies.md",
-     "chunk_index": 0, "score": 0.71}
-  ],
-  "revisions": 0,
-  "research_rounds": 0,
-  "critic": {"verdict": "pass", "feedback": "...", "unsupported_claims": []},
-  "trace": [{"node": "planner", "detail": "2 subtasks, use_rag=True, use_web=False",
-             "elapsed_ms": 812.4}]
-}
-```
-
-For long runs, stream the pipeline instead of holding a blank connection open:
-
-```bash
-curl -N -X POST localhost:8000/api/report/stream -H 'content-type: application/json'      -d '{"question": "What is our incident severity scheme?"}'
-```
-
-```
-event: progress
-data: {"node": "planner", "detail": "3 subtasks, use_rag=True, use_web=False", "elapsed_ms": 812.4}
-
-event: progress
-data: {"node": "researcher", "detail": "initial: 9 notes from 3 subtask(s), 9 source(s)", "elapsed_ms": 1904.7}
-
-event: report
-data: {"status": "passed", "report": "...", "citations": [...], "trace": [...]}
-```
-
-A failure mid-stream arrives as a terminal `error` event rather than a severed connection —
-the response status is already committed by the time an agent can fail.
-
-Or with Docker:
-
-```bash
-docker build -t agentdesk . && docker run -p 8000:8000 --env-file .env agentdesk
-```
+| Layer | Choice | Why |
+| --- | --- | --- |
+| Orchestration | LangGraph (`app/graph.py`) | An explicit state machine with reducers and conditional edges, not a fixed chain |
+| LLM | Gemini (`app/llm/gemini_client.py`) | Every decision point (plan, extract facts, critique) is a forced function call via `FunctionCallingConfig(mode="ANY")`, so nothing is parsed from free text |
+| Retrieval | `gemini-embedding-001` + Chroma (cosine), BM25, rank fusion, optional ONNX cross-encoder | All of them benchmarked against each other; the winner is the default |
+| Tools | `mcp` SDK, real client/server over stdio | The tool server is callable by any MCP client, not just this repo |
+| API | FastAPI (`app/main.py`) | `POST /api/report` and an SSE `POST /api/report/stream`; optional shared-password gate |
+| Frontend | Vite + React + three.js (`frontend/`) | Live 3D view of the agents, step-by-step replay, tabbed report with hoverable citation chips, Markdown/PDF export, local history, command palette |
+| Quality gates | ruff, pytest (85% floor), stdio smoke test, offline eval, retrieval benchmark | Each has pass/fail thresholds, enforced in CI on Python 3.11 and 3.12 |
+| Deploy | Docker, Railway (API), Vercel (UI) | Branch-protected `master`, required checks, secret scanning, Dependabot |
 
 ## Tests
 
 ```bash
-pytest                        # 130 tests, fully offline, no API keys, no cost
-pytest --cov=app              # 93% line coverage
+pytest                        # 166 tests, fully offline, no API keys, no cost
+pytest --cov=app              # 92% line coverage
 ruff check . && ruff format --check .
 ```
 
@@ -318,8 +337,7 @@ _Live run, 6 cases, recorded 2026-09-10._
 *orchestrator* — did a report come out, does every citation resolve, do the loops terminate — and
 they hold regardless of which model answers. The judgement metrics depend on the model, so in an
 offline run they describe the stub and nothing more; the table labels which is which. Answer
-quality itself is measured by neither, and needs an LLM-as-judge faithfulness score against a
-labelled key — noted here as the next step rather than claimed as built.
+quality itself is measured by neither; that is what the answer-quality eval below is for.
 
 ### Retrieval quality
 
@@ -384,6 +402,70 @@ What the numbers say, and what changed because of them:
   Recall@4. The Analyst reads all four chunks, so Recall@4 is what matters here, and the
   reranker ships disabled (`AGENTDESK_RERANKER=cross-encoder` turns it on).
 
+### Answer quality (LLM judge)
+
+`eval/run_answer_eval.py` runs the full live pipeline on 26 answerable questions (8 keyword, 10
+paraphrase, 8 multi-doc) and 8 unanswerable ones, then has a separate judge model grade each report:
+
+- **Correctness** against the gold evidence chunks (correct / partial / incorrect).
+- **Faithfulness**: each claim is checked against the passages the report actually cites.
+- **Deterministic checks**: whether the gold evidence was cited, and whether an unanswerable
+  question wrongly cites an internal document.
+- **Judge sanity**: each report is also graded against a *different* question's reference, which
+  a working judge must fail.
+
+```bash
+python -m eval.run_answer_eval --write   # live; needs GEMINI_API_KEY and judge-model quota
+```
+
+The harness and its scoring logic are covered by 9 offline tests. Raw per-question rows,
+including each report and the judge's reasoning: [`eval/results_answers.json`](eval/results_answers.json).
+
+**Read the judge with care.** The stronger Gemini models allow only 20 requests a day on the free
+tier, far too few for 34 questions, so the judge here is `gemini-3.5-flash-lite`: a different
+model from the one under test, but not a more capable one. That is why the *judge sanity* row
+exists (a mismatched answer must be graded wrong, and it was every time), and why the
+deterministic rows (gold evidence cited, no internal citation on unanswerable questions) are the
+ones to trust most. A stronger judge may grade a little more harshly.
+
+<!-- eval:answers:start -->
+_Live run, 26 answerable + 8 unanswerable questions. Pipeline model `gemini-flash-lite-latest`, judge `gemini-3.5-flash-lite`. Recorded 2026-10-04._
+
+| Metric | Result | How it is measured |
+| --- | --- | --- |
+| Correctness | 0.92 | judge vs gold evidence; correct = 1, partial = 0.5 |
+| Fully correct | 92% | share graded `correct` |
+| ↳ keyword / paraphrase / multi-doc | 0.88 / 1.00 / 0.88 | |
+| Faithfulness | 0.95 | supported claims / all claims (42 checked against cited passages) |
+| Gold evidence cited | 96% | deterministic |
+| No fabricated internal answer | 100% | unanswerable questions citing no internal doc; deterministic |
+| Judge sanity | 100% | mismatched answers the judge correctly fails |
+| Errors | 0 | runs that raised |
+| Mean latency | 17.0 s | full pipeline, per question |
+<!-- eval:answers:end -->
+
+### Public benchmark: BEIR SciFact
+
+The in-house benchmark's questions and corpus were written by the same author, so it could
+flatter the system. `eval/run_beir_eval.py` runs the same production `retrieve()` (Chroma,
+the BM25 index, rank fusion, and the cross-encoder) over
+[BEIR SciFact](https://github.com/beir-cellar/beir). SciFact has 5,183 scientific abstracts and
+300 claims with relevance labels from domain experts. Embeddings come from a small local model,
+because embedding 5k abstracts on the Gemini free tier is impractical. That means this tests the
+retrieval *pipeline*, not Gemini.
+
+```bash
+python -m eval.run_beir_eval --write              # all five retrievers, including the reranker
+python -m eval.run_beir_eval --no-rerank --write  # skip the slow cross-encoder
+```
+
+<!-- eval:beir:start -->
+_Not run yet._ Indexing 5,183 abstracts with a local CPU embedder took more than 30 minutes on
+the development laptop without finishing, so no numbers are claimed. The harness is in place and
+the table fills in automatically when a run completes (a GPU or a hosted embedding model makes
+it quick).
+<!-- eval:beir:end -->
+
 ## Configuration
 
 All settings are environment variables read at call time (see `app/config.py` and `.env.example`).
@@ -422,7 +504,7 @@ app/
 frontend/              Vite + React + three.js UI (3D live pipeline + replay, tabbed report, history)
 eval/                  pipeline eval + retrieval benchmark: labelled sets, stub model,
                        runners, cached embeddings, checked-in results
-tests/                 157 tests; doubles.py holds the offline stand-ins
+tests/                 166 tests; doubles.py holds the offline stand-ins
 scripts/               ingest_docs, run_demo, check_mcp_server
 ```
 
@@ -438,8 +520,9 @@ Stated plainly, because they are the honest next steps rather than hidden gaps:
   closest chunk (0.366) is nearer than the least similar correct chunk (0.375), so no distance
   threshold separates them perfectly. At 0.40, half get through, and catching those is left to
   the Analyst and Critic.
-- **No answer-quality metric.** Everything measured is structural. Whether a passing report is
-  *correct* needs an LLM-judge faithfulness score against a labelled answer key.
+- **The answer-quality judge is a small model.** It is a different model from the one under
+  test, but it is a flash-lite one, because stronger judges exceed the free tier's daily quota.
+  The results are indicative, and a stronger judge (or human spot-checks) would firm them up.
 - **Fixed-width chunking** ignores markdown structure; a heading can be separated from the
   paragraph it introduces. Structure-aware splitting would retrieve better.
 - **The Critic sees only the Analyst's facts**, which came from the same model family. It catches
@@ -455,6 +538,18 @@ Stated plainly, because they are the honest next steps rather than hidden gaps:
   every case). Those paths are covered by `tests/test_graph_flow.py` instead.
 - **DuckDuckGo scraping is best-effort**; it is a fallback so the tool never hard-fails, not a
   reliable search path. Set `TAVILY_API_KEY` for anything real.
+
+## Engineering log: what was built, and what changed along the way
+
+The project went through five rounds of work. Each one fixed something specific rather than adding features for their own sake.
+
+1. **Production hardening.** The first version truncated every RAG passage at its first blank line (782 characters retrieved, 22 delivered) because passages were serialised to text and re-parsed. Fixed by passing structured data across the MCP boundary, then added a regression test that exercises the seam. Also added the research loop (the Critic can request more evidence), bounded retries and typed errors.
+2. **Port to Gemini and live deployment.** Moved the whole LLM and embedding layer from Claude + OpenAI to Gemini (`google-genai`) with the API contract unchanged, then deployed the backend on Railway and the UI on Vercel. Deployment exposed two bugs that tests missed: the MCP tool subprocess did not inherit the environment (API keys), and parallel RAG calls each created their own Chroma client on the same index and corrupted it. Both are fixed and covered.
+3. **A new frontend.** A Vite + React + three.js UI where the five agents orbit the orchestrator and light up live as the SSE stream arrives. It has run replay, a tabbed report with hoverable citation chips, a command palette, local history, and Markdown/PDF export.
+4. **A retrieval benchmark that changed the defaults.** 64 labelled questions plus 16 unanswerable ones. It showed the relevance floor (tuned for OpenAI) refused **0 of 16** off-topic questions under Gemini. Re-calibrated to 0.40, it now refuses all off-topic ones and loses no answerable question. It also showed hybrid search and the reranker did not earn their place on this corpus, so the default stays dense.
+5. **Answer-quality eval and a public-benchmark harness.** An LLM-judge eval run on 34 questions (correctness 0.92, faithfulness 0.95), plus a harness for the public BEIR SciFact dataset, because a self-written benchmark can flatter its author. The SciFact run has not completed yet; see [Evaluation](#evaluation).
+
+Repository hygiene: `master` is protected (PRs only, required CI checks, linear history), secret scanning and Dependabot are on, and every change above landed through a reviewed-by-CI pull request.
 
 ## License
 
