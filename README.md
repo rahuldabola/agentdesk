@@ -50,7 +50,7 @@ Every `[source_id]` resolves to a real file chunk or URL, so the report can be a
 | Offline tests | **166 tests, 92% coverage**, no API keys needed |
 | Real production bugs found by deploying | **2**, both fixed with regression tests |
 | Answer quality (26 questions, LLM judge) | **0.92** correctness · **0.95** faithfulness · **100%** no made-up answers to unanswerable questions · [details](#answer-quality-llm-judge) |
-| Public benchmark (BEIR SciFact) | see [Public benchmark](#public-benchmark-beir-scifact) |
+| Public benchmark (BEIR SciFact) | harness built, [not run yet](#public-benchmark-beir-scifact) |
 
 **Stack:** LangGraph · MCP (real stdio client/server) · FastAPI · Gemini · Chroma · BM25 ·
 React + three.js · Docker · GitHub Actions · Railway + Vercel
@@ -455,11 +455,15 @@ because embedding 5k abstracts on the Gemini free tier is impractical. That mean
 retrieval *pipeline*, not Gemini.
 
 ```bash
-python -m eval.run_beir_eval --write   # downloads the dataset once (~3MB), ~15 min on a laptop CPU
+python -m eval.run_beir_eval --write              # all five retrievers, including the reranker
+python -m eval.run_beir_eval --no-rerank --write  # skip the slow cross-encoder
 ```
 
 <!-- eval:beir:start -->
-_Results pending: the first full run is in progress._
+_Not run yet._ Indexing 5,183 abstracts with a local CPU embedder took more than 30 minutes on
+the development laptop without finishing, so no numbers are claimed. The harness is in place and
+the table fills in automatically when a run completes (a GPU or a hosted embedding model makes
+it quick).
 <!-- eval:beir:end -->
 
 ## Configuration
@@ -543,7 +547,7 @@ The project went through five rounds of work. Each one fixed something specific 
 2. **Port to Gemini and live deployment.** Moved the whole LLM and embedding layer from Claude + OpenAI to Gemini (`google-genai`) with the API contract unchanged, then deployed the backend on Railway and the UI on Vercel. Deployment exposed two bugs that tests missed: the MCP tool subprocess did not inherit the environment (API keys), and parallel RAG calls each created their own Chroma client on the same index and corrupted it. Both are fixed and covered.
 3. **A new frontend.** A Vite + React + three.js UI where the five agents orbit the orchestrator and light up live as the SSE stream arrives. It has run replay, a tabbed report with hoverable citation chips, a command palette, local history, and Markdown/PDF export.
 4. **A retrieval benchmark that changed the defaults.** 64 labelled questions plus 16 unanswerable ones. It showed the relevance floor (tuned for OpenAI) refused **0 of 16** off-topic questions under Gemini. Re-calibrated to 0.40, it now refuses all off-topic ones and loses no answerable question. It also showed hybrid search and the reranker did not earn their place on this corpus, so the default stays dense.
-5. **Answer-quality and public-benchmark harnesses.** An LLM-judge eval (correctness, faithfulness, judge sanity checks) and a run over the public BEIR SciFact dataset, because a self-written benchmark can flatter its author. See [Evaluation](#evaluation) for what has and has not been run.
+5. **Answer-quality eval and a public-benchmark harness.** An LLM-judge eval run on 34 questions (correctness 0.92, faithfulness 0.95), plus a harness for the public BEIR SciFact dataset, because a self-written benchmark can flatter its author. The SciFact run has not completed yet; see [Evaluation](#evaluation).
 
 Repository hygiene: `master` is protected (PRs only, required CI checks, linear history), secret scanning and Dependabot are on, and every change above landed through a reviewed-by-CI pull request.
 
