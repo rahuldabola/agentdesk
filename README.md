@@ -8,7 +8,7 @@
 every sentence in it links to the exact document or web page it came from.**
 
 **🔗 Try it live:** [agentdesk-research.vercel.app](https://agentdesk-research.vercel.app)
-&nbsp;·&nbsp; password: `phazl77NW8pw` &nbsp;·&nbsp;
+&nbsp;·&nbsp; password: `mjSqEPp14EMF` &nbsp;·&nbsp;
 [API](https://agentdesk-production-9e6c.up.railway.app)
 
 > New here? Read **[What it does](#what-it-does)**, then **[How it works](#how-it-works)**.
