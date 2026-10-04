@@ -42,7 +42,7 @@ README_PATH = os.path.join(REPO_ROOT, "README.md")
 CACHE_DIR = os.path.join(EVAL_DIR, ".cache")
 RESULTS_PATH = os.path.join(EVAL_DIR, "results_beir.json")
 DATASET_URL = "https://public.ukp.informatik.tu-darmstadt.de/thakur/BEIR/datasets/scifact.zip"
-EMBED_MODEL = "BAAI/bge-small-en-v1.5"
+EMBED_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 CANDIDATES = 20
 CONFIGS = (
     ("dense", "dense", "none"),
@@ -103,13 +103,13 @@ class LocalEmbedder:
     def __init__(self, model_name: str = EMBED_MODEL):
         from fastembed import TextEmbedding
 
-        self.model = TextEmbedding(model_name=model_name)
+        self.model = TextEmbedding(model_name=model_name, threads=4)
 
     def __call__(self, texts, client=None, task_type="RETRIEVAL_DOCUMENT"):
         if task_type == "RETRIEVAL_QUERY":
             vectors = self.model.query_embed(list(texts))
         else:
-            vectors = self.model.passage_embed(list(texts), batch_size=32)
+            vectors = self.model.passage_embed(list(texts), batch_size=8)
         return [v.tolist() for v in vectors]
 
 
