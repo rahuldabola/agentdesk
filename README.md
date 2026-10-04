@@ -16,6 +16,31 @@ phazl77NW8pw ) · API: [agentdesk-production-9e6c.up.railway.app](https://agentd
 
 ---
 
+## At a glance
+
+| | |
+| --- | --- |
+| **What it is** | Ask a question, get a cited report. Five agents plan, research, analyse, write and fact-check it. |
+| **Why it is trustworthy** | Every claim carries a `source_id` that resolves to a real file chunk or URL. A Critic checks the draft and can send it back for a rewrite *or* for more research. |
+| **Stack** | LangGraph · MCP (real stdio client/server) · FastAPI · Gemini · Chroma · BM25 · React + three.js |
+| **Live** | Frontend on Vercel, API on Railway (links above) |
+| **Quality gates (CI)** | ruff, 166 offline tests at 92% coverage, a pipeline eval, and a 64-question retrieval benchmark with pass/fail thresholds |
+| **Headline results** | Dense retrieval Recall@4 **0.97** on 64 labelled questions · off-topic refusal **0% → 100%** after a benchmark-driven fix · 2 production bugs found and fixed |
+
+## What was built, and what we changed along the way
+
+The project went through five rounds of work. Each one fixed something specific rather than adding features for their own sake.
+
+1. **Production hardening.** The first version truncated every RAG passage at its first blank line (782 characters retrieved, 22 delivered) because passages were serialised to text and re-parsed. Fixed by passing structured data across the MCP boundary, then added a regression test that exercises the seam. Also added the research loop (the Critic can request more evidence), bounded retries and typed errors.
+2. **Port to Gemini and live deployment.** Moved the whole LLM and embedding layer from Claude + OpenAI to Gemini (`google-genai`) with the API contract unchanged, then deployed the backend on Railway and the UI on Vercel. Deployment exposed two bugs that tests missed: the MCP tool subprocess did not inherit the environment (API keys), and parallel RAG calls each created their own Chroma client on the same index and corrupted it. Both are fixed and covered.
+3. **A new frontend.** A Vite + React + three.js UI where the five agents orbit the orchestrator and light up live as the SSE stream arrives. It has run replay, a tabbed report with hoverable citation chips, a command palette, local history, and Markdown/PDF export.
+4. **A retrieval benchmark that changed the defaults.** 64 labelled questions plus 16 unanswerable ones. It showed the relevance floor (tuned for OpenAI) refused **0 of 16** off-topic questions under Gemini. Re-calibrated to 0.40, it now refuses all off-topic ones and loses no answerable question. It also showed hybrid search and the reranker did not earn their place on this corpus, so the default stays dense.
+5. **Answer-quality and public-benchmark harnesses.** An LLM-judge eval (correctness, faithfulness, judge sanity checks) and a run over the public BEIR SciFact dataset, because a self-written benchmark can flatter its author. See [Evaluation](#evaluation) for what has and has not been run.
+
+Repository hygiene: `master` is protected (PRs only, required CI checks, linear history), secret scanning and Dependabot are on, and every change above landed through a reviewed-by-CI pull request.
+
+---
+
 ## The problem this solves
 
 One LLM call answering a research question either hallucinates unsupported claims or gives a
@@ -267,8 +292,8 @@ docker build -t agentdesk . && docker run -p 8000:8000 --env-file .env agentdesk
 ## Tests
 
 ```bash
-pytest                        # 130 tests, fully offline, no API keys, no cost
-pytest --cov=app              # 93% line coverage
+pytest                        # 166 tests, fully offline, no API keys, no cost
+pytest --cov=app              # 92% line coverage
 ruff check . && ruff format --check .
 ```
 
@@ -346,8 +371,7 @@ _Live run, 6 cases, recorded 2026-09-10._
 *orchestrator* — did a report come out, does every citation resolve, do the loops terminate — and
 they hold regardless of which model answers. The judgement metrics depend on the model, so in an
 offline run they describe the stub and nothing more; the table labels which is which. Answer
-quality itself is measured by neither, and needs an LLM-as-judge faithfulness score against a
-labelled key — noted here as the next step rather than claimed as built.
+quality itself is measured by neither; that is what the answer-quality eval below is for.
 
 ### Retrieval quality
 
@@ -412,6 +436,31 @@ What the numbers say, and what changed because of them:
   Recall@4. The Analyst reads all four chunks, so Recall@4 is what matters here, and the
   reranker ships disabled (`AGENTDESK_RERANKER=cross-encoder` turns it on).
 
+### Answer quality (LLM judge)
+
+`eval/run_answer_eval.py` runs the full live pipeline on 26 answerable questions (8 keyword, 10
+paraphrase, 8 multi-doc) and 8 unanswerable ones, then has a stronger judge model grade each report:
+
+- **Correctness** against the gold evidence chunks (correct / partial / incorrect).
+- **Faithfulness**: each claim is checked against the passages the report actually cites.
+- **Deterministic checks**: whether the gold evidence was cited, and whether an unanswerable
+  question wrongly cites an internal document.
+- **Judge sanity**: each report is also graded against a *different* question's reference, which
+  a working judge must fail.
+
+```bash
+python -m eval.run_answer_eval --write   # live; needs GEMINI_API_KEY and judge-model quota
+```
+
+**Status:** the harness and its scoring logic are tested (9 offline tests), and a 2-question
+smoke run completed end to end. A full run has *not* been recorded yet: the judge model's
+free-tier quota (20 requests/day) is too small for 34 questions. The table fills in automatically
+once a full run is written, so no numbers are claimed until then.
+
+<!-- eval:answers:start -->
+_Full run pending (judge-model quota)._
+<!-- eval:answers:end -->
+
 ### Public benchmark: BEIR SciFact
 
 The in-house benchmark's questions and corpus were written by the same author, so it could
@@ -468,7 +517,7 @@ app/
 frontend/              Vite + React + three.js UI (3D live pipeline + replay, tabbed report, history)
 eval/                  pipeline eval + retrieval benchmark: labelled sets, stub model,
                        runners, cached embeddings, checked-in results
-tests/                 157 tests; doubles.py holds the offline stand-ins
+tests/                 166 tests; doubles.py holds the offline stand-ins
 scripts/               ingest_docs, run_demo, check_mcp_server
 ```
 
@@ -484,8 +533,9 @@ Stated plainly, because they are the honest next steps rather than hidden gaps:
   closest chunk (0.366) is nearer than the least similar correct chunk (0.375), so no distance
   threshold separates them perfectly. At 0.40, half get through, and catching those is left to
   the Analyst and Critic.
-- **No answer-quality metric.** Everything measured is structural. Whether a passing report is
-  *correct* needs an LLM-judge faithfulness score against a labelled answer key.
+- **Answer quality is not yet recorded.** The LLM-judge harness exists and is tested, but a full
+  run needs more judge-model quota than the free tier allows in a day. Until then, the recorded
+  metrics are structural plus retrieval quality.
 - **Fixed-width chunking** ignores markdown structure; a heading can be separated from the
   paragraph it introduces. Structure-aware splitting would retrieve better.
 - **The Critic sees only the Analyst's facts**, which came from the same model family. It catches
