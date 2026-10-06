@@ -11,6 +11,11 @@ every sentence in it links to the exact document or web page it came from.**
 &nbsp;·&nbsp; password: `mjSqEPp14EMF` &nbsp;·&nbsp;
 [API](https://agentdesk-production-9e6c.up.railway.app)
 
+<p align="center">
+  <img src="docs/finished-run.jpg" alt="A finished AgentDesk run: the Critic's Verified banner, report tabs, and inline citation chips that link to source documents" width="900">
+</p>
+<p align="center"><sub>A finished run: verified by the Critic, with every claim carrying a citation chip.</sub></p>
+
 > New here? Read **[What it does](#what-it-does)**, then **[How it works](#how-it-works)**.
 > Want to run it? Jump to **[Quick start](#quick-start)**.
 
