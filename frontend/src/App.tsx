@@ -35,11 +35,9 @@ export default function App() {
 
   // ---- Auth -------------------------------------------------------------
   useEffect(() => {
+    // Probe even with no stored password: a backend with the gate disabled
+    // (e.g. local dev, AGENTDESK_APP_PASSWORD empty) accepts an empty one.
     const stored = getStoredPassword();
-    if (!stored) {
-      setGate("locked");
-      return;
-    }
     checkPassword(stored)
       .then((ok) => {
         if (ok) {
