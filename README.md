@@ -26,12 +26,15 @@ every sentence in it links to the exact document or web page it came from.**
 A single chatbot answering a research question tends to either make things up or give a vague
 answer with no sources. AgentDesk avoids both:
 
-1. A **Planner** splits your question into smaller research tasks.
+1. A **Planner** classifies your question, lists what a complete answer must contain, and
+   splits it into smaller research tasks.
 2. A **Researcher** looks each one up in a private knowledge base (RAG) and on the web.
 3. An **Analyst** pulls out individual facts, each tied to the source it came from.
-4. A **Writer** drafts the report using only those facts.
-5. A **Critic** checks the draft against the sources. If a claim is unsupported it sends the
-   draft back, either for a **rewrite** or, if evidence is missing, for **more research**.
+4. A **Synthesizer** groups the facts into themes and flags where sources disagree.
+5. A **Writer** drafts the report in a shape that suits the question, using only those facts.
+6. A **Critic** checks the draft against the sources and the Planner's criteria. If a claim is
+   unsupported or something is missing it sends the draft back, either for a **rewrite** or, if
+   evidence is missing, for **more research**.
 
 You get a report like this (shortened):
 
@@ -69,7 +72,7 @@ flowchart LR
 
     subgraph G["LangGraph state machine"]
         direction TB
-        P[Planner] --> R[Researcher] --> A[Analyst] --> W[Writer] --> C{Critic}
+        P[Planner] --> R[Researcher] --> A[Analyst] --> S[Synthesizer] --> W[Writer] --> C{Critic}
         C -- "rewrite" --> W
         C -- "missing evidence" --> R
     end
@@ -90,11 +93,12 @@ flowchart LR
 
 | Agent | Job | Guardrail |
 | --- | --- | --- |
-| **Planner** | Breaks the question into subtasks; decides whether to use the knowledge base, the web, or both | Output is a forced function call, never free text |
+| **Planner** | Classifies the question, sets checkable success criteria, breaks it into subtasks; decides whether to use the knowledge base, the web, or both | Output is a forced function call, never free text |
 | **Researcher** | Runs every (subtask × tool) lookup concurrently over one MCP session; registers each passage under a stable `source_id` | Owns the source registry |
-| **Analyst** | Extracts atomic facts, each bound to a `source_id` | Drops any fact citing an id that was never retrieved |
-| **Writer** | Drafts the report from the facts, citing inline | Can only use what the Analyst passed on |
-| **Critic** | Verifies the draft against the evidence and returns pass/revise | Routes "badly written" to the Writer and "missing evidence" to the Researcher; both loops are capped |
+| **Analyst** | Extracts atomic facts (typed: number, policy, procedure, definition, claim), each bound to a `source_id` | Drops any fact citing an id that was never retrieved |
+| **Synthesizer** | Groups facts into themes, flags conflicts (including internal vs external practice) and gaps | Refers to facts by index only; a fact it forgets to place is kept, never dropped |
+| **Writer** | Drafts the report from the themed facts in a shape chosen by question type (comparison table, steps, risk review, direct answer, brief), citing inline | Can only use what the Analyst passed on |
+| **Critic** | Verifies the draft against the evidence, the success criteria and itself, and returns pass/revise | A "pass" cannot override uncovered criteria or contradictions. Routes "badly written" to the Writer and "missing evidence" to the Researcher; both loops are capped |
 
 Two design choices do most of the work:
 
@@ -515,7 +519,7 @@ All settings are environment variables read at call time (see `app/config.py` an
 app/
   graph.py            LangGraph state machine, reducers, citation resolution
   config.py           settings; errors.py: typed error taxonomy
-  agents/             planner, researcher, analyst, writer, critic
+  agents/             planner, researcher, analyst, synthesizer, writer, critic
     base.py           @node decorator: timing, logging, trace entries
   llm/gemini_client.py  forced function-calling + retry policy
   mcp/                server.py (tool process), client.py (session), tools.py (impls)

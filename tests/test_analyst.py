@@ -13,7 +13,7 @@ def test_analyst_extracts_facts_with_their_sources():
     with patch("app.agents.analyst.structured_call", return_value={"facts": facts}):
         update = analyst_node({"question": "q", "research_notes": NOTES})
 
-    assert update["facts"] == facts
+    assert update["facts"] == [{**facts[0], "kind": "claim"}]
 
 
 def test_analyst_skips_the_llm_call_when_there_is_nothing_to_analyse():
@@ -43,3 +43,14 @@ def test_analyst_truncates_oversized_notes_before_prompting():
         analyst_node({"question": "q", "research_notes": huge})
 
     assert len(call.call_args.kwargs["user_prompt"]) < 3_000
+
+
+def test_analyst_keeps_a_valid_fact_kind_and_defaults_an_invalid_one():
+    facts = [
+        {"claim": "Limit is 100/min.", "kind": "number", "source_id": "rag:h.md#0"},
+        {"claim": "Rotations are common.", "kind": "vibes", "source_id": "web:1"},
+    ]
+    with patch("app.agents.analyst.structured_call", return_value={"facts": facts}):
+        update = analyst_node({"question": "q", "research_notes": NOTES})
+
+    assert [f["kind"] for f in update["facts"]] == ["number", "claim"]

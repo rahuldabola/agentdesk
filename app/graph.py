@@ -1,4 +1,4 @@
-"""The LangGraph state machine wiring the five agents together."""
+"""The LangGraph state machine wiring the six agents together."""
 
 import logging
 import operator
@@ -12,6 +12,7 @@ from app.agents.analyst import analyst_node
 from app.agents.critic import critic_node
 from app.agents.planner import planner_node
 from app.agents.researcher import research_node
+from app.agents.synthesizer import synthesizer_node
 from app.agents.writer import writer_node
 
 log = logging.getLogger("agentdesk.graph")
@@ -66,6 +67,7 @@ class AgentState(TypedDict, total=False):
 
     # Analysis and drafting
     facts: list[dict]
+    synthesis: dict
     draft_report: str
 
     # Critique
@@ -99,13 +101,15 @@ def build_graph():
     graph.add_node("plan", planner_node)
     graph.add_node("research", research_node)
     graph.add_node("analyze", analyst_node)
+    graph.add_node("synthesize", synthesizer_node)
     graph.add_node("write", writer_node)
     graph.add_node("critique", critic_node)
 
     graph.add_edge(START, "plan")
     graph.add_edge("plan", "research")
     graph.add_edge("research", "analyze")
-    graph.add_edge("analyze", "write")
+    graph.add_edge("analyze", "synthesize")
+    graph.add_edge("synthesize", "write")
     graph.add_edge("write", "critique")
     graph.add_conditional_edges(
         "critique",
