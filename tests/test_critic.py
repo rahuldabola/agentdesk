@@ -70,3 +70,33 @@ def test_blank_missing_information_entries_are_ignored():
 
     assert update["missing_information"] == []
     assert update["revision_count"] == 1
+
+
+def test_pass_with_uncovered_criteria_is_downgraded_to_a_rewrite():
+    state = {**STATE, "success_criteria": ["states the timeline"], "question_type": "how_to"}
+    with _verdict(verdict="pass", uncovered_criteria=["states the timeline"]):
+        update = critic_node(state)
+
+    assert update["critic_verdict"] == "revise"
+    assert "final_report" not in update
+    assert update["revision_count"] == 1
+    assert "states the timeline" in update["critic_feedback"]
+
+
+def test_contradictions_block_a_pass_and_reach_the_writer_feedback():
+    with _verdict(verdict="pass", contradictions=["says 30 days, then 90 days"]):
+        update = critic_node(STATE)
+
+    assert update["critic_verdict"] == "revise"
+    assert update["contradictions"] == ["says 30 days, then 90 days"]
+    assert "says 30 days, then 90 days" in update["critic_feedback"]
+
+
+def test_success_criteria_are_shown_to_the_critic():
+    state = {**STATE, "success_criteria": ["states the timeline"], "question_type": "how_to"}
+    with _verdict(verdict="pass") as mocked:
+        critic_node(state)
+
+    prompt = mocked.call_args.kwargs["user_prompt"]
+    assert "Question type: how_to" in prompt
+    assert "- states the timeline" in prompt

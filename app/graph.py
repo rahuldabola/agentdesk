@@ -51,6 +51,8 @@ class AgentState(TypedDict, total=False):
     question: str
 
     # Plan
+    question_type: str
+    success_criteria: list[str]
     subtasks: list[str]
     use_rag: bool
     use_web: bool
@@ -70,6 +72,8 @@ class AgentState(TypedDict, total=False):
     critic_verdict: str
     critic_feedback: str
     unsupported_claims: list[str]
+    uncovered_criteria: list[str]
+    contradictions: list[str]
     missing_information: list[str]
     revision_count: int
 

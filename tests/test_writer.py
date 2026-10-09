@@ -46,3 +46,15 @@ def test_writer_handles_an_empty_fact_list():
         writer_node({"question": "q", "facts": []})
 
     assert "(none)" in call.call_args.kwargs["user_prompt"]
+
+
+def test_writer_prompt_lists_the_success_criteria():
+    from unittest.mock import patch
+
+    from app.agents.writer import writer_node
+
+    state = {"question": "q", "facts": [], "success_criteria": ["states the timeline"]}
+    with patch("app.agents.writer.text_call", return_value="r") as mocked:
+        writer_node(state)
+
+    assert "- states the timeline" in mocked.call_args.kwargs["user_prompt"]
