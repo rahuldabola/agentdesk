@@ -77,6 +77,17 @@ def _criteria_block(state: dict) -> str:
     return f"Question type: {kind}\nSuccess criteria:\n{listed}\n\n"
 
 
+def _conflicts_block(state: dict) -> str:
+    conflicts = (state.get("synthesis") or {}).get("conflicts") or []
+    if not conflicts:
+        return ""
+    listed = "\n".join(f"- {c['description']}" for c in conflicts)
+    return (
+        "Known conflicts in the evidence (the draft must acknowledge them, not pick a side "
+        f"silently):\n{listed}\n\n"
+    )
+
+
 def _compose_feedback(feedback: str, uncovered: list[str], contradictions: list[str]) -> str:
     """Fold the structured findings into the text the Writer reads on a rewrite."""
     parts = [feedback] if feedback else []
@@ -98,7 +109,7 @@ def critic_node(state: dict) -> dict:
         system=SYSTEM,
         user_prompt=(
             f"Question: {state['question']}\n\n{_criteria_block(state)}"
-            f"Facts:\n{facts_text or '(none)'}\n\n"
+            f"Facts:\n{facts_text or '(none)'}\n\n{_conflicts_block(state)}"
             f"Draft report:\n{draft}"
         ),
         tool_name="submit_verdict",

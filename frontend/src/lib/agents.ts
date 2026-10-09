@@ -70,6 +70,7 @@ export function inferActiveAgent(trace: TraceEntry[], running: boolean): AgentKe
     case "researcher":
       return "analyst";
     case "analyst":
+    case "synthesizer":
       return "writer";
     case "writer":
       return "critic";

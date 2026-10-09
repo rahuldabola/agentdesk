@@ -100,3 +100,14 @@ def test_success_criteria_are_shown_to_the_critic():
     prompt = mocked.call_args.kwargs["user_prompt"]
     assert "Question type: how_to" in prompt
     assert "- states the timeline" in prompt
+
+
+def test_known_conflicts_are_shown_to_the_critic():
+    state = {
+        **STATE,
+        "synthesis": {"conflicts": [{"description": "30 vs 90 days", "fact_ids": []}]},
+    }
+    with _verdict(verdict="pass") as mocked:
+        critic_node(state)
+
+    assert "- 30 vs 90 days" in mocked.call_args.kwargs["user_prompt"]
