@@ -8,7 +8,7 @@ information sends the graph back to the Researcher instead.
 """
 
 from app.agents.base import node
-from app.config import get_settings
+from app.config import agent_model, get_settings
 from app.llm.gemini_client import structured_call
 
 VERDICT_SCHEMA = {
@@ -115,6 +115,7 @@ def critic_node(state: dict) -> dict:
         tool_name="submit_verdict",
         tool_description="Submit the critique verdict",
         input_schema=VERDICT_SCHEMA,
+        model=agent_model("critic"),
     )
 
     verdict = data.get("verdict", "pass")

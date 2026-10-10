@@ -1,6 +1,7 @@
 """Analyst: turns raw passages into atomic claims, each bound to a source_id."""
 
 from app.agents.base import node
+from app.config import agent_model
 from app.llm.gemini_client import structured_call
 
 FACT_KINDS = ["number", "policy", "procedure", "definition", "claim"]
@@ -64,6 +65,7 @@ def analyst_node(state: dict) -> dict:
         tool_description="Submit extracted facts with source citations",
         input_schema=FACTS_SCHEMA,
         max_tokens=2048,
+        model=agent_model("analyst"),
     )
 
     # Drop any fact citing a source_id that was not in the notes - that is a

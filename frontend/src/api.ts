@@ -67,8 +67,11 @@ export interface Citation {
   title?: string;
 }
 
+export type Depth = "quick" | "deep";
+
 export interface ReportResult {
   question: string;
+  depth?: Depth | null;
   status: string;
   report: string;
   citations: Citation[];
@@ -103,6 +106,7 @@ export async function streamReport(
   password: string,
   handlers: StreamHandlers,
   signal?: AbortSignal,
+  depth?: Depth,
 ): Promise<void> {
   const res = await fetch(`${API_BASE}/api/report/stream`, {
     method: "POST",
@@ -110,7 +114,7 @@ export async function streamReport(
       "content-type": "application/json",
       ...authHeaders(password),
     },
-    body: JSON.stringify({ question }),
+    body: JSON.stringify(depth ? { question, depth } : { question }),
     signal,
   });
 

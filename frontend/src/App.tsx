@@ -1,6 +1,6 @@
 import { ArrowUp, Keyboard, Menu, Plus, RefreshCw, Search, TriangleAlert } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { checkPassword, clearStoredPassword, fetchHealth, getStoredPassword, streamReport } from "./api";
+import { checkPassword, clearStoredPassword, fetchHealth, getStoredPassword, streamReport, type Depth } from "./api";
 import CommandPalette from "./components/CommandPalette";
 import DraftingPreview from "./components/DraftingPreview";
 import FollowUps from "./components/FollowUps";
@@ -27,6 +27,10 @@ export default function App() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [showTop, setShowTop] = useState(false);
   const [health, setHealth] = useState<HealthState>({ state: "checking" });
+  const [depth, setDepth] = useState<Depth>(() => (localStorage.getItem("agentdesk.depth") === "quick" ? "quick" : "deep"));
+  useEffect(() => {
+    localStorage.setItem("agentdesk.depth", depth);
+  }, [depth]);
   const abortRef = useRef<Map<string, AbortController>>(new Map());
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -123,6 +127,7 @@ export default function App() {
           onError: (message) => patchRun(id, { error: message, running: false, finishedAt: Date.now() }),
         },
         controller.signal,
+        depth,
       )
         .catch((err: Error & { status?: number }) => {
           if (err.name === "AbortError") return;
@@ -139,7 +144,7 @@ export default function App() {
           patchRun(id, (r) => (r.running ? { running: false, error: "The connection closed before the report arrived.", finishedAt: Date.now() } : {}));
         });
     },
-    [password, patchRun, runs, toast],
+    [password, patchRun, runs, toast, depth],
   );
 
   const stopRun = useCallback(() => {
@@ -282,7 +287,7 @@ export default function App() {
   );
 
   const composer = (large?: boolean) => (
-    <QuestionComposer running={anyRunning} onSubmit={startRun} onStop={stopRun} inputRef={inputRef} autoFocus={large} large={large} />
+    <QuestionComposer depth={depth} onDepthChange={setDepth} running={anyRunning} onSubmit={startRun} onStop={stopRun} inputRef={inputRef} autoFocus={large} large={large} />
   );
 
   return (

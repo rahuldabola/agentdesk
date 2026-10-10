@@ -11,6 +11,7 @@ drop or alter it.
 """
 
 from app.agents.base import node
+from app.config import agent_model
 from app.llm.gemini_client import structured_call
 
 SYNTHESIS_SCHEMA = {
@@ -126,6 +127,12 @@ def synthesizer_node(state: dict) -> dict:
             "_detail": "no facts to organise",
         }
 
+    if state.get("depth") == "quick":
+        return {
+            "synthesis": {"themes": [], "conflicts": [], "gaps": []},
+            "_detail": f"skipped in quick mode ({len(facts)} facts passed through)",
+        }
+
     criteria = state.get("success_criteria") or []
     prompt = f"Question: {state['question']}\nQuestion type: {state.get('question_type', '')}\n"
     if criteria:
@@ -139,6 +146,7 @@ def synthesizer_node(state: dict) -> dict:
         tool_description="Submit the themes, conflicts and gaps",
         input_schema=SYNTHESIS_SCHEMA,
         max_tokens=1536,
+        model=agent_model("synthesizer"),
     )
     synthesis = build_synthesis(data, len(facts))
     return {

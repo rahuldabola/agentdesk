@@ -501,6 +501,11 @@ All settings are environment variables read at call time (see `app/config.py` an
 | `GEMINI_API_KEY` | — | required; free tier available at aistudio.google.com/apikey |
 | `TAVILY_API_KEY` | — | optional; without it, web search scrapes DuckDuckGo |
 | `GEMINI_MODEL` | `gemini-flash-lite-latest` | chat/tool-calling model; heavier models hit free-tier rate limits fast under this pipeline's call volume |
+| `AGENTDESK_DEPTH` | `deep` | `quick` skips page reading, query rewording and the Synthesizer for a faster, lighter run; a request can override it with `"depth"` in the body |
+| `AGENTDESK_MODEL_<AGENT>` | — | run one agent (`PLANNER`, `RESEARCHER`, `ANALYST`, `SYNTHESIZER`, `WRITER`, `CRITIC`) on a different model than `GEMINI_MODEL`, e.g. a stronger one for the judgement-heavy Planner and Critic |
+| `AGENTDESK_FETCH_PAGES` | `3` | pages the web researcher reads in full per round; `0` turns it off |
+| `AGENTDESK_FETCH_MAX_CHARS` | `1800` | text kept from each page |
+| `AGENTDESK_QUERY_REWRITE` | `1` | reword a knowledge-base query that found nothing, once; `0` turns it off |
 | `AGENTDESK_EMBED_MODEL` | `gemini-embedding-001` | |
 | `AGENTDESK_MAX_DISTANCE` | `0.40` | cosine-distance relevance floor, calibrated by the retrieval benchmark |
 | `AGENTDESK_RETRIEVAL_MODE` | `dense` | `dense`, `bm25`, or `hybrid` (reciprocal rank fusion of both) |

@@ -120,3 +120,44 @@ def test_render_table_shows_every_headline_metric():
 
     for label in ("Correctness", "Faithfulness", "Judge sanity", "No fabricated"):
         assert label in table
+
+
+def test_completeness_judge_is_skipped_without_criteria():
+    from unittest.mock import patch
+
+    with patch("app.llm.gemini_client.structured_call") as judge:
+        assert answers.judge_completeness([], "report", "m") == []
+
+    judge.assert_not_called()
+
+
+def test_summary_reports_criteria_coverage_only_when_it_was_measured():
+    covered = {
+        **row("keyword", "correct", [True]),
+        "criteria": [
+            {"criterion": "a", "met": True},
+            {"criterion": "b", "met": False},
+            {"criterion": "c", "met": True},
+            {"criterion": "d", "met": True},
+        ],
+    }
+
+    with_criteria = answers.summarise([covered], [])
+    without = answers.summarise([row("keyword", "correct", [True])], [])
+
+    assert with_criteria["criteria_coverage"] == pytest.approx(0.75)
+    assert with_criteria["criteria_checked"] == 4
+    assert without["criteria_coverage"] is None
+
+
+def test_render_table_adds_a_coverage_row_only_when_measured():
+    measured = {**row("keyword", "correct", [True]), "criteria": [{"criterion": "a", "met": True}]}
+    result = {"meta": {"model": "m", "judge_model": "j"}}
+
+    shown = answers.render_table({**result, "summary": answers.summarise([measured], [])})
+    hidden = answers.render_table(
+        {**result, "summary": answers.summarise([row("keyword", "correct", [True])], [])}
+    )
+
+    assert "Criteria coverage | 100%" in shown
+    assert "Criteria coverage" not in hidden

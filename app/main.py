@@ -5,6 +5,7 @@ import logging
 import os
 import secrets
 from collections.abc import Iterator
+from typing import Literal
 
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
@@ -55,11 +56,15 @@ async def require_app_password(x_app_password: str | None = Header(default=None)
 
 class ReportRequest(BaseModel):
     question: str = Field(min_length=3, max_length=2000)
+    # quick = leaner pipeline (fewer LLM/HTTP calls); deep = every specialist on.
+    # Omitted -> the server's AGENTDESK_DEPTH, which defaults to deep.
+    depth: Literal["quick", "deep"] | None = None
 
 
 def _response_body(question: str, result: dict) -> dict:
     return {
         "question": question,
+        "depth": result.get("depth"),
         # "passed" means the Critic accepted the report; "revision_limit_reached"
         # means it did not, and the last draft is being returned unverified.
         "status": result.get("status"),
@@ -94,7 +99,7 @@ def health() -> dict:
 
 @app.post("/api/report", dependencies=[Depends(require_app_password)])
 async def create_report(req: ReportRequest) -> dict:
-    result = await run_in_threadpool(run_agentdesk, req.question)
+    result = await run_in_threadpool(run_agentdesk, req.question, req.depth)
     return _response_body(req.question, result)
 
 
@@ -102,14 +107,14 @@ def _sse(event: str, data: dict) -> str:
     return f"event: {event}\ndata: {json.dumps(data)}\n\n"
 
 
-def _report_events(question: str) -> Iterator[str]:
+def _report_events(question: str, depth: str | None = None) -> Iterator[str]:
     """Server-sent events for one run: a `progress` per node, then `report`.
 
     Errors are delivered as a terminal `error` event rather than a severed
     connection, because the response status is already committed by then.
     """
     try:
-        for kind, payload in stream_agentdesk(question):
+        for kind, payload in stream_agentdesk(question, depth):
             if kind == "progress":
                 yield _sse("progress", payload)
             else:
@@ -129,7 +134,7 @@ async def auth_check() -> dict:
 async def create_report_stream(req: ReportRequest) -> StreamingResponse:
     """Same run as /api/report, streamed as each agent finishes."""
     return StreamingResponse(
-        iterate_in_threadpool(_report_events(req.question)),
+        iterate_in_threadpool(_report_events(req.question, req.depth)),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
