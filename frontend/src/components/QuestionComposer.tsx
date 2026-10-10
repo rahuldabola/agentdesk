@@ -1,10 +1,13 @@
 import { ArrowUp, Square } from "lucide-react";
+import type { Depth } from "../api";
 import { type FormEvent, type RefObject, useLayoutEffect, useState } from "react";
 
 const MIN_LEN = 3;
 const MAX_LEN = 2000;
 
 export default function QuestionComposer({
+  depth,
+  onDepthChange,
   running,
   onSubmit,
   onStop,
@@ -12,6 +15,8 @@ export default function QuestionComposer({
   autoFocus,
   large,
 }: {
+  depth: Depth;
+  onDepthChange: (depth: Depth) => void;
   running: boolean;
   onSubmit: (question: string) => void;
   onStop: () => void;
@@ -69,8 +74,29 @@ export default function QuestionComposer({
         className={`block w-full resize-none bg-transparent px-4 text-[15px] leading-relaxed text-[var(--text)] outline-none placeholder:text-[var(--text-faint)] ${large ? "pb-12 pt-4" : "pb-11 pt-3.5"}`}
       />
       <div className="absolute inset-x-3 bottom-2.5 flex items-center justify-between gap-2">
-        <div className="hidden items-center gap-1.5 text-[11px] text-[var(--text-faint)] sm:flex">
-          <kbd>Enter</kbd> to send · <kbd>Shift</kbd>+<kbd>Enter</kbd> new line
+        <div className="flex items-center gap-2.5">
+          <div
+            role="group"
+            aria-label="Research depth"
+            title="Deep reads pages in full, rewords failed searches and organises the evidence. Quick skips those for a faster, lighter run."
+            className="flex rounded-lg border border-[var(--border)] p-0.5 text-[11px] font-medium"
+          >
+            {(["quick", "deep"] as const).map((d) => (
+              <button
+                key={d}
+                type="button"
+                aria-pressed={depth === d}
+                disabled={running}
+                onClick={() => onDepthChange(d)}
+                className={`rounded-md px-2 py-0.5 capitalize transition disabled:cursor-not-allowed ${depth === d ? "bg-[var(--text)]/10 text-[var(--text)]" : "text-[var(--text-faint)] hover:text-[var(--text)]"}`}
+              >
+                {d}
+              </button>
+            ))}
+          </div>
+          <div className="hidden items-center gap-1.5 text-[11px] text-[var(--text-faint)] md:flex">
+            <kbd>Enter</kbd> to send · <kbd>Shift</kbd>+<kbd>Enter</kbd> new line
+          </div>
         </div>
         <div className="ml-auto flex items-center gap-2.5">
           {value.length > 0 && (

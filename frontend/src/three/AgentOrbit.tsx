@@ -32,7 +32,8 @@ const EDGES: EdgeDef[] = [
   { from: "core", to: "planner" },
   { from: "planner", to: "researcher" },
   { from: "researcher", to: "analyst" },
-  { from: "analyst", to: "writer" },
+  { from: "analyst", to: "synthesizer" },
+  { from: "synthesizer", to: "writer" },
   { from: "writer", to: "critic" },
   { from: "critic", to: "writer", loop: true },
   { from: "critic", to: "researcher", loop: true },
@@ -363,7 +364,7 @@ export default function AgentOrbit(props: AgentOrbitProps) {
     io.observe(container);
 
     // ---- Demo cycle for the landing page ---------------------------------------------
-    const demoOrder: AgentKey[] = ["planner", "researcher", "analyst", "writer", "critic"];
+    const demoOrder: AgentKey[] = ["planner", "researcher", "analyst", "synthesizer", "writer", "critic"];
     let demoIndex = 0;
     let demoTimer = 0;
 

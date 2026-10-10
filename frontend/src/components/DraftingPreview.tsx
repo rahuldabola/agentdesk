@@ -7,6 +7,7 @@ const NARRATION: Record<AgentKey, string> = {
   planner: "Breaking your question into focused sub-questions…",
   researcher: "Searching the knowledge base and the web in parallel…",
   analyst: "Pulling atomic, source-pinned facts out of the evidence…",
+  synthesizer: "Grouping the facts into themes and checking where sources disagree…",
   writer: "Writing the report, with a citation on every sentence…",
   critic: "Fact-checking each claim against the sources…",
 };

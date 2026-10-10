@@ -100,7 +100,7 @@ def _events(raw: str) -> list[tuple[str, dict]]:
 
 
 def test_the_stream_reports_each_node_before_the_final_report():
-    def fake_stream(question):
+    def fake_stream(question, depth=None):
         yield "progress", {"node": "planner", "detail": "2 subtasks", "elapsed_ms": 10.0}
         yield "progress", {"node": "researcher", "detail": "4 notes", "elapsed_ms": 20.0}
         yield "report", RESULT
@@ -121,7 +121,7 @@ def test_the_stream_reports_each_node_before_the_final_report():
 def test_a_failure_mid_stream_arrives_as_an_error_event():
     """The status line is already sent, so the failure has to travel in-band."""
 
-    def fake_stream(question):
+    def fake_stream(question, depth=None):
         yield "progress", {"node": "planner", "detail": "ok", "elapsed_ms": 1.0}
         raise LLMError("Claude is down")
 
@@ -140,3 +140,39 @@ def test_the_stream_validates_its_input_like_the_plain_endpoint():
 
     assert resp.status_code == 422
     never.assert_not_called()
+
+
+def test_depth_is_passed_through_to_the_pipeline_and_echoed():
+    with patch("app.main.run_agentdesk", return_value={**RESULT, "depth": "quick"}) as run:
+        response = client.post("/api/report", json={"question": "What is X?", "depth": "quick"})
+
+    assert response.status_code == 200
+    assert run.call_args.args == ("What is X?", "quick")
+    assert response.json()["depth"] == "quick"
+
+
+def test_depth_defaults_to_the_servers_choice_when_omitted():
+    with patch("app.main.run_agentdesk", return_value=RESULT) as run:
+        client.post("/api/report", json={"question": "What is X?"})
+
+    assert run.call_args.args == ("What is X?", None)
+
+
+def test_an_unknown_depth_is_rejected_before_any_llm_call():
+    with patch("app.main.run_agentdesk") as never:
+        response = client.post("/api/report", json={"question": "What is X?", "depth": "turbo"})
+
+    assert response.status_code == 422
+    never.assert_not_called()
+
+
+def test_the_stream_forwards_depth():
+    def fake_stream(question, depth=None):
+        yield "report", {**RESULT, "depth": depth}
+
+    with patch("app.main.stream_agentdesk", side_effect=fake_stream):
+        response = client.post(
+            "/api/report/stream", json={"question": "What is X?", "depth": "quick"}
+        )
+
+    assert '"depth": "quick"' in response.text

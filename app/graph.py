@@ -14,6 +14,7 @@ from app.agents.planner import planner_node
 from app.agents.researcher import research_node
 from app.agents.synthesizer import synthesizer_node
 from app.agents.writer import writer_node
+from app.config import resolve_depth
 
 log = logging.getLogger("agentdesk.graph")
 
@@ -50,6 +51,7 @@ def merge_sources(existing: dict, new: dict) -> dict:
 
 class AgentState(TypedDict, total=False):
     question: str
+    depth: str  # "quick" | "deep"; see app.config.resolve_depth
 
     # Plan
     question_type: str
@@ -155,11 +157,17 @@ def resolve_citations(report: str, sources: dict) -> list[dict]:
     return citations
 
 
-def _initial_state(question: str) -> dict:
+def _initial_state(question: str, depth: str | None = None) -> dict:
     question = (question or "").strip()
     if not question:
         raise ValueError("question must not be empty")
-    return {"question": question, "revision_count": 0, "research_rounds": 0, "trace": []}
+    return {
+        "question": question,
+        "depth": resolve_depth(depth),
+        "revision_count": 0,
+        "research_rounds": 0,
+        "trace": [],
+    }
 
 
 def finalize(state: dict) -> dict:
@@ -179,11 +187,11 @@ def finalize(state: dict) -> dict:
     return result
 
 
-def run_agentdesk(question: str) -> dict:
-    return finalize(get_graph().invoke(_initial_state(question)))
+def run_agentdesk(question: str, depth: str | None = None) -> dict:
+    return finalize(get_graph().invoke(_initial_state(question, depth)))
 
 
-def stream_agentdesk(question: str) -> Iterator[tuple[str, dict]]:
+def stream_agentdesk(question: str, depth: str | None = None) -> Iterator[tuple[str, dict]]:
     """Yield ("progress", trace_entry) as each node finishes, then ("report", result).
 
     A full run takes tens of seconds; this lets a caller show the pipeline
@@ -191,7 +199,7 @@ def stream_agentdesk(question: str) -> Iterator[tuple[str, dict]]:
     """
     emitted = 0
     state: dict = {}
-    for state in get_graph().stream(_initial_state(question), stream_mode="values"):
+    for state in get_graph().stream(_initial_state(question, depth), stream_mode="values"):
         trace = state.get("trace", [])
         for entry in trace[emitted:]:
             yield "progress", entry

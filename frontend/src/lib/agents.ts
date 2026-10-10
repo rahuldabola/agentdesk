@@ -1,6 +1,6 @@
 import type { TraceEntry } from "../api";
 
-export type AgentKey = "planner" | "researcher" | "analyst" | "writer" | "critic";
+export type AgentKey = "planner" | "researcher" | "analyst" | "synthesizer" | "writer" | "critic";
 
 export interface AgentMeta {
   key: AgentKey;
@@ -15,35 +15,42 @@ export const AGENTS: AgentMeta[] = [
     key: "planner",
     label: "Planner",
     blurb: "Decomposes the question",
-    description: "Splits your question into focused sub-questions and decides whether to search the internal knowledge base, the web, or both.",
+    description: "Classifies your question, writes the checklist a complete answer must satisfy, and splits it into focused sub-questions routed to the knowledge base, the web, or both.",
     color: "#8b7cff",
   },
   {
     key: "researcher",
     label: "Researcher",
     blurb: "RAG + web search",
-    description: "Runs every sub-question in parallel through MCP tools: vector search over the knowledge base and live web search.",
+    description: "Two specialists run in parallel through MCP tools: an internal lane that searches the knowledge base (rewording queries that find nothing) and a web lane that searches, then reads the top pages in full.",
     color: "#38bdf8",
   },
   {
     key: "analyst",
     label: "Analyst",
     blurb: "Extracts cited facts",
-    description: "Reads the raw evidence and pulls out atomic facts, each pinned to the exact source it came from.",
+    description: "Reads the raw evidence and pulls out atomic, typed facts (numbers, policies, procedures), each pinned to the exact source it came from.",
     color: "#34d399",
+  },
+  {
+    key: "synthesizer",
+    label: "Synthesizer",
+    blurb: "Organises the evidence",
+    description: "Groups the facts into themes, flags where sources disagree (including internal vs external practice) and lists what no source covers. Skipped in quick mode.",
+    color: "#2dd4bf",
   },
   {
     key: "writer",
     label: "Writer",
     blurb: "Drafts the report",
-    description: "Turns the fact sheet into a readable report where every sentence carries an inline citation.",
+    description: "Turns the organised facts into a report shaped for the question (comparison table, steps, risk review, direct answer) where every sentence carries an inline citation.",
     color: "#fbbf24",
   },
   {
     key: "critic",
     label: "Critic",
     blurb: "Checks every claim",
-    description: "Fact-checks the draft against the evidence. Unsupported claims send it back for a rewrite, evidence gaps send it back to research.",
+    description: "Fact-checks the draft against the evidence, the Planner's checklist and itself. Unsupported or missing points send it back for a rewrite, evidence gaps send it back to research.",
     color: "#f472b6",
   },
 ];
@@ -70,6 +77,7 @@ export function inferActiveAgent(trace: TraceEntry[], running: boolean): AgentKe
     case "researcher":
       return "analyst";
     case "analyst":
+      return "synthesizer";
     case "synthesizer":
       return "writer";
     case "writer":

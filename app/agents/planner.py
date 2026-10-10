@@ -1,6 +1,7 @@
 """Planner: decomposes the question and routes it to the right tools."""
 
 from app.agents.base import node
+from app.config import agent_model
 from app.llm.gemini_client import structured_call
 
 QUESTION_TYPES = ["comparison", "how_to", "risk_compliance", "factual_lookup", "open_ended"]
@@ -66,6 +67,7 @@ def planner_node(state: dict) -> dict:
         tool_name="submit_plan",
         tool_description="Submit the research plan",
         input_schema=PLAN_SCHEMA,
+        model=agent_model("planner"),
     )
     subtasks = [s for s in data.get("subtasks", []) if s and s.strip()]
     use_rag = bool(data.get("use_rag", True))

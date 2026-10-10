@@ -151,6 +151,30 @@ def gold_cited(report: str, notes: list[dict], gold: list[dict]) -> bool:
     return False
 
 
+COMPLETENESS_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "criteria": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "criterion": {"type": "string"},
+                    "met": {"type": "boolean"},
+                },
+                "required": ["criterion", "met"],
+            },
+        }
+    },
+    "required": ["criteria"],
+}
+COMPLETENESS_SYSTEM = """You check whether a report covers what a complete answer needs.
+For each listed criterion, say whether the report addresses it. A report that explicitly says
+the information is not available counts as addressing the criterion. A report that is silent
+on it, or only gestures at it, does not. This is about coverage, not correctness: do not judge
+whether the content is true."""
+
+
 def with_retries(fn, attempts: int = 4, delay: float = 20.0):
     """Retry a whole call on any exception. The client already retries single
     requests; this outlasts longer overload spells (503 "high demand") and
@@ -207,6 +231,24 @@ def judge_faithfulness(report: str, notes: list[dict], model: str) -> dict:
     )
 
 
+def judge_completeness(criteria: list[str], report: str, model: str) -> list[dict]:
+    from app.llm.gemini_client import structured_call
+
+    if not criteria:
+        return []
+    listed = "\n".join(f"- {c}" for c in criteria)
+    data = structured_call(
+        COMPLETENESS_SYSTEM,
+        f"Criteria:\n{listed}\n\nReport:\n{report}",
+        "submit_coverage",
+        "Submit the coverage",
+        COMPLETENESS_SCHEMA,
+        model=model,
+        max_tokens=1024,
+    )
+    return data.get("criteria", [])
+
+
 def ingest_real_corpus(chroma_dir: str) -> None:
     """Ingest in a child process, as production does at boot, so this process
     never holds a Chroma handle the MCP tool subprocess also opens."""
@@ -231,6 +273,8 @@ def run_pipeline(question: str) -> dict:
     return {
         "report": result.get("final_report") or "",
         "status": result.get("status"),
+        "question_type": result.get("question_type"),
+        "success_criteria": result.get("success_criteria", []),
         "notes": [
             {"source_id": n["source_id"], "content": n["content"]}
             for n in result.get("research_notes", [])
@@ -248,6 +292,7 @@ def summarise(rows: list[dict], negative_rows: list[dict]) -> dict:
         grades = [GRADE_SCORE[r["grade"]] for r in judged if r["type"] == qtype]
         if grades:
             by_type[qtype] = round(statistics.mean(grades), 3)
+    criteria = [c for r in ok for c in r.get("criteria", [])]
     sanity = [r["sanity_grade"] == "incorrect" for r in judged if "sanity_grade" in r]
     neg_ok = [r for r in negative_rows if "error" not in r]
     return {
@@ -264,6 +309,10 @@ def summarise(rows: list[dict], negative_rows: list[dict]) -> dict:
         if claims
         else 0.0,
         "claims_checked": len(claims),
+        "criteria_coverage": round(sum(c["met"] for c in criteria) / len(criteria), 3)
+        if criteria
+        else None,
+        "criteria_checked": len(criteria),
         "gold_cited_rate": round(sum(r["gold_cited"] for r in ok) / len(ok), 3) if ok else 0.0,
         "unanswerable": len(negative_rows),
         "no_fabrication_rate": round(sum(r["no_fabrication"] for r in neg_ok) / len(neg_ok), 3)
@@ -305,6 +354,11 @@ def run(judge_model: str, pause: float, limit: int | None = None) -> dict:
                 lambda row=row: judge_faithfulness(row["report"], row["notes"], judge_model)
             )["claims"]
             row["gold_cited"] = gold_cited(row["report"], row["notes"], q["gold"])
+            row["criteria"] = with_retries(
+                lambda row=row: judge_completeness(
+                    row["success_criteria"], row["report"], judge_model
+                )
+            )
         rows.append(row)
         time.sleep(pause)
 
@@ -364,6 +418,14 @@ def render_table(result: dict) -> str:
             f"{by_type.get('paraphrase', 0):.2f} / {by_type.get('multi', 0):.2f} | |",
             f"| Faithfulness | {s['faithfulness']:.2f} | supported claims / all claims "
             f"({s['claims_checked']} checked against cited passages) |",
+            *(
+                [
+                    f"| Criteria coverage | {s['criteria_coverage']:.0%} | share of the Planner's "
+                    f"success criteria the report addresses ({s['criteria_checked']} judged) |"
+                ]
+                if s.get("criteria_coverage") is not None
+                else []
+            ),
             f"| Gold evidence cited | {s['gold_cited_rate']:.0%} | deterministic |",
             f"| No fabricated internal answer | {s['no_fabrication_rate']:.0%} | "
             "unanswerable questions citing no internal doc; deterministic |",

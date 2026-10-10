@@ -143,8 +143,10 @@ def structured_call(
     )
 
 
-def text_call(system: str, user_prompt: str, max_tokens: int = 1500) -> str:
-    response = _create(system=system, contents=user_prompt, max_tokens=max_tokens)
+def text_call(
+    system: str, user_prompt: str, max_tokens: int = 1500, model: str | None = None
+) -> str:
+    response = _create(system=system, contents=user_prompt, max_tokens=max_tokens, model=model)
     text = response.text or ""
     if not text.strip():
         raise LLMError("Gemini returned an empty response.")

@@ -21,7 +21,7 @@ import asyncio
 import logging
 
 from app.agents.base import node
-from app.config import get_settings
+from app.config import agent_model, get_settings
 from app.llm.gemini_client import structured_call
 from app.mcp.client import call_tool, mcp_session
 
@@ -105,6 +105,7 @@ def rewrite_queries(question: str, queries: list[str]) -> list[str]:
         tool_description="Submit the reworded queries",
         input_schema=REWRITE_SCHEMA,
         max_tokens=512,
+        model=agent_model("researcher"),
     )
     out = [q.strip() for q in data.get("queries") or [] if isinstance(q, str)]
     return [out[i] if i < len(out) and out[i] else q for i, q in enumerate(queries)]
@@ -115,7 +116,7 @@ def _is_empty(payload) -> bool:
     return isinstance(payload, dict) and not payload.get("error") and not payload.get("results")
 
 
-async def _internal_lane(session, subtasks, guarded, question, activity) -> list[tuple]:
+async def _internal_lane(session, subtasks, guarded, question, activity, deep) -> list[tuple]:
     settings = get_settings()
 
     async def search(queries):
@@ -128,7 +129,7 @@ async def _internal_lane(session, subtasks, guarded, question, activity) -> list
     payloads = list(await search(queries))
 
     empty = [i for i, p in enumerate(payloads) if _is_empty(p)]
-    if empty and settings.query_rewrite:
+    if empty and settings.query_rewrite and deep:
         try:
             reworded = await asyncio.to_thread(
                 rewrite_queries, question, [queries[i] for i in empty]
@@ -170,7 +171,7 @@ def _pages_to_read(payloads, limit: int) -> list[str]:
     return urls
 
 
-async def _web_lane(session, subtasks, guarded, activity) -> list[tuple]:
+async def _web_lane(session, subtasks, guarded, activity, deep) -> list[tuple]:
     settings = get_settings()
     searches = (
         guarded(session, "web_search", {"query": q, "max_results": settings.web_results})
@@ -178,7 +179,7 @@ async def _web_lane(session, subtasks, guarded, activity) -> list[tuple]:
     )
     payloads = await asyncio.gather(*searches, return_exceptions=True)
 
-    urls = _pages_to_read(payloads, settings.fetch_pages)
+    urls = _pages_to_read(payloads, settings.fetch_pages if deep else 0)
     if urls:
         fetches = (
             guarded(session, "fetch_page", {"url": u, "max_chars": settings.fetch_max_chars})
@@ -202,7 +203,7 @@ async def _web_lane(session, subtasks, guarded, activity) -> list[tuple]:
 
 
 async def _gather(
-    subtasks: list[str], use_rag: bool, use_web: bool, question: str
+    subtasks: list[str], use_rag: bool, use_web: bool, question: str, deep: bool = True
 ) -> tuple[list[tuple], dict]:
     """Run the internal and web lanes concurrently over one session.
 
@@ -220,9 +221,9 @@ async def _gather(
     async with mcp_session() as session:
         lanes = []
         if use_rag:
-            lanes.append(_internal_lane(session, subtasks, guarded, question, activity))
+            lanes.append(_internal_lane(session, subtasks, guarded, question, activity, deep))
         if use_web:
-            lanes.append(_web_lane(session, subtasks, guarded, activity))
+            lanes.append(_web_lane(session, subtasks, guarded, activity, deep))
         results = await asyncio.gather(*lanes)
 
     return [pair for lane in results for pair in lane], activity
@@ -296,7 +297,8 @@ def research_node(state: dict) -> dict:
         }
 
     sources: dict = dict(state.get("sources") or {})
-    pairs, activity = asyncio.run(_gather(subtasks, use_rag, use_web, state["question"]))
+    deep = state.get("depth", "deep") != "quick"
+    pairs, activity = asyncio.run(_gather(subtasks, use_rag, use_web, state["question"], deep))
     notes, failures = assemble_notes(pairs, sources, index_web_sources(sources))
 
     round_label = f"follow-up round {state.get('research_rounds', 0) + 1}" if pending else "initial"

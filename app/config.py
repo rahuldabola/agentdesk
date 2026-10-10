@@ -18,6 +18,31 @@ def _float(name: str, default: float) -> float:
     return default if raw in (None, "") else float(raw)
 
 
+DEPTHS = ("quick", "deep")
+
+
+def resolve_depth(requested: str | None = None) -> str:
+    """Normalise a per-request depth, falling back to AGENTDESK_DEPTH, then "deep".
+
+    quick = the lean pipeline (no page reading, no query rewriting, no synthesis
+    pass): fewer LLM and HTTP calls, for when latency or rate limits matter.
+    deep = every specialist on.
+    """
+    for candidate in (requested, os.environ.get("AGENTDESK_DEPTH")):
+        if candidate and candidate.strip().lower() in DEPTHS:
+            return candidate.strip().lower()
+    return "deep"
+
+
+def agent_model(agent: str) -> str | None:
+    """Model override for one agent (AGENTDESK_MODEL_<AGENT>), or None for the default.
+
+    Lets the judgement-heavy agents (planner, synthesizer, critic) run on a
+    stronger model than extraction and drafting, without paying for it everywhere.
+    """
+    return os.environ.get(f"AGENTDESK_MODEL_{agent.upper()}") or None
+
+
 @dataclass(frozen=True)
 class Settings:
     # LLM

@@ -2,6 +2,7 @@
 
 from app.agents.base import node
 from app.agents.synthesizer import source_trust
+from app.config import agent_model
 from app.llm.gemini_client import text_call
 
 SYSTEM = (
@@ -23,8 +24,9 @@ SYSTEM = (
 TEMPLATES = {
     "comparison": (
         "Shape: a comparison. State the verdict first, then a Markdown table with one row per "
-        "dimension and one column per option (cite inside the cells), then a short note on "
-        "where the options differ most and what is not covered by the evidence."
+        "dimension and one column per option, headed by the real name of that option or "
+        "source (never 'Option A'), citing inside the cells; then a short note on where the "
+        "options differ most and what is not covered by the evidence."
     ),
     "how_to": (
         "Shape: a procedure. Give a one-line goal, then numbered steps in order, each step "
@@ -130,7 +132,7 @@ def writer_node(state: dict) -> dict:
             prompt += f"\n\nSpecifically, these claims were not supported by the facts:\n{listed}"
         prompt += "\n\nRewrite the report so every remaining claim is supported and cited."
 
-    report = text_call(system=SYSTEM, user_prompt=prompt)
+    report = text_call(system=SYSTEM, user_prompt=prompt, model=agent_model("writer"))
 
     return {
         "draft_report": report,
