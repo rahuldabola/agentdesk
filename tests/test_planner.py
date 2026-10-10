@@ -37,3 +37,25 @@ def test_planner_never_returns_a_plan_with_no_tools():
         update = planner_node({"question": "q"})
 
     assert update["use_rag"] is True
+
+
+def test_planner_returns_question_type_and_success_criteria():
+    with _plan(
+        question_type="comparison",
+        success_criteria=["states our retention period", "  ", "states the industry norm"],
+        subtasks=["a"],
+        use_rag=True,
+        use_web=True,
+    ):
+        update = planner_node({"question": "q"})
+
+    assert update["question_type"] == "comparison"
+    assert update["success_criteria"] == ["states our retention period", "states the industry norm"]
+
+
+def test_planner_defaults_an_unknown_question_type_and_missing_criteria():
+    with _plan(question_type="nonsense", subtasks=["a"], use_rag=True, use_web=False):
+        update = planner_node({"question": "q"})
+
+    assert update["question_type"] == "open_ended"
+    assert update["success_criteria"] == []

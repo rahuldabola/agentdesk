@@ -20,6 +20,13 @@ def writer_node(state: dict) -> dict:
     facts_text = "\n".join(f"- {f['claim']} [{f['source_id']}]" for f in facts)
 
     prompt = f"Question: {state['question']}\n\nFacts:\n{facts_text or '(none)'}"
+    criteria = state.get("success_criteria") or []
+    if criteria:
+        listed = "\n".join(f"- {c}" for c in criteria)
+        prompt += (
+            "\n\nA complete answer must address each of these (say so explicitly if the "
+            f"facts cannot support one):\n{listed}"
+        )
     feedback = state.get("critic_feedback")
     revision = state.get("revision_count", 0)
 
