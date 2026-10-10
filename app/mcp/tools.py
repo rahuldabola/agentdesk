@@ -9,7 +9,7 @@ contains one - which markdown passages routinely do.
 import json
 import logging
 import os
-from urllib.parse import parse_qs, urlsplit
+from urllib.parse import parse_qs, quote, urlsplit
 
 import requests
 from bs4 import BeautifulSoup
@@ -21,6 +21,7 @@ log = logging.getLogger("agentdesk.tools")
 
 TAVILY_URL = "https://api.tavily.com/search"
 DDG_URL = "https://html.duckduckgo.com/html/"
+WIKIPEDIA_API = "https://en.wikipedia.org/w/api.php"
 
 
 def _payload(results: list[dict], provider: str, error: str | None = None) -> str:
@@ -89,8 +90,44 @@ def _duckduckgo_search(query: str, max_results: int, timeout: float) -> list[dic
     return results
 
 
+def _wikipedia_search(query: str, max_results: int, timeout: float) -> list[dict]:
+    """Keyless last resort: Wikipedia's search API.
+
+    DuckDuckGo's HTML endpoint answers cloud IPs with a bot-check page, so with no
+    Tavily key a deployed instance can end up with no web search at all. Wikipedia
+    will not know about a vendor's pricing page, but it is a stable, citable source
+    for definitions and widely documented practice, and `fetch_page` can read it.
+    """
+    resp = requests.get(
+        WIKIPEDIA_API,
+        params={
+            "action": "query",
+            "list": "search",
+            "srsearch": query,
+            "srlimit": max_results,
+            "srprop": "snippet",
+            "format": "json",
+        },
+        headers={"User-Agent": "AgentDesk/1.0 (research assistant)"},
+        timeout=timeout,
+    )
+    resp.raise_for_status()
+    results = []
+    for hit in resp.json().get("query", {}).get("search", [])[:max_results]:
+        title = hit.get("title", "")
+        snippet = BeautifulSoup(hit.get("snippet", ""), "html.parser").get_text(" ", strip=True)
+        results.append(
+            {
+                "title": f"{title} - Wikipedia",
+                "url": "https://en.wikipedia.org/wiki/" + quote(title.replace(" ", "_")),
+                "snippet": snippet,
+            }
+        )
+    return results
+
+
 def web_search_impl(query: str, max_results: int | None = None) -> str:
-    """Search the public web. Tavily when a key is set, else a DuckDuckGo HTML scrape."""
+    """Search the public web: Tavily when a key is set, else a DuckDuckGo scrape, else Wikipedia."""
     settings = get_settings()
     max_results = settings.web_results if max_results is None else max_results
     timeout = settings.tool_timeout
@@ -114,6 +151,16 @@ def web_search_impl(query: str, max_results: int | None = None) -> str:
     except Exception as exc:
         log.warning("duckduckgo search failed for %r: %s", query, exc)
         errors.append(f"duckduckgo: {exc}")
+
+    if os.environ.get("AGENTDESK_WIKIPEDIA_FALLBACK", "1") != "0":
+        try:
+            results = _wikipedia_search(query, max_results, timeout)
+            if results:
+                return _payload(results, "wikipedia")
+            errors.append("wikipedia: no results")
+        except Exception as exc:
+            log.warning("wikipedia search failed for %r: %s", query, exc)
+            errors.append(f"wikipedia: {exc}")
 
     return _payload([], "none", error="; ".join(errors))
 

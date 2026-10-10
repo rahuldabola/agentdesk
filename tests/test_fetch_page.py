@@ -199,3 +199,23 @@ def test_extract_text_without_a_title():
     title, text = extract_text("<p>Just text.</p>", 100)
 
     assert (title, text) == ("", "Just text.")
+
+
+def test_a_mediawiki_page_yields_the_article_not_the_site_chrome():
+    html = (
+        "<html><head><title>SRE - Wikipedia</title></head><body>"
+        "<div id='mw-navigation'>Jump to content Main menu</div>"
+        "<div id='mw-content-text'>"
+        "<div class='hatnote'>Not to be confused with X</div>"
+        "<p>Site reliability engineering is a discipline.<sup class='reference'>[1]</sup></p>"
+        "<span class='mw-editsection'>[edit]</span>"
+        "<table class='infobox'><tr><td>Infobox</td></tr></table>"
+        "<p>It applies software practice to operations.</p>"
+        "</div></body></html>"
+    )
+
+    _, text = extract_text(html, 500)
+
+    assert text == (
+        "Site reliability engineering is a discipline. It applies software practice to operations."
+    )
