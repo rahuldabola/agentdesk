@@ -64,8 +64,18 @@ def extract_facts(prompt: str) -> dict:
         source_id, body = match.group(1), match.group(2).strip()
         claim = SENTENCE_END.split(body)[0].strip()
         if claim:
-            facts.append({"claim": claim[:300], "source_id": source_id})
+            facts.append({"claim": claim[:300], "kind": "claim", "source_id": source_id})
     return {"facts": facts[:12]}
+
+
+def synthesize(prompt: str) -> dict:
+    """One theme holding every fact, in the order the Analyst produced them."""
+    count = len(re.findall(r"^\d+\. ", prompt, flags=re.MULTILINE))
+    return {
+        "themes": [{"title": "Findings", "fact_ids": list(range(count))}],
+        "conflicts": [],
+        "gaps": [],
+    }
 
 
 def write_report(prompt: str) -> str:
@@ -118,6 +128,8 @@ def structured_call(system, user_prompt, tool_name, tool_description, input_sche
         return plan(user_prompt)
     if tool_name == "submit_facts":
         return extract_facts(user_prompt)
+    if tool_name == "submit_synthesis":
+        return synthesize(user_prompt)
     if tool_name == "submit_verdict":
         return critique(user_prompt)
     raise AssertionError(f"stub model has no script for tool '{tool_name}'")

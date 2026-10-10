@@ -27,6 +27,10 @@ def _default_nodes():
             "trace": [{"node": "researcher"}],
         },
         "analyst_node": lambda s: {"facts": [], "trace": [{"node": "analyst"}]},
+        "synthesizer_node": lambda s: {
+            "synthesis": {"themes": [], "conflicts": [], "gaps": []},
+            "trace": [{"node": "synthesizer"}],
+        },
         "writer_node": lambda s: {"draft_report": "Report v1", "trace": [{"node": "writer"}]},
         "critic_node": lambda s: {
             "critic_verdict": "pass",
@@ -72,6 +76,7 @@ def test_happy_path_visits_every_node_once():
         "planner",
         "researcher",
         "analyst",
+        "synthesizer",
         "writer",
         "critic",
     ]
@@ -225,11 +230,12 @@ def test_streaming_emits_each_node_once_then_the_finished_report():
     events = _stream()
 
     kinds = [kind for kind, _ in events]
-    assert kinds == ["progress"] * 5 + ["report"]
+    assert kinds == ["progress"] * 6 + ["report"]
     assert [payload["node"] for kind, payload in events if kind == "progress"] == [
         "planner",
         "researcher",
         "analyst",
+        "synthesizer",
         "writer",
         "critic",
     ]
@@ -268,6 +274,7 @@ def test_streaming_does_not_replay_trace_entries_across_a_loop():
         "planner",
         "researcher",
         "analyst",
+        "synthesizer",
         "writer",
         "critic",
         "writer",
