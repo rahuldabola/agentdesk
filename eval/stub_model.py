@@ -78,6 +78,12 @@ def synthesize(prompt: str) -> dict:
     }
 
 
+def rewrite(prompt: str) -> dict:
+    """Reword each numbered query by appending a formal-document hint."""
+    queries = re.findall(r"^\d+\. (.+)$", prompt, flags=re.MULTILINE)
+    return {"queries": [f"{q} policy" for q in queries]}
+
+
 def write_report(prompt: str) -> str:
     """Echo the fact list back as a cited report - never inventing a source_id."""
     facts = re.findall(r"^- (.+?) \[([^\]]+)\]$", prompt, flags=re.MULTILINE)
@@ -130,6 +136,8 @@ def structured_call(system, user_prompt, tool_name, tool_description, input_sche
         return extract_facts(user_prompt)
     if tool_name == "submit_synthesis":
         return synthesize(user_prompt)
+    if tool_name == "submit_queries":
+        return rewrite(user_prompt)
     if tool_name == "submit_verdict":
         return critique(user_prompt)
     raise AssertionError(f"stub model has no script for tool '{tool_name}'")
@@ -150,3 +158,12 @@ def synthetic_web_search(query, max_results, timeout):
         }
         for i in range(max_results)
     ]
+
+
+def synthetic_fetch_page(url, max_chars=1800):
+    """Deterministic stand-in for reading a page: no network."""
+    import json
+
+    return json.dumps(
+        {"url": url, "title": "Page", "text": f"Full text of {url}. Detailed guidance follows."}
+    )

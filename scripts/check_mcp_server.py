@@ -15,7 +15,7 @@ import tempfile
 
 from app.mcp.client import call_tool, mcp_session
 
-EXPECTED_TOOLS = {"rag_search", "web_search"}
+EXPECTED_TOOLS = {"rag_search", "web_search", "fetch_page"}
 
 
 async def check() -> None:

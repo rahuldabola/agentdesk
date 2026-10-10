@@ -45,6 +45,9 @@ class Settings:
     web_results: int
     tool_timeout: float
     max_concurrent_tool_calls: int
+    fetch_pages: int
+    fetch_max_chars: int
+    query_rewrite: bool
 
     # Control loop
     max_revisions: int
@@ -82,6 +85,12 @@ def get_settings() -> Settings:
         web_results=_int("AGENTDESK_WEB_RESULTS", 3),
         tool_timeout=_float("AGENTDESK_TOOL_TIMEOUT", 15.0),
         max_concurrent_tool_calls=_int("AGENTDESK_MAX_CONCURRENT_TOOL_CALLS", 4),
+        # Pages the web researcher reads in full per round (0 turns it off), and how
+        # much text of each reaches the Analyst (which caps a note at 2000 chars).
+        fetch_pages=_int("AGENTDESK_FETCH_PAGES", 3),
+        fetch_max_chars=_int("AGENTDESK_FETCH_MAX_CHARS", 1800),
+        # Let the internal researcher reword a query that retrieved nothing, once.
+        query_rewrite=_int("AGENTDESK_QUERY_REWRITE", 1) != 0,
         max_revisions=_int("AGENTDESK_MAX_REVISIONS", 2),
         max_research_rounds=_int("AGENTDESK_MAX_RESEARCH_ROUNDS", 1),
     )

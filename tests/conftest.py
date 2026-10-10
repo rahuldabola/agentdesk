@@ -62,3 +62,14 @@ def real_mcp_session(monkeypatch):
     """Make the Researcher talk to the real MCP server without spawning a process."""
     monkeypatch.setattr("app.agents.researcher.mcp_session", in_memory_mcp_session)
     return in_memory_mcp_session
+
+
+@pytest.fixture(autouse=True)
+def _researcher_extras_off(monkeypatch):
+    """Page fetching and query rewriting reach the network / the LLM.
+
+    Off by default so existing tests stay hermetic; the tests that cover them
+    switch them on and stub the edge they touch.
+    """
+    monkeypatch.setenv("AGENTDESK_FETCH_PAGES", "0")
+    monkeypatch.setenv("AGENTDESK_QUERY_REWRITE", "0")

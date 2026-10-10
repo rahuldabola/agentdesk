@@ -9,6 +9,7 @@ contains one - which markdown passages routinely do.
 import json
 import logging
 import os
+from urllib.parse import parse_qs, urlsplit
 
 import requests
 from bs4 import BeautifulSoup
@@ -47,6 +48,22 @@ def _tavily_search(query: str, max_results: int, timeout: float) -> list[dict]:
     ]
 
 
+def _unwrap_duckduckgo(href: str) -> str:
+    """DuckDuckGo's HTML results link through a redirector (`//duckduckgo.com/l/?uddg=<url>`).
+
+    Citing the redirector would hide the real source and make the page
+    unfetchable, so recover the destination it encodes.
+    """
+    parts = urlsplit(href)
+    if parts.path.startswith("/l/") and parts.netloc.endswith("duckduckgo.com"):
+        target = parse_qs(parts.query).get("uddg")
+        if target:
+            return target[0]
+    if href.startswith("//"):
+        return "https:" + href
+    return href
+
+
 def _duckduckgo_search(query: str, max_results: int, timeout: float) -> list[dict]:
     resp = requests.get(
         DDG_URL,
@@ -65,7 +82,7 @@ def _duckduckgo_search(query: str, max_results: int, timeout: float) -> list[dic
         results.append(
             {
                 "title": title_el.get_text(strip=True),
-                "url": title_el.get("href", ""),
+                "url": _unwrap_duckduckgo(title_el.get("href", "")),
                 "snippet": snippet_el.get_text(strip=True) if snippet_el else "",
             }
         )

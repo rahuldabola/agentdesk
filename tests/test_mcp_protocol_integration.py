@@ -36,11 +36,12 @@ async def _list_tools():
         return await session.list_tools()
 
 
-def test_the_server_declares_both_tools_with_schemas():
+def test_the_server_declares_its_tools_with_schemas():
     result = asyncio.run(_list_tools())
     tools = {t.name: t for t in result.tools}
 
-    assert set(tools) == {"web_search", "rag_search"}
+    assert set(tools) == {"web_search", "rag_search", "fetch_page"}
+    assert "url" in tools["fetch_page"].input_schema["properties"]
     assert "query" in tools["rag_search"].input_schema["properties"]
     assert "max_results" in tools["web_search"].input_schema["properties"]
     assert tools["rag_search"].description

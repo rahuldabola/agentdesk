@@ -115,3 +115,13 @@ def test_results_without_a_title_link_are_skipped():
         payload = json.loads(web_search_impl("q"))
 
     assert payload["results"] == []
+
+
+def test_duckduckgo_redirector_links_are_unwrapped_to_the_real_url():
+    from app.mcp.tools import _unwrap_duckduckgo
+
+    wrapped = "//duckduckgo.com/l/?uddg=https%3A%2F%2Fsre.example%2Foncall%3Fa%3D1&rut=abc"
+
+    assert _unwrap_duckduckgo(wrapped) == "https://sre.example/oncall?a=1"
+    assert _unwrap_duckduckgo("https://sre.example/direct") == "https://sre.example/direct"
+    assert _unwrap_duckduckgo("//cdn.example/x") == "https://cdn.example/x"
