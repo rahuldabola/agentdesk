@@ -73,3 +73,4 @@ def _researcher_extras_off(monkeypatch):
     """
     monkeypatch.setenv("AGENTDESK_FETCH_PAGES", "0")
     monkeypatch.setenv("AGENTDESK_QUERY_REWRITE", "0")
+    monkeypatch.setenv("AGENTDESK_WIKIPEDIA_FALLBACK", "0")

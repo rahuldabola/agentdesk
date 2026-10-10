@@ -125,3 +125,71 @@ def test_duckduckgo_redirector_links_are_unwrapped_to_the_real_url():
     assert _unwrap_duckduckgo(wrapped) == "https://sre.example/oncall?a=1"
     assert _unwrap_duckduckgo("https://sre.example/direct") == "https://sre.example/direct"
     assert _unwrap_duckduckgo("//cdn.example/x") == "https://cdn.example/x"
+
+
+def test_wikipedia_is_the_keyless_last_resort(monkeypatch):
+    monkeypatch.delenv("TAVILY_API_KEY", raising=False)
+    monkeypatch.setenv("AGENTDESK_WIKIPEDIA_FALLBACK", "1")
+    api = MagicMock()
+    api.json.return_value = {
+        "query": {
+            "search": [
+                {
+                    "title": "Site reliability engineering",
+                    "snippet": 'Uses <span class="s">SRE</span> teams',
+                }
+            ]
+        }
+    }
+    with (
+        patch("app.mcp.tools._duckduckgo_search", return_value=[]),
+        patch("app.mcp.tools.requests.get", return_value=api) as get,
+    ):
+        payload = json.loads(web_search_impl("sre on-call", 3))
+
+    assert payload["provider"] == "wikipedia"
+    [hit] = payload["results"]
+    assert hit["title"] == "Site reliability engineering - Wikipedia"
+    assert hit["url"] == "https://en.wikipedia.org/wiki/Site_reliability_engineering"
+    assert hit["snippet"] == "Uses SRE teams", "markup is stripped from the snippet"
+    assert get.call_args.kwargs["params"]["srsearch"] == "sre on-call"
+
+
+def test_wikipedia_is_not_consulted_when_duckduckgo_works(monkeypatch):
+    monkeypatch.delenv("TAVILY_API_KEY", raising=False)
+    monkeypatch.setenv("AGENTDESK_WIKIPEDIA_FALLBACK", "1")
+    hit = [{"title": "T", "url": "https://x.example", "snippet": "s"}]
+    with (
+        patch("app.mcp.tools._duckduckgo_search", return_value=hit),
+        patch("app.mcp.tools._wikipedia_search") as wiki,
+    ):
+        payload = json.loads(web_search_impl("q", 3))
+
+    assert payload["provider"] == "duckduckgo"
+    wiki.assert_not_called()
+
+
+def test_all_providers_failing_reports_every_error(monkeypatch):
+    monkeypatch.delenv("TAVILY_API_KEY", raising=False)
+    monkeypatch.setenv("AGENTDESK_WIKIPEDIA_FALLBACK", "1")
+    with (
+        patch("app.mcp.tools._duckduckgo_search", return_value=[]),
+        patch("app.mcp.tools._wikipedia_search", side_effect=RuntimeError("down")),
+    ):
+        payload = json.loads(web_search_impl("q", 3))
+
+    assert payload["provider"] == "none" and payload["results"] == []
+    assert "duckduckgo" in payload["error"] and "wikipedia: down" in payload["error"]
+
+
+def test_the_wikipedia_fallback_can_be_switched_off(monkeypatch):
+    monkeypatch.delenv("TAVILY_API_KEY", raising=False)
+    monkeypatch.setenv("AGENTDESK_WIKIPEDIA_FALLBACK", "0")
+    with (
+        patch("app.mcp.tools._duckduckgo_search", return_value=[]),
+        patch("app.mcp.tools._wikipedia_search") as wiki,
+    ):
+        payload = json.loads(web_search_impl("q", 3))
+
+    wiki.assert_not_called()
+    assert payload["provider"] == "none"

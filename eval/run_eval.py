@@ -85,6 +85,7 @@ def offline_patches(docs_dir, chroma_dir):
     os.environ["AGENTDESK_COLLECTION"] = "agentdesk-eval"
     os.environ.setdefault("GEMINI_API_KEY", "offline-stub")
     os.environ.pop("TAVILY_API_KEY", None)
+    os.environ["AGENTDESK_WIKIPEDIA_FALLBACK"] = "0"
 
     return [
         patch("app.rag.ingest.embed_texts", fake_embed_texts),

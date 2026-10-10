@@ -32,6 +32,9 @@ MAX_REDIRECTS = 3
 MAX_CHARS_CEILING = 20_000
 ALLOWED_PORTS = (None, 80, 443)
 TEXT_TYPES = ("text/html", "application/xhtml+xml", "text/plain")
+STRIP_SELECTORS = (
+    ".mw-editsection, .reference, .navbox, .infobox, .hatnote, .sidebar, .ambox, .mw-empty-elt"
+)
 STRIP_TAGS = ("script", "style", "noscript", "nav", "header", "footer", "aside", "form", "svg")
 USER_AGENT = "Mozilla/5.0 (compatible; AgentDesk/1.0)"
 
@@ -83,7 +86,10 @@ def extract_text(html: str, max_chars: int) -> tuple[str, str]:
     title = soup.title.get_text(strip=True) if soup.title else ""
     for tag in soup(STRIP_TAGS):
         tag.decompose()
-    root = soup.body or soup
+    for noise in soup.select(STRIP_SELECTORS):
+        noise.decompose()
+    # On a MediaWiki page the article body is the content; the rest is site chrome.
+    root = soup.select_one("#mw-content-text") or soup.body or soup
     text = re.sub(r"\s+", " ", root.get_text(" ", strip=True)).strip()
     if len(text) > max_chars:
         text = text[:max_chars].rsplit(" ", 1)[0] + "..."
