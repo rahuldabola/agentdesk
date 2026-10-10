@@ -4,6 +4,7 @@ import logging
 
 from mcp.server.mcpserver import MCPServer
 
+from app.mcp.fetch import fetch_page_impl
 from app.mcp.tools import rag_search_impl, web_search_impl
 
 mcp = MCPServer("agentdesk-tools")
@@ -13,6 +14,12 @@ mcp = MCPServer("agentdesk-tools")
 def web_search(query: str, max_results: int = 3) -> str:
     """Search the public web. Returns JSON: {provider, results:[{title,url,snippet}]}."""
     return web_search_impl(query, max_results)
+
+
+@mcp.tool()
+def fetch_page(url: str, max_chars: int = 1800) -> str:
+    """Read the text of a public web page. Returns JSON: {url, title, text} or {url, error}."""
+    return fetch_page_impl(url, max_chars)
 
 
 @mcp.tool()

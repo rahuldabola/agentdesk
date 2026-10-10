@@ -95,9 +95,11 @@ def offline_patches(docs_dir, chroma_dir):
         patch("app.agents.planner.structured_call", stub_model.structured_call),
         patch("app.agents.analyst.structured_call", stub_model.structured_call),
         patch("app.agents.synthesizer.structured_call", stub_model.structured_call),
+        patch("app.agents.researcher.structured_call", stub_model.structured_call),
         patch("app.agents.critic.structured_call", stub_model.structured_call),
         patch("app.agents.writer.text_call", stub_model.text_call),
         patch("app.mcp.tools._duckduckgo_search", stub_model.synthetic_web_search),
+        patch("app.mcp.server.fetch_page_impl", stub_model.synthetic_fetch_page),
     ]
 
 

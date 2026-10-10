@@ -80,6 +80,7 @@ flowchart LR
     R <-- "MCP over stdio" --> T["MCP tool server"]
     T --> RAG["rag_search<br/>dense · BM25 · RRF · rerank<br/>+ relevance floor"]
     T --> WEB["web_search<br/>Tavily → DuckDuckGo"]
+    T --> FETCH["fetch_page<br/>public http(s) only"]
     RAG --> DB[("Chroma<br/>gemini-embedding-001")]
 
     subgraph EVAL["Evaluation"]
@@ -94,7 +95,7 @@ flowchart LR
 | Agent | Job | Guardrail |
 | --- | --- | --- |
 | **Planner** | Classifies the question, sets checkable success criteria, breaks it into subtasks; decides whether to use the knowledge base, the web, or both | Output is a forced function call, never free text |
-| **Researcher** | Runs every (subtask × tool) lookup concurrently over one MCP session; registers each passage under a stable `source_id` | Owns the source registry |
+| **Researcher** | Two concurrent lanes over one MCP session: the internal lane searches the knowledge base and rewords a query that found nothing (once); the web lane searches, then reads the top pages in full via `fetch_page`. Registers each passage under a stable `source_id` | Owns the source registry. A failed rewrite or page falls back to the plain result. `fetch_page` refuses non-public addresses and re-checks every redirect. Tunable with `AGENTDESK_FETCH_PAGES` (0 = off), `AGENTDESK_FETCH_MAX_CHARS`, `AGENTDESK_QUERY_REWRITE` |
 | **Analyst** | Extracts atomic facts (typed: number, policy, procedure, definition, claim), each bound to a `source_id` | Drops any fact citing an id that was never retrieved |
 | **Synthesizer** | Groups facts into themes, flags conflicts (including internal vs external practice) and gaps | Refers to facts by index only; a fact it forgets to place is kept, never dropped |
 | **Writer** | Drafts the report from the themed facts in a shape chosen by question type (comparison table, steps, risk review, direct answer, brief), citing inline | Can only use what the Analyst passed on |
