@@ -9,7 +9,7 @@ every sentence in it links to the exact document or web page it came from.**
 
 **🔗 Try it live:** [agentdesk-research.vercel.app](https://agentdesk-research.vercel.app)
 &nbsp;·&nbsp; password: `mjSqEPp14EMF` &nbsp;·&nbsp;
-[API](https://agentdesk-production-9e6c.up.railway.app)
+[API](https://agentdesk-api.onrender.com/health) (free tier: the first request after idle can take ~1 min)
 
 <p align="center">
   <img src="docs/finished-run.jpg" alt="A finished AgentDesk run: the Critic's Verified banner, report tabs, and inline citation chips that link to source documents" width="900">
@@ -62,13 +62,13 @@ Every `[source_id]` resolves to a real file chunk or URL, so the report can be a
 | Public benchmark (BEIR SciFact) | **0.70** nDCG@10 with hybrid search on 300 expert-labelled claims; our BM25 reproduces the published figure · [details](#public-benchmark-beir-scifact) |
 
 **Stack:** LangGraph · MCP (real stdio client/server) · FastAPI · Gemini · Chroma · BM25 ·
-React + three.js · Docker · GitHub Actions · Railway + Vercel
+React + three.js · Docker · GitHub Actions · Render + Vercel
 
 ## How it works
 
 ```mermaid
 flowchart LR
-    UI["React + three.js UI<br/>(Vercel)"] -- "SSE stream" --> API["FastAPI<br/>(Railway)"]
+    UI["React + three.js UI<br/>(Vercel)"] -- "SSE stream" --> API["FastAPI<br/>(Render)"]
     API --> G
 
     subgraph G["LangGraph state machine"]
@@ -311,7 +311,7 @@ retrieval benchmark below, not from habit.
 | API | FastAPI (`app/main.py`) | `POST /api/report`, an SSE `POST /api/report/stream`, and `/api/runs` to list, inspect, resume, cancel and delete runs; optional shared-password gate |
 | Frontend | Vite + React + three.js (`frontend/`) | Live 3D view of the agents, step-by-step replay, tabbed report with hoverable citation chips, Markdown/PDF export, local history, command palette |
 | Quality gates | ruff, pytest (85% floor), stdio smoke test, offline eval, retrieval benchmark | Each has pass/fail thresholds, enforced in CI on Python 3.11 and 3.12 |
-| Deploy | Docker, Railway (API), Vercel (UI) | Branch-protected `master`, required checks, secret scanning, Dependabot |
+| Deploy | Docker, Render (API, `render.yaml` Blueprint), Vercel (UI) | Branch-protected `master`, required checks, secret scanning, Dependabot |
 
 ## Tests
 
@@ -629,7 +629,7 @@ Stated plainly, because they are the honest next steps rather than hidden gaps:
 The project went through six rounds of work. Each one fixed something specific rather than adding features for their own sake.
 
 1. **Production hardening.** The first version truncated every RAG passage at its first blank line (782 characters retrieved, 22 delivered) because passages were serialised to text and re-parsed. Fixed by passing structured data across the MCP boundary, then added a regression test that exercises the seam. Also added the research loop (the Critic can request more evidence), bounded retries and typed errors.
-2. **Port to Gemini and live deployment.** Moved the whole LLM and embedding layer from Claude + OpenAI to Gemini (`google-genai`) with the API contract unchanged, then deployed the backend on Railway and the UI on Vercel. Deployment exposed two bugs that tests missed: the MCP tool subprocess did not inherit the environment (API keys), and parallel RAG calls each created their own Chroma client on the same index and corrupted it. Both are fixed and covered.
+2. **Port to Gemini and live deployment.** Moved the whole LLM and embedding layer from Claude + OpenAI to Gemini (`google-genai`) with the API contract unchanged, then deployed the backend on Railway and the UI on Vercel (the API moved to Render when the Railway trial ended). Deployment exposed two bugs that tests missed: the MCP tool subprocess did not inherit the environment (API keys), and parallel RAG calls each created their own Chroma client on the same index and corrupted it. Both are fixed and covered.
 3. **A new frontend.** A Vite + React + three.js UI where the five agents orbit the orchestrator and light up live as the SSE stream arrives. It has run replay, a tabbed report with hoverable citation chips, a command palette, local history, and Markdown/PDF export.
 4. **A retrieval benchmark that changed the defaults.** 64 labelled questions plus 16 unanswerable ones. It showed the relevance floor (tuned for OpenAI) refused **0 of 16** off-topic questions under Gemini. Re-calibrated to 0.40, it now refuses all off-topic ones and loses no answerable question. It also showed hybrid search and the reranker did not earn their place on this corpus, so the default stays dense.
 5. **Answer-quality eval and a public-benchmark harness.** An LLM-judge eval run on 34 questions (correctness 0.92, faithfulness 0.95), plus a run on the public BEIR SciFact dataset (hybrid nDCG@10 0.70), because a self-written benchmark can flatter its author. Notably, the best retriever differs between the two corpora.
