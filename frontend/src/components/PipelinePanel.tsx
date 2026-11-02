@@ -191,6 +191,8 @@ export default function PipelinePanel({ run, onStop }: { run: Run; onStop: () =>
 function StatusBadge({ run, replaying }: { run: Run; replaying: boolean }) {
   if (replaying) return <Badge color="var(--cyan)" label="Replaying" pulse />;
   if (run.running) return <Badge color="var(--accent-strong)" label="Running" pulse />;
+  if (run.pendingPlan) return <Badge color="var(--accent)" label="Awaiting your review" pulse />;
+  if (run.detached) return <Badge color="var(--accent)" label="Reconnecting" pulse />;
   if (run.error) return <Badge color="var(--err)" label="Stopped" />;
   if (run.result?.status === "passed") return <Badge color="var(--ok)" label="Verified" />;
   return <Badge color="var(--warn)" label="Unverified" />;

@@ -9,6 +9,7 @@ import pytest
 
 import app.graph as graph_module
 import app.llm.gemini_client as gemini_client
+import app.persistence as persistence
 from tests.doubles import fake_embed_texts, flatten_exception, in_memory_mcp_session
 
 __all__ = ["fake_embed_texts", "flatten_exception", "in_memory_mcp_session"]
@@ -39,6 +40,15 @@ def no_network(monkeypatch):
     monkeypatch.setattr("app.mcp.tools.requests.get", _boom)
     monkeypatch.setattr("app.mcp.tools.requests.post", _boom)
     monkeypatch.delenv("TAVILY_API_KEY", raising=False)
+
+
+@pytest.fixture(autouse=True)
+def in_memory_runs(monkeypatch):
+    """Checkpoints and the run index live in-process and die with the test."""
+    monkeypatch.setenv("AGENTDESK_RUNS_DB", "memory")
+    persistence.reset_persistence()
+    yield
+    persistence.reset_persistence()
 
 
 @pytest.fixture(autouse=True)

@@ -1,4 +1,4 @@
-import { ArrowUp, Square } from "lucide-react";
+import { ArrowUp, ClipboardCheck, Square } from "lucide-react";
 import type { Depth } from "../api";
 import { type FormEvent, type RefObject, useLayoutEffect, useState } from "react";
 
@@ -8,6 +8,8 @@ const MAX_LEN = 2000;
 export default function QuestionComposer({
   depth,
   onDepthChange,
+  reviewPlan,
+  onReviewPlanChange,
   running,
   onSubmit,
   onStop,
@@ -17,6 +19,8 @@ export default function QuestionComposer({
 }: {
   depth: Depth;
   onDepthChange: (depth: Depth) => void;
+  reviewPlan: boolean;
+  onReviewPlanChange: (on: boolean) => void;
   running: boolean;
   onSubmit: (question: string) => void;
   onStop: () => void;
@@ -94,7 +98,17 @@ export default function QuestionComposer({
               </button>
             ))}
           </div>
-          <div className="hidden items-center gap-1.5 text-[11px] text-[var(--text-faint)] md:flex">
+          <button
+            type="button"
+            aria-pressed={reviewPlan}
+            disabled={running}
+            onClick={() => onReviewPlanChange(!reviewPlan)}
+            title="Pause after planning so you can approve or edit the sub-questions before any research runs."
+            className={`flex items-center gap-1 rounded-lg border px-2 py-0.5 text-[11px] font-medium transition disabled:cursor-not-allowed ${reviewPlan ? "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--text)]" : "border-[var(--border)] text-[var(--text-faint)] hover:text-[var(--text)]"}`}
+          >
+            <ClipboardCheck size={11} /> Review plan
+          </button>
+          <div className="hidden items-center gap-1.5 text-[11px] text-[var(--text-faint)] lg:flex">
             <kbd>Enter</kbd> to send · <kbd>Shift</kbd>+<kbd>Enter</kbd> new line
           </div>
         </div>

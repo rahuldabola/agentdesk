@@ -230,7 +230,7 @@ def test_streaming_emits_each_node_once_then_the_finished_report():
     events = _stream()
 
     kinds = [kind for kind, _ in events]
-    assert kinds == ["progress"] * 6 + ["report"]
+    assert kinds == ["run"] + ["progress"] * 6 + ["report"]
     assert [payload["node"] for kind, payload in events if kind == "progress"] == [
         "planner",
         "researcher",

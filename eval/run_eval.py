@@ -32,6 +32,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from dotenv import load_dotenv  # noqa: E402
 
 load_dotenv()
+# Eval runs are not user runs: keep their checkpoints out of the run history.
+os.environ.setdefault("AGENTDESK_RUNS_DB", "memory")
 
 from app.graph import extract_citation_ids, run_agentdesk  # noqa: E402
 

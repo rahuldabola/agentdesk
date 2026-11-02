@@ -1,7 +1,13 @@
-import type { ReportResult, TraceEntry } from "../api";
+import type { PlanReview, ReportResult, TraceEntry } from "../api";
 
 export interface Run {
   id: string;
+  /** The server's run id: lets the page reattach to a run after a reload. */
+  serverId?: string;
+  /** Set while the run is paused for the user to approve the Planner's plan. */
+  pendingPlan?: PlanReview | null;
+  /** The page lost the stream mid-run; the server may still have finished it. */
+  detached?: boolean;
   question: string;
   trace: TraceEntry[];
   result: ReportResult | null;
@@ -24,7 +30,10 @@ export function loadRuns(): Run[] {
     // A run that was still streaming when the page closed can never finish.
     return parsed.map((r) =>
       r.running
-        ? { ...r, running: false, error: r.error ?? "Interrupted — the page was closed mid-run.", finishedAt: r.finishedAt ?? r.startedAt }
+        ? r.serverId
+          ? // The server keeps executing without us; App reattaches and fetches the outcome.
+            { ...r, running: false, detached: true }
+          : { ...r, running: false, error: r.error ?? "Interrupted — the page was closed mid-run.", finishedAt: r.finishedAt ?? r.startedAt }
         : r,
     );
   } catch {

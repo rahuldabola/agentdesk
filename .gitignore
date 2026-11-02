@@ -15,3 +15,6 @@ dist/
 
 # downloaded benchmark datasets
 eval/.cache/
+
+# durable run state (checkpoints + run index)
+runs/
