@@ -25,7 +25,16 @@ def test_a_node_reports_its_own_timing_and_detail():
     assert update["value"] == 1
     assert "_detail" not in update, "the detail must not leak into graph state"
     assert update["trace"] == [
-        {"node": "demo", "detail": "did a thing", "elapsed_ms": update["trace"][0]["elapsed_ms"]}
+        {
+            "node": "demo",
+            "detail": "did a thing",
+            "elapsed_ms": update["trace"][0]["elapsed_ms"],
+            # A node that never calls the LLM still reports (zero) usage.
+            "llm_calls": 0,
+            "tokens_in": 0,
+            "tokens_out": 0,
+            "cost_usd": 0.0,
+        }
     ]
     assert update["trace"][0]["elapsed_ms"] >= 0
 

@@ -29,8 +29,10 @@ from app.graph import (
     run_agentdesk,
     stream_agentdesk,
 )
+from app.observability import compute_metrics, init_tracing
 
 load_dotenv()  # no-ops if .env doesn't exist (Docker/Railway set real env vars instead)
+TRACING = init_tracing()  # exports spans only when OTEL_EXPORTER_OTLP_ENDPOINT is set
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("agentdesk.api")
@@ -106,6 +108,8 @@ def _response_body(question: str, result: dict) -> dict:
             "unsupported_claims": result.get("unsupported_claims", []),
         },
         "trace": result.get("trace", []),
+        # Tokens, LLM calls and list-price cost: run totals plus a per-agent breakdown.
+        "usage": result.get("usage"),
     }
 
 
@@ -132,7 +136,14 @@ async def run_conflict_handler(request: Request, exc: RunConflict) -> JSONRespon
 
 @app.get("/health")
 def health() -> dict:
-    return {"status": "ok", "model": get_settings().gemini_model}
+    return {"status": "ok", "model": get_settings().gemini_model, "tracing": TRACING}
+
+
+@app.get("/api/metrics", dependencies=[Depends(require_app_password)])
+async def metrics(limit: int = Query(default=200, ge=1, le=1000)) -> dict:
+    """Volume, pass rate, latency percentiles, spend, and where time and money go per agent."""
+    runs = await run_in_threadpool(list_runs, limit)
+    return compute_metrics(runs)
 
 
 @app.post("/api/report", dependencies=[Depends(require_app_password)])

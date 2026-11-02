@@ -4,6 +4,7 @@ import {
   AArrowUp,
   BookOpen,
   Check,
+  Coins,
   Copy,
   Download,
   ExternalLink,
@@ -20,7 +21,9 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Citation, ReportResult, TraceEntry } from "../api";
 import { AGENT_BY_KEY, AGENTS, formatDuration, isAgentKey } from "../lib/agents";
+import { formatCost, runUsage } from "../lib/usage";
 import { useToast } from "./Toast";
+import UsageTab from "./UsageTab";
 
 // The Writer is told one source_id per bracket, but a model occasionally packs
 // several into one anyway (`[rag:a#0, web:1]`) - split those into one chip
@@ -54,7 +57,7 @@ function slugify(s: string) {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60) || "report";
 }
 
-type Tab = "report" | "sources" | "timeline" | "critic";
+type Tab = "report" | "sources" | "timeline" | "usage" | "critic";
 
 const TEXT_SIZES = [13.5, 14.5, 16, 17.5];
 const TEXT_SIZE_KEY = "agentdesk:text-size";
@@ -103,6 +106,7 @@ function extractOutline(report: string): { level: number; text: string }[] {
 
 export default function ReportView({ result, trace, onRerun }: { result: ReportResult; trace: TraceEntry[]; onRerun: () => void }) {
   const [tab, setTab] = useState<Tab>("report");
+  const cost = runUsage(trace, result.usage).cost_usd;
   const [highlighted, setHighlighted] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const toast = useToast();
@@ -161,6 +165,7 @@ export default function ReportView({ result, trace, onRerun }: { result: ReportR
     { key: "report", label: "Report", icon: FileText },
     { key: "sources", label: "Sources", count: result.citations.length, icon: BookOpen },
     { key: "timeline", label: "Timeline", icon: Gauge },
+    { key: "usage", label: "Usage", icon: Coins },
     { key: "critic", label: "Critic", count: flagged.length || undefined, icon: passed ? ShieldCheck : ShieldAlert },
   ];
 
@@ -188,6 +193,7 @@ export default function ReportView({ result, trace, onRerun }: { result: ReportR
           <Stat label="research rounds" value={result.research_rounds} />
           <Stat label="sources" value={result.citations.length} />
           <Stat label="min read" value={readMinutes} />
+          {cost > 0 && <Stat label="cost" value={formatCost(cost)} />}
         </div>
       </div>
 
@@ -290,6 +296,7 @@ export default function ReportView({ result, trace, onRerun }: { result: ReportR
             )}
             {tab === "sources" && <SourcesTab citations={result.citations} highlighted={highlighted} />}
             {tab === "timeline" && <TimelineTab trace={trace} />}
+            {tab === "usage" && <UsageTab result={result} trace={trace} />}
             {tab === "critic" && <CriticTab result={result} />}
         </div>
       </div>
@@ -297,7 +304,7 @@ export default function ReportView({ result, trace, onRerun }: { result: ReportR
   );
 }
 
-function Stat({ label, value }: { label: string; value: number }) {
+function Stat({ label, value }: { label: string; value: number | string }) {
   return (
     <div className="rounded-xl bg-white/[0.03] px-2.5 py-1 text-center">
       <div className="font-mono text-[13px] font-semibold leading-tight">{value}</div>

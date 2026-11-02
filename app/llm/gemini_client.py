@@ -13,6 +13,7 @@ from google.genai import errors, types
 
 from app.config import get_settings
 from app.errors import ConfigurationError, LLMError
+from app.observability import record_llm_response, tracer
 from app.util.retry import retry_call
 
 log = logging.getLogger("agentdesk.llm")
@@ -79,10 +80,24 @@ def _create(
 ) -> "types.GenerateContentResponse":
     settings = get_settings()
     client = get_client()
+    model = model or settings.gemini_model
+    with tracer.start_as_current_span("gemini.generate_content") as span:
+        span.set_attribute("gen_ai.system", "gemini")
+        span.set_attribute("gen_ai.operation.name", "generate_content")
+        span.set_attribute("gen_ai.request.model", model)
+        span.set_attribute("gen_ai.request.max_tokens", max_tokens)
+        response = _generate(
+            client, settings, model, system, contents, max_tokens, tools, tool_config
+        )
+        record_llm_response(response, model, span)
+        return response
+
+
+def _generate(client, settings, model, system, contents, max_tokens, tools, tool_config):
     try:
         return retry_call(
             lambda: client.models.generate_content(
-                model=model or settings.gemini_model,
+                model=model,
                 contents=contents,
                 config=types.GenerateContentConfig(
                     systemInstruction=system,

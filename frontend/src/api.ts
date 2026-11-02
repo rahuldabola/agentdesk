@@ -55,6 +55,47 @@ export interface TraceEntry {
   node: string;
   detail: string;
   elapsed_ms: number;
+  // Per-node LLM usage (absent on runs recorded before usage tracking).
+  llm_calls?: number;
+  tokens_in?: number;
+  tokens_out?: number;
+  cost_usd?: number;
+}
+
+export interface UsageCounts {
+  llm_calls: number;
+  tokens_in: number;
+  tokens_out: number;
+  /** List-price equivalent on the Gemini paid tier; the free tier bills $0. */
+  cost_usd: number;
+  elapsed_ms: number;
+}
+
+export interface RunUsage extends UsageCounts {
+  by_agent: Record<string, UsageCounts & { runs: number }>;
+}
+
+export interface FleetMetrics {
+  runs: number;
+  by_status: Record<string, number>;
+  completed: number;
+  pass_rate: number | null;
+  latency_ms: { p50: number | null; p95: number | null; mean: number | null };
+  avg_tokens_per_run: number | null;
+  avg_cost_per_run_usd: number | null;
+  total_tokens: number;
+  total_cost_usd: number;
+  by_agent: Record<
+    string,
+    { avg_elapsed_ms: number; avg_tokens: number; avg_llm_calls: number; avg_cost_usd: number; time_share: number; cost_share: number }
+  >;
+  window_start: number | null;
+}
+
+export async function fetchMetrics(password: string, signal?: AbortSignal): Promise<FleetMetrics> {
+  const res = await fetch(`${API_BASE}/api/metrics`, { headers: authHeaders(password), signal });
+  if (!res.ok) throw new ApiError(await errorDetail(res), res.status);
+  return res.json();
 }
 
 export interface Citation {
@@ -84,6 +125,7 @@ export interface ReportResult {
     unsupported_claims: string[];
   };
   trace: TraceEntry[];
+  usage?: RunUsage | null;
 }
 
 export class ApiError extends Error {

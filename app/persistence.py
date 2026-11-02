@@ -15,6 +15,7 @@ Two stores, one SQLite file:
 
 from __future__ import annotations
 
+import json
 import os
 import sqlite3
 import threading
@@ -28,19 +29,32 @@ from app.config import get_settings
 
 RUN_STATUSES = ("running", "awaiting_review", "completed", "failed", "cancelled")
 
-_COLUMNS = (
-    "run_id",
-    "question",
-    "depth",
+# Columns a run's lifecycle may update (identity and timestamps are set elsewhere).
+_UPDATABLE = {
     "review_plan",
     "status",
     "outcome",
     "error",
     "citations",
     "revisions",
-    "created_at",
-    "updated_at",
-)
+    "llm_calls",
+    "tokens_in",
+    "tokens_out",
+    "cost_usd",
+    "elapsed_ms",
+    "usage_by_agent",
+}
+
+# Added after the first release; created on open so an existing runs DB upgrades
+# in place instead of failing on the new columns.
+_MIGRATIONS = {
+    "llm_calls": "INTEGER",
+    "tokens_in": "INTEGER",
+    "tokens_out": "INTEGER",
+    "cost_usd": "REAL",
+    "elapsed_ms": "REAL",
+    "usage_by_agent": "TEXT",  # JSON: per-agent usage, see observability.summarize_trace
+}
 
 
 def _is_memory(path: str) -> bool:
@@ -84,6 +98,10 @@ class RunStore:
                 """
             )
             self._conn.execute("CREATE INDEX IF NOT EXISTS runs_created ON runs(created_at)")
+            existing = {r["name"] for r in self._conn.execute("PRAGMA table_info(runs)")}
+            for column, sql_type in _MIGRATIONS.items():
+                if column not in existing:
+                    self._conn.execute(f"ALTER TABLE runs ADD COLUMN {column} {sql_type}")
             self._conn.commit()
 
     def create(self, run_id: str, question: str, depth: str, review_plan: bool) -> dict:
@@ -98,11 +116,13 @@ class RunStore:
         return self.get(run_id)  # type: ignore[return-value]
 
     def update(self, run_id: str, **fields) -> None:
-        unknown = set(fields) - set(_COLUMNS[3:-2])
+        unknown = set(fields) - _UPDATABLE
         if unknown:
             raise ValueError(f"unknown run fields: {sorted(unknown)}")
         if "status" in fields and fields["status"] not in RUN_STATUSES:
             raise ValueError(f"unknown run status: {fields['status']}")
+        if isinstance(fields.get("usage_by_agent"), dict):
+            fields["usage_by_agent"] = json.dumps(fields["usage_by_agent"])
         assignments = ", ".join(f"{name} = ?" for name in fields)
         with self._lock:
             self._conn.execute(
@@ -133,6 +153,8 @@ class RunStore:
 def _row(row: sqlite3.Row) -> dict:
     data = dict(row)
     data["review_plan"] = bool(data["review_plan"])
+    raw = data.get("usage_by_agent")
+    data["usage_by_agent"] = json.loads(raw) if raw else {}
     return data
 
 

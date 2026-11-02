@@ -1,4 +1,4 @@
-import { BookOpen, Keyboard, LogOut, Pin, PinOff, Plus, Search, Trash2, Workflow, X } from "lucide-react";
+import { Activity, BookOpen, Keyboard, LogOut, Pin, PinOff, Plus, Search, Trash2, Workflow, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { groupRunsByDay, type Run } from "../lib/history";
 import Logo from "./Logo";
@@ -16,6 +16,7 @@ export default function Sidebar({
   onClearAll,
   onNavigate,
   onShowShortcuts,
+  onShowMetrics,
   onSignOut,
   onClose,
 }: {
@@ -29,6 +30,7 @@ export default function Sidebar({
   onClearAll: () => void;
   onNavigate: (section: "how-it-works" | "knowledge-base") => void;
   onShowShortcuts: () => void;
+  onShowMetrics: () => void;
   onSignOut: () => void;
   onClose?: () => void;
 }) {
@@ -147,6 +149,7 @@ export default function Sidebar({
       <div className="flex flex-col gap-0.5 border-t border-[var(--border)] pt-2">
         <NavItem icon={Workflow} label="How it works" onClick={() => onNavigate("how-it-works")} />
         <NavItem icon={BookOpen} label="Knowledge base" onClick={() => onNavigate("knowledge-base")} />
+        <NavItem icon={Activity} label="System metrics" onClick={onShowMetrics} />
         <NavItem icon={Keyboard} label="Keyboard shortcuts" hint="?" onClick={onShowShortcuts} />
         <a
           href="https://github.com/rahuldabola/agentdesk"

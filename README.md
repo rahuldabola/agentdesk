@@ -55,8 +55,9 @@ Every `[source_id]` resolves to a real file chunk or URL, so the report can be a
 | --- | --- |
 | Finding the right document (64 labelled questions) | **97%** Recall@4 (the right chunk is in the top 4) |
 | Refusing off-topic questions | **0% → 100%**, found and fixed by the benchmark |
-| Offline tests | **284 tests, 95% coverage**, no API keys needed |
+| Offline tests | **302 tests, 96% coverage**, no API keys needed |
 | Durable runs | Checkpointed after every node: a run **survives a server restart**, resumes from the failed node, and can **pause for a human to edit the plan** · [details](#durable-runs-and-human-in-the-loop) |
+| Observability | Tokens and cost per agent on every run, fleet metrics, and OpenTelemetry traces. The first trace showed **8.2s of a 27s run** spent starting the MCP tool server · [details](#observability-tokens-cost-and-traces) |
 | Real production bugs found by deploying | **2**, both fixed with regression tests |
 | Answer quality (26 questions, LLM judge) | **0.92** correctness · **0.95** faithfulness · **100%** no made-up answers to unanswerable questions · [details](#answer-quality-llm-judge) |
 | Public benchmark (BEIR SciFact) | **0.70** nDCG@10 with hybrid search on 300 expert-labelled claims; our BM25 reproduces the published figure · [details](#public-benchmark-beir-scifact) |
@@ -234,6 +235,7 @@ GET    /api/runs/{id}            plan, trace, pending review and result, rebuilt
 POST   /api/runs/{id}/resume     {"action": "approve", "subtasks"?, "success_criteria"?, "use_rag"?, "use_web"?} → SSE
                                  {"action": "reject"} → cancels a paused run
 POST   /api/runs/{id}/cancel     stop a run (an executing one halts at the next node)
+GET    /api/metrics              fleet metrics: pass rate, p50/p95 latency, tokens, spend, per-agent shares
 DELETE /api/runs/{id}            drop the run and its checkpoints
 ```
 
@@ -241,6 +243,53 @@ Reviewer edits are untrusted input. `clean_plan_edits` trims and caps them, and 
 Planner's invariants: a plan can't end up with no sub-questions or with both sources
 switched off. Verified live against Gemini: a paused run survived a server restart, then
 researched the edited sub-questions in the new process without re-planning.
+
+## Observability: tokens, cost and traces
+
+Three layers, each answering a different question.
+
+**1. What did this run cost, and which agent spent it?** Every Gemini response carries
+`usage_metadata`. The `@node` decorator opens a ledger in a `contextvars` variable for the
+duration of the agent step, and the LLM client records each response into whichever ledger
+is current. Context variables follow `asyncio` tasks and `asyncio.to_thread`, so the
+Researcher's parallel lanes still bill to the Researcher. The totals go into that step's
+trace entry (`llm_calls`, `tokens_in`, `tokens_out`, `cost_usd`), which is already
+checkpointed and streamed, so there is no second store to keep consistent. Cost is priced
+from the model version Gemini reports, using the published paid-tier rate. Thinking tokens
+are billed as output. The UI shows it in a **Usage** tab and as a cost chip on each report.
+
+**2. How is the system doing overall?** `GET /api/metrics` aggregates the run index: volume
+by status, the Critic's pass rate, p50/p95 latency, tokens and cost per run, total spend,
+and each agent's share of time and cost. It's in the UI under **System metrics**.
+
+**3. Where exactly did the time go?** OpenTelemetry spans for every run segment, agent
+step, Gemini call (GenAI semantic conventions: `gen_ai.usage.input_tokens`, ...) and MCP
+tool call. The `mcp` SDK's own spans nest underneath. Set `OTEL_EXPORTER_OTLP_ENDPOINT`
+to export them to Jaeger, Grafana Tempo, Honeycomb, Langfuse or any other OTLP backend.
+Without it, the OpenTelemetry API is a no-op.
+
+A real deep-mode run, exported and rendered (trimmed):
+
+```
+agentdesk.run                       27016ms  status=completed total_cost=0.00632
+  agent.planner                      4620ms
+    gemini.generate_content          1960ms  in=493  out=172  model=gemini-3.5-flash-lite
+  agent.researcher                  15496ms
+    MCP send initialize              8174ms   <- tool-server subprocess start-up
+    mcp.call_tool rag_search         4142ms  results=4    (x3, concurrent)
+    mcp.call_tool web_search         3660ms  results=0    (x3, concurrent)
+  agent.analyst                      1822ms
+    gemini.generate_content          1821ms  in=1674 out=502
+  agent.writer                       2630ms
+    gemini.generate_content          2629ms  in=1010 out=838
+  ...
+```
+
+That first trace overturned the obvious guess. The Researcher takes **57% of the run with
+zero LLM calls**, and its biggest single cost is **8.2s to start the MCP tool-server
+subprocess** (spawn, import Chroma, handshake) on every research round. The model calls
+are not the bottleneck; process start-up and tool I/O are. The whole run was 7.6k tokens,
+about $0.006 at list price.
 
 ## Design deep-dives
 
@@ -295,7 +344,7 @@ retrieval benchmark below, not from habit.
 | Errors reaching the API | Typed handlers: `ConfigurationError` → 500, everything else in the `AgentDeskError` tree → 502 with a structured body. No stack traces to callers. |
 | A report that never passed critique | Returned with `status: "revision_limit_reached"` and the Critic's flagged claims, so a caller can tell a verified report from an unverified one. |
 | Runaway loops | Both the rewrite and research loops are separately capped; `test_the_graph_terminates_when_the_critic_never_passes` proves termination. |
-| Observability | Every node emits a structured trace entry (`node`, `detail`, `elapsed_ms`) plus a log line, returned in the API response. |
+| Observability | Every node emits a trace entry (`node`, `detail`, `elapsed_ms`, tokens, cost) and a log line; runs and agent steps are OpenTelemetry spans; `GET /api/metrics` gives pass rate, latency percentiles and spend. |
 | A crash, redeploy or timeout mid-run | Checkpointed after every node; `POST /api/runs/{id}/resume` continues from the last finished node. |
 | A client disconnecting mid-run | The run executes on its own worker thread, not on the HTTP response, so it still finishes and is recorded. |
 
@@ -316,8 +365,8 @@ retrieval benchmark below, not from habit.
 ## Tests
 
 ```bash
-pytest                        # 284 tests, fully offline, no API keys, no cost
-pytest --cov=app              # 95% line coverage
+pytest                        # 302 tests, fully offline, no API keys, no cost
+pytest --cov=app              # 96% line coverage
 ruff check . && ruff format --check .
 ```
 
@@ -568,6 +617,9 @@ All settings are environment variables read at call time (see `app/config.py` an
 | `AGENTDESK_CORS_ORIGINS` | `*` | comma-separated list of origins allowed to call the API |
 | `AGENTDESK_RUNS_DB` | `./runs/agentdesk.sqlite` | SQLite file for checkpoints and the run index; `memory` keeps them in-process. On an ephemeral disk, mount a volume here to keep runs across deploys |
 | `AGENTDESK_MAX_PLAN_SUBTASKS` | `8` | most sub-questions a reviewer can leave in an edited plan |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | — | OTLP/HTTP collector to export traces to (e.g. `http://localhost:4318`); unset = tracing off. Other standard `OTEL_*` variables (headers, sampler) work too |
+| `OTEL_SERVICE_NAME` | `agentdesk-api` | service name on exported spans |
+| `AGENTDESK_PRICE_INPUT_PER_M` / `AGENTDESK_PRICE_OUTPUT_PER_M` | per model | override the USD-per-1M-token prices used for cost |
 
 ## Project layout
 
@@ -576,6 +628,7 @@ app/
   graph.py            LangGraph state machine, reducers, citation resolution, run lifecycle
                       (start / review interrupt / resume / cancel)
   persistence.py      SQLite checkpointer + run index
+  observability.py    per-agent token/cost ledger, fleet metrics, OpenTelemetry setup
   config.py           settings; errors.py: typed error taxonomy
   agents/             planner, researcher, analyst, synthesizer, writer, critic
     base.py           @node decorator: timing, logging, trace entries
@@ -587,7 +640,7 @@ app/
 frontend/              Vite + React + three.js UI (3D live pipeline + replay, tabbed report, history)
 eval/                  pipeline eval + retrieval benchmark: labelled sets, stub model,
                        runners, cached embeddings, checked-in results
-tests/                 284 tests; doubles.py holds the offline stand-ins
+tests/                 302 tests; doubles.py holds the offline stand-ins
 scripts/               ingest_docs, run_demo, check_mcp_server
 ```
 
@@ -626,7 +679,7 @@ Stated plainly, because they are the honest next steps rather than hidden gaps:
 
 ## Engineering log: what was built, and what changed along the way
 
-The project went through six rounds of work. Each one fixed something specific rather than adding features for their own sake.
+The project went through seven rounds of work. Each one fixed something specific rather than adding features for their own sake.
 
 1. **Production hardening.** The first version truncated every RAG passage at its first blank line (782 characters retrieved, 22 delivered) because passages were serialised to text and re-parsed. Fixed by passing structured data across the MCP boundary, then added a regression test that exercises the seam. Also added the research loop (the Critic can request more evidence), bounded retries and typed errors.
 2. **Port to Gemini and live deployment.** Moved the whole LLM and embedding layer from Claude + OpenAI to Gemini (`google-genai`) with the API contract unchanged, then deployed the backend on Railway and the UI on Vercel (the API moved to Render when the Railway trial ended). Deployment exposed two bugs that tests missed: the MCP tool subprocess did not inherit the environment (API keys), and parallel RAG calls each created their own Chroma client on the same index and corrupted it. Both are fixed and covered.
@@ -634,6 +687,7 @@ The project went through six rounds of work. Each one fixed something specific r
 4. **A retrieval benchmark that changed the defaults.** 64 labelled questions plus 16 unanswerable ones. It showed the relevance floor (tuned for OpenAI) refused **0 of 16** off-topic questions under Gemini. Re-calibrated to 0.40, it now refuses all off-topic ones and loses no answerable question. It also showed hybrid search and the reranker did not earn their place on this corpus, so the default stays dense.
 5. **Answer-quality eval and a public-benchmark harness.** An LLM-judge eval run on 34 questions (correctness 0.92, faithfulness 0.95), plus a run on the public BEIR SciFact dataset (hybrid nDCG@10 0.70), because a self-written benchmark can flatter its author. Notably, the best retriever differs between the two corpora.
 6. **Durable runs and human-in-the-loop.** A SQLite checkpointer behind every run, an `interrupt()`-based plan-review step, resume-from-failure, cooperative cancel and a run API. The UI gained a plan editor and reattaches to runs after a reload. Live testing found that a client disconnect stranded the run mid-graph. Runs now execute on worker threads decoupled from the HTTP response.
+7. **Observability.** Per-agent token and cost accounting through a `contextvars` ledger, a metrics endpoint, a Usage tab and a System metrics view, plus OpenTelemetry spans for runs, agents, Gemini calls and MCP tool calls. Verified by exporting a live run's 26 spans to an OTLP receiver. The first trace showed that starting the MCP tool server costs 8.2s of every research round.
 
 Repository hygiene: `master` is protected (PRs only, required CI checks, linear history), secret scanning and Dependabot are on, and every change above landed through a reviewed-by-CI pull request.
 
