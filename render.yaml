@@ -1,0 +1,25 @@
+# Render Blueprint for the AgentDesk API (the UI is on Vercel).
+# One-click deploy: https://render.com/deploy?repo=https://github.com/rahuldabola/agentdesk
+services:
+  - type: web
+    name: agentdesk-api
+    runtime: docker
+    plan: free
+    region: singapore
+    healthCheckPath: /health
+    envVars:
+      # Secrets: prompted for in the Render dashboard, never committed.
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: TAVILY_API_KEY # optional; without it web search falls back to Wikipedia/DuckDuckGo
+        sync: false
+      - key: AGENTDESK_APP_PASSWORD # shared demo password; empty disables the gate
+        sync: false
+      - key: AGENTDESK_CORS_ORIGINS
+        value: https://agentdesk-research.vercel.app
+      - key: GEMINI_MODEL
+        value: gemini-flash-lite-latest
+      # Free instances have an ephemeral disk: run history resets on each deploy
+      # or restart. Attach a persistent disk at /app/runs to keep it.
+      - key: AGENTDESK_RUNS_DB
+        value: ./runs/agentdesk.sqlite

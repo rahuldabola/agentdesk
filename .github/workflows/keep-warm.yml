@@ -1,0 +1,16 @@
+# Render's free tier sleeps after 15 idle minutes, and a cold start (boot + re-ingest)
+# takes about a minute, which is a bad first impression for a live demo.
+# Set the SERVICE_URL repository variable to the deployed API URL to enable.
+name: Keep warm
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    if: vars.SERVICE_URL != ''
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl -fsS --max-time 90 "${{ vars.SERVICE_URL }}/health" || true
