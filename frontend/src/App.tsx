@@ -24,6 +24,7 @@ import PipelinePanel from "./components/PipelinePanel";
 import PlanReview from "./components/PlanReview";
 import QuestionComposer from "./components/QuestionComposer";
 import ReportView from "./components/ReportView";
+import MetricsDialog from "./components/MetricsDialog";
 import ShortcutsDialog from "./components/ShortcutsDialog";
 import Sidebar, { type HealthState } from "./components/Sidebar";
 import { useToast } from "./components/Toast";
@@ -38,6 +39,7 @@ export default function App() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [metricsOpen, setMetricsOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [showTop, setShowTop] = useState(false);
   const [health, setHealth] = useState<HealthState>({ state: "checking" });
@@ -333,7 +335,8 @@ export default function App() {
       } else if (paletteOpen) {
         return; // the palette handles its own keys
       } else if (e.key === "Escape") {
-        if (shortcutsOpen) setShortcutsOpen(false);
+        if (metricsOpen) setMetricsOpen(false);
+        else if (shortcutsOpen) setShortcutsOpen(false);
         else if (drawerOpen) setDrawerOpen(false);
         else if (anyRunning) stopRun();
       } else if (!typing && e.key === "/") {
@@ -406,6 +409,10 @@ export default function App() {
       }}
       onNavigate={navigateTo}
       onShowShortcuts={() => setShortcutsOpen(true)}
+      onShowMetrics={() => {
+        setMetricsOpen(true);
+        setDrawerOpen(false);
+      }}
       onSignOut={lock}
       onClose={onClose}
     />
@@ -578,6 +585,7 @@ export default function App() {
       )}
 
       <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+      <MetricsDialog open={metricsOpen} password={password} onClose={() => setMetricsOpen(false)} />
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} runs={runs} running={anyRunning} actions={paletteActions} />
     </div>
   );

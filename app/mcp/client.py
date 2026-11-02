@@ -15,6 +15,7 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
 from app.errors import ToolError
+from app.observability import tracer
 
 log = logging.getLogger("agentdesk.mcp")
 
@@ -49,6 +50,16 @@ async def mcp_session():
 
 async def call_tool(session, tool_name: str, arguments: dict) -> dict:
     """Call a tool over an existing session and return its parsed JSON payload."""
+    with tracer.start_as_current_span(f"mcp.call_tool {tool_name}") as span:
+        span.set_attribute("mcp.tool.name", tool_name)
+        payload = await _call_tool(session, tool_name, arguments)
+        results = payload.get("results")
+        if isinstance(results, list):
+            span.set_attribute("mcp.tool.result_count", len(results))
+        return payload
+
+
+async def _call_tool(session, tool_name: str, arguments: dict) -> dict:
     result = await session.call_tool(tool_name, arguments)
     if getattr(result, "isError", False):
         raise ToolError(f"MCP tool '{tool_name}' reported an error: {result.content}")

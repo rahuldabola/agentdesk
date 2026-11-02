@@ -18,6 +18,7 @@ from app.agents.researcher import research_node
 from app.agents.synthesizer import synthesizer_node
 from app.agents.writer import writer_node
 from app.config import get_settings, resolve_depth
+from app.observability import summarize_trace, tracer
 from app.persistence import get_checkpointer, get_run_store
 
 log = logging.getLogger("agentdesk.graph")
@@ -211,6 +212,7 @@ def finalize(state: dict) -> dict:
         result.get("final_report", ""), result.get("sources", {})
     )
     result.setdefault("status", "passed")
+    result["usage"] = summarize_trace(result.get("trace", []))
     log.info(
         "run complete: status=%s revisions=%d research_rounds=%d citations=%d",
         result["status"],
@@ -251,52 +253,84 @@ def _drive(run_id: str, graph_input) -> Iterator[tuple[str, dict]]:
     """
     graph = get_graph()
     config = _config(run_id)
-    store = get_run_store()
+    resuming = graph_input is None or isinstance(graph_input, Command)
 
-    # On a resume, the restored state already carries earlier trace entries;
-    # only entries produced from here on are news to the caller.
-    emitted = len((graph.get_state(config).values or {}).get("trace", []))
-    store.update(run_id, status="running", error=None)
-    try:
-        for state in graph.stream(graph_input, config, stream_mode="values"):
-            if "__interrupt__" in state:  # the pause marker, not a state snapshot
-                continue
-            trace = state.get("trace", [])
-            for entry in trace[emitted:]:
-                yield "progress", entry
-            emitted = len(trace)
-            # Cooperative cancellation, checked at node boundaries: a node in
-            # flight finishes (and is checkpointed), nothing after it starts.
-            with _active_lock:
-                cancelled = run_id in _cancel_requests
-            if cancelled:
-                store.update(run_id, status="cancelled")
-                yield "cancelled", {"run_id": run_id}
-                return
-    except GeneratorExit:
-        store.update(run_id, status="failed", error="stream closed before the run finished")
-        raise
-    except Exception as exc:
-        store.update(run_id, status="failed", error=f"{type(exc).__name__}: {exc}")
-        raise
+    with tracer.start_as_current_span("agentdesk.run") as span:
+        span.set_attribute("agentdesk.run_id", run_id)
+        span.set_attribute("agentdesk.resume", resuming)
+        if isinstance(graph_input, dict):
+            span.set_attribute("agentdesk.depth", graph_input.get("depth", ""))
+            span.set_attribute("agentdesk.review_plan", bool(graph_input.get("review_plan")))
 
-    snapshot = graph.get_state(config)
-    plan = _pending_review(snapshot)
-    if plan is not None:
-        store.update(run_id, status="awaiting_review")
-        yield "plan_review", {"run_id": run_id, **plan}
-        return
+        def settle(status: str, **fields) -> dict:
+            """Record where the segment stopped, with usage summed from the trace.
 
-    result = finalize(snapshot.values)
-    result["run_id"] = run_id
-    store.update(
-        run_id,
-        status="completed",
-        outcome=result["status"],
-        citations=len(result["citations"]),
-        revisions=result.get("revision_count", 0),
-    )
-    yield "report", result
+            Called at every stopping point (done, paused, cancelled, failed) so
+            the index always reflects the run's cumulative cost so far.
+            """
+            values = graph.get_state(config).values or {}
+            usage = summarize_trace(values.get("trace", []))
+            get_run_store().update(
+                run_id,
+                status=status,
+                llm_calls=usage["llm_calls"],
+                tokens_in=usage["tokens_in"],
+                tokens_out=usage["tokens_out"],
+                cost_usd=usage["cost_usd"],
+                elapsed_ms=usage["elapsed_ms"],
+                usage_by_agent=usage["by_agent"],
+                **fields,
+            )
+            span.set_attribute("agentdesk.status", status)
+            for key in ("llm_calls", "tokens_in", "tokens_out", "cost_usd"):
+                span.set_attribute(f"agentdesk.total_{key}", usage[key])
+            return usage
+
+        # On a resume, the restored state already carries earlier trace entries;
+        # only entries produced from here on are news to the caller.
+        emitted = len((graph.get_state(config).values or {}).get("trace", []))
+        get_run_store().update(run_id, status="running", error=None)
+        try:
+            for state in graph.stream(graph_input, config, stream_mode="values"):
+                if "__interrupt__" in state:  # the pause marker, not a state snapshot
+                    continue
+                trace = state.get("trace", [])
+                for entry in trace[emitted:]:
+                    yield "progress", entry
+                emitted = len(trace)
+                # Cooperative cancellation, checked at node boundaries: a node in
+                # flight finishes (and is checkpointed), nothing after it starts.
+                with _active_lock:
+                    cancelled = run_id in _cancel_requests
+                if cancelled:
+                    settle("cancelled")
+                    yield "cancelled", {"run_id": run_id}
+                    return
+        except GeneratorExit:
+            settle("failed", error="stream closed before the run finished")
+            raise
+        except Exception as exc:
+            settle("failed", error=f"{type(exc).__name__}: {exc}")
+            raise
+
+        snapshot = graph.get_state(config)
+        plan = _pending_review(snapshot)
+        if plan is not None:
+            settle("awaiting_review")
+            yield "plan_review", {"run_id": run_id, **plan}
+            return
+
+        result = finalize(snapshot.values)
+        result["run_id"] = run_id
+        settle(
+            "completed",
+            outcome=result["status"],
+            citations=len(result["citations"]),
+            revisions=result.get("revision_count", 0),
+        )
+        span.set_attribute("agentdesk.outcome", result["status"])
+        span.set_attribute("agentdesk.citations", len(result["citations"]))
+        yield "report", result
 
 
 def create_run(question: str, depth: str | None = None, review_plan: bool = False) -> str:
