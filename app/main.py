@@ -3,21 +3,32 @@
 import json
 import logging
 import os
+import queue
 import secrets
+import threading
 from collections.abc import Iterator
 from typing import Literal
 
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, Header, HTTPException, Request
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, Response
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
-from starlette.concurrency import iterate_in_threadpool
 
 from app.config import get_settings
 from app.errors import AgentDeskError, ConfigurationError
-from app.graph import run_agentdesk, stream_agentdesk
+from app.graph import (
+    RunConflict,
+    RunNotFound,
+    cancel_run,
+    delete_run,
+    get_run,
+    list_runs,
+    resume_run,
+    run_agentdesk,
+    stream_agentdesk,
+)
 
 load_dotenv()  # no-ops if .env doesn't exist (Docker/Railway set real env vars instead)
 
@@ -26,7 +37,7 @@ log = logging.getLogger("agentdesk.api")
 
 app = FastAPI(
     title="AgentDesk",
-    version="1.0.0",
+    version="1.1.0",
     description="Multi-agent research & report orchestrator (LangGraph + MCP + RAG)",
 )
 
@@ -36,7 +47,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins,
     allow_credentials=False,
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["content-type", "x-app-password"],
 )
 
@@ -61,8 +72,25 @@ class ReportRequest(BaseModel):
     depth: Literal["quick", "deep"] | None = None
 
 
+class StreamRequest(ReportRequest):
+    # Pause after the Planner and wait for a human to approve or edit the plan
+    # (POST /api/runs/{run_id}/resume). Only meaningful on a streamed run.
+    review_plan: bool = False
+
+
+class ResumeRequest(BaseModel):
+    """A reviewer's decision on a paused plan; omitted fields keep the Planner's value."""
+
+    action: Literal["approve", "reject"] = "approve"
+    subtasks: list[str] | None = Field(default=None, max_length=20)
+    success_criteria: list[str] | None = Field(default=None, max_length=20)
+    use_rag: bool | None = None
+    use_web: bool | None = None
+
+
 def _response_body(question: str, result: dict) -> dict:
     return {
+        "run_id": result.get("run_id"),
         "question": question,
         "depth": result.get("depth"),
         # "passed" means the Critic accepted the report; "revision_limit_reached"
@@ -92,6 +120,16 @@ async def agentdesk_error_handler(request: Request, exc: AgentDeskError) -> JSON
     )
 
 
+@app.exception_handler(RunNotFound)
+async def run_not_found_handler(request: Request, exc: RunNotFound) -> JSONResponse:
+    return JSONResponse(status_code=404, content={"error": "RunNotFound", "detail": str(exc)})
+
+
+@app.exception_handler(RunConflict)
+async def run_conflict_handler(request: Request, exc: RunConflict) -> JSONResponse:
+    return JSONResponse(status_code=409, content={"error": "RunConflict", "detail": str(exc)})
+
+
 @app.get("/health")
 def health() -> dict:
     return {"status": "ok", "model": get_settings().gemini_model}
@@ -107,21 +145,69 @@ def _sse(event: str, data: dict) -> str:
     return f"event: {event}\ndata: {json.dumps(data)}\n\n"
 
 
-def _report_events(question: str, depth: str | None = None) -> Iterator[str]:
-    """Server-sent events for one run: a `progress` per node, then `report`.
+def _run_events(events: Iterator[tuple[str, dict]]) -> Iterator[str]:
+    """Server-sent events for one run segment.
 
-    Errors are delivered as a terminal `error` event rather than a severed
-    connection, because the response status is already committed by then.
+    `run` (the id, first), a `progress` per node, then either `report` or
+    `plan_review` (the run is paused for a human). Errors are delivered as a
+    terminal `error` event rather than a severed connection, because the
+    response status is already committed by then. The run is checkpointed, so
+    a failed run can be resumed later.
     """
     try:
-        for kind, payload in stream_agentdesk(question, depth):
-            if kind == "progress":
-                yield _sse("progress", payload)
+        for kind, payload in events:
+            if kind == "report":
+                yield _sse("report", _response_body(payload.get("question", ""), payload))
             else:
-                yield _sse("report", _response_body(question, payload))
+                yield _sse(kind, payload)
     except AgentDeskError as exc:
         log.error("%s during stream: %s", type(exc).__name__, exc)
         yield _sse("error", {"error": type(exc).__name__, "detail": str(exc)})
+    except Exception as exc:  # a bug, not an upstream failure; still end the stream cleanly
+        log.exception("unexpected error during run")
+        yield _sse("error", {"error": type(exc).__name__, "detail": "internal error"})
+
+
+_DONE = object()
+
+
+def start_run_worker(events: Iterator[tuple[str, dict]]) -> tuple[queue.Queue, threading.Thread]:
+    """Execute a run on its own thread, publishing SSE chunks to a queue.
+
+    The run's lifetime is decoupled from the HTTP connection on purpose. A
+    sync generator streamed straight into the response is simply abandoned
+    when the client disconnects - suspended at a `yield`, never closed - which
+    left the run stuck at "running" and unresumable. Here the worker always
+    drives the run to its next stopping point (report, review pause or error),
+    the checkpointer records it, and a client that dropped off can read the
+    outcome from GET /api/runs/{run_id}.
+    """
+    chunks: queue.Queue = queue.Queue()
+
+    def work() -> None:
+        try:
+            for chunk in _run_events(events):
+                chunks.put(chunk)
+        finally:
+            chunks.put(_DONE)
+
+    worker = threading.Thread(target=work, name="agentdesk-run", daemon=True)
+    worker.start()
+    return chunks, worker
+
+
+def _event_stream(events: Iterator[tuple[str, dict]]) -> StreamingResponse:
+    chunks, _ = start_run_worker(events)
+
+    async def body():
+        while (chunk := await run_in_threadpool(chunks.get)) is not _DONE:
+            yield chunk
+
+    return StreamingResponse(
+        body(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @app.post("/api/auth/check", dependencies=[Depends(require_app_password)])
@@ -131,10 +217,49 @@ async def auth_check() -> dict:
 
 
 @app.post("/api/report/stream", dependencies=[Depends(require_app_password)])
-async def create_report_stream(req: ReportRequest) -> StreamingResponse:
+async def create_report_stream(req: StreamRequest) -> StreamingResponse:
     """Same run as /api/report, streamed as each agent finishes."""
-    return StreamingResponse(
-        iterate_in_threadpool(_report_events(req.question, req.depth)),
-        media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
-    )
+    return _event_stream(stream_agentdesk(req.question, req.depth, review_plan=req.review_plan))
+
+
+# --- Durable runs -------------------------------------------------------------
+
+
+@app.get("/api/runs", dependencies=[Depends(require_app_password)])
+async def runs_index(limit: int = Query(default=50, ge=1, le=200)) -> dict:
+    """Most recent runs first, from the run index (no checkpoint reads)."""
+    return {"runs": await run_in_threadpool(list_runs, limit)}
+
+
+@app.get("/api/runs/{run_id}", dependencies=[Depends(require_app_password)])
+async def run_detail(run_id: str) -> dict:
+    """One run, reconstructed from its checkpoint: plan, trace, pending review, result."""
+    record = await run_in_threadpool(get_run, run_id)
+    result = record.pop("result")
+    record["result"] = _response_body(record["question"], result) if result else None
+    return record
+
+
+@app.post("/api/runs/{run_id}/resume", dependencies=[Depends(require_app_password)])
+async def run_resume(run_id: str, req: ResumeRequest):
+    """Approve (optionally edit) a paused plan, or continue a failed/orphaned run.
+
+    `reject` cancels a paused run and returns its record as JSON; everything
+    else streams the rest of the run as server-sent events.
+    """
+    if req.action == "reject":
+        return await run_in_threadpool(cancel_run, run_id)
+    edits = req.model_dump(exclude={"action"}, exclude_none=True)
+    return _event_stream(resume_run(run_id, edits))
+
+
+@app.post("/api/runs/{run_id}/cancel", dependencies=[Depends(require_app_password)])
+async def run_cancel(run_id: str) -> dict:
+    """Stop a run. An executing one halts at its next node boundary."""
+    return await run_in_threadpool(cancel_run, run_id)
+
+
+@app.delete("/api/runs/{run_id}", status_code=204, dependencies=[Depends(require_app_password)])
+async def run_delete(run_id: str) -> Response:
+    await run_in_threadpool(delete_run, run_id)
+    return Response(status_code=204)

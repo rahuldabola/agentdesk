@@ -78,6 +78,10 @@ class Settings:
     max_revisions: int
     max_research_rounds: int
 
+    # Durable runs
+    runs_db: str
+    max_plan_subtasks: int
+
 
 def get_settings() -> Settings:
     return Settings(
@@ -118,4 +122,9 @@ def get_settings() -> Settings:
         query_rewrite=_int("AGENTDESK_QUERY_REWRITE", 1) != 0,
         max_revisions=_int("AGENTDESK_MAX_REVISIONS", 2),
         max_research_rounds=_int("AGENTDESK_MAX_RESEARCH_ROUNDS", 1),
+        # SQLite file holding graph checkpoints and the run index ("memory" keeps
+        # both in-process). On an ephemeral disk, mount a volume to keep runs.
+        runs_db=os.environ.get("AGENTDESK_RUNS_DB", "./runs/agentdesk.sqlite"),
+        # Upper bound on subtasks a human may add when editing a plan for review.
+        max_plan_subtasks=_int("AGENTDESK_MAX_PLAN_SUBTASKS", 8),
     )

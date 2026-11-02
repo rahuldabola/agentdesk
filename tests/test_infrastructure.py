@@ -118,18 +118,34 @@ def test_an_empty_question_is_rejected_before_any_work_happens():
 
 
 def test_run_agentdesk_attaches_resolved_citations_and_a_status():
-    graph = MagicMock()
-    graph.invoke.return_value = {
-        "final_report": "A claim [rag:h.md#0] and another [web:9].",
-        "sources": {"rag:h.md#0": {"source_id": "rag:h.md#0", "type": "rag", "file": "h.md"}},
-        "revision_count": 0,
-        "research_rounds": 0,
+    seen = {}
+
+    def planner(state):
+        seen["question"] = state["question"]
+        return {"subtasks": ["s"], "use_rag": True, "use_web": False, "trace": []}
+
+    nodes = {
+        "planner_node": planner,
+        "research_node": lambda s: {
+            "sources": {"rag:h.md#0": {"source_id": "rag:h.md#0", "type": "rag", "file": "h.md"}},
+            "trace": [],
+        },
+        "analyst_node": lambda s: {"facts": []},
+        "synthesizer_node": lambda s: {"synthesis": {}},
+        "writer_node": lambda s: {"draft_report": "d"},
+        "critic_node": lambda s: {"final_report": "A claim [rag:h.md#0] and another [web:9]."},
     }
-
-    with patch("app.graph.get_graph", return_value=graph):
+    patches = [patch(f"app.graph.{name}", side_effect=fn) for name, fn in nodes.items()]
+    for p in patches:
+        p.start()
+    try:
         result = run_agentdesk("  a real question  ")
+    finally:
+        for p in patches:
+            p.stop()
 
-    assert graph.invoke.call_args[0][0]["question"] == "a real question"
+    assert seen["question"] == "a real question"
     assert result["status"] == "passed"
+    assert result["run_id"]
     # [web:9] was never registered as a source, so it must not be reported as one.
     assert [c["source_id"] for c in result["citations"]] == ["rag:h.md#0"]

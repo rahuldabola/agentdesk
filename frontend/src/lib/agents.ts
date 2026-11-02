@@ -73,6 +73,7 @@ export function inferActiveAgent(trace: TraceEntry[], running: boolean): AgentKe
   if (!last) return "planner";
   switch (last.node) {
     case "planner":
+    case "reviewer": // a human approved the plan; research starts next
       return "researcher";
     case "researcher":
       return "analyst";

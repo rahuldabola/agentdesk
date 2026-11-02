@@ -55,7 +55,8 @@ Every `[source_id]` resolves to a real file chunk or URL, so the report can be a
 | --- | --- |
 | Finding the right document (64 labelled questions) | **97%** Recall@4 (the right chunk is in the top 4) |
 | Refusing off-topic questions | **0% → 100%**, found and fixed by the benchmark |
-| Offline tests | **166 tests, 92% coverage**, no API keys needed |
+| Offline tests | **284 tests, 95% coverage**, no API keys needed |
+| Durable runs | Checkpointed after every node: a run **survives a server restart**, resumes from the failed node, and can **pause for a human to edit the plan** · [details](#durable-runs-and-human-in-the-loop) |
 | Real production bugs found by deploying | **2**, both fixed with regression tests |
 | Answer quality (26 questions, LLM judge) | **0.92** correctness · **0.95** faithfulness · **100%** no made-up answers to unanswerable questions · [details](#answer-quality-llm-judge) |
 | Public benchmark (BEIR SciFact) | **0.70** nDCG@10 with hybrid search on 300 expert-labelled claims; our BM25 reproduces the published figure · [details](#public-benchmark-beir-scifact) |
@@ -72,10 +73,12 @@ flowchart LR
 
     subgraph G["LangGraph state machine"]
         direction TB
-        P[Planner] --> R[Researcher] --> A[Analyst] --> S[Synthesizer] --> W[Writer] --> C{Critic}
+        P[Planner] --> H{{"Plan review<br/>(optional interrupt)"}} --> R[Researcher] --> A[Analyst] --> S[Synthesizer] --> W[Writer] --> C{Critic}
         C -- "rewrite" --> W
         C -- "missing evidence" --> R
     end
+
+    G <-- "checkpoint after every node" --> CK[("SQLite<br/>checkpoints + run index")]
 
     R <-- "MCP over stdio" --> T["MCP tool server"]
     T --> RAG["rag_search<br/>dense · BM25 · RRF · rerank<br/>+ relevance floor"]
@@ -197,6 +200,48 @@ A failure mid-stream arrives as a terminal `error` event rather than a severed c
 
 ---
 
+## Durable runs and human-in-the-loop
+
+Every run is a LangGraph **thread** with its own id, and a SQLite checkpointer
+(`langgraph-checkpoint-sqlite`) snapshots the full graph state after every node. Three
+things follow from that:
+
+1. **Pause for a human.** With `"review_plan": true`, a `review_plan` node calls
+   LangGraph's `interrupt()` right after the Planner. The run stops, its state is persisted,
+   and the stream ends with a `plan_review` event carrying the sub-questions, success
+   criteria and source choices. The user edits them in the UI (or via the API) and
+   approves; `Command(resume=...)` re-enters the graph, and the Researcher receives exactly
+   the edited plan. The pause can last hours and the approval can arrive at a different
+   server process.
+2. **Resume instead of restart.** A run that fails mid-way (a Gemini timeout in the Writer,
+   say) is marked `failed` with its error. `POST /api/runs/{id}/resume` continues from the
+   last finished node, so planning and research are not paid for twice. A run orphaned by
+   a crash or redeploy (stuck at `running` but not executing anywhere) is resumable too.
+3. **Runs outlive connections.** Each run executes on its own worker thread and publishes
+   events to a queue that the SSE response drains. Closing the tab doesn't stop the run.
+   It finishes, is recorded, and the UI reattaches on reload. **Stop** is an explicit,
+   cooperative cancel honoured at the next node boundary.
+
+The third point fixed a real bug found while testing this feature live. Streaming the
+sync generator straight into the response meant a client disconnect left the generator
+suspended at a `yield` forever. The run sat at `running`, still claimed, and could not be
+resumed. `test_a_run_finishes_even_if_nobody_reads_the_stream` pins it.
+
+```
+POST   /api/report/stream        {"question", "depth"?, "review_plan"?}  → SSE: run, progress…, report | plan_review
+GET    /api/runs                 run index, newest first
+GET    /api/runs/{id}            plan, trace, pending review and result, rebuilt from the checkpoint
+POST   /api/runs/{id}/resume     {"action": "approve", "subtasks"?, "success_criteria"?, "use_rag"?, "use_web"?} → SSE
+                                 {"action": "reject"} → cancels a paused run
+POST   /api/runs/{id}/cancel     stop a run (an executing one halts at the next node)
+DELETE /api/runs/{id}            drop the run and its checkpoints
+```
+
+Reviewer edits are untrusted input. `clean_plan_edits` trims and caps them, and keeps the
+Planner's invariants: a plan can't end up with no sub-questions or with both sources
+switched off. Verified live against Gemini: a paused run survived a server restart, then
+researched the edited sub-questions in the new process without re-planning.
+
 ## Design deep-dives
 
 ### Why MCP instead of calling the tools directly
@@ -251,16 +296,19 @@ retrieval benchmark below, not from habit.
 | A report that never passed critique | Returned with `status: "revision_limit_reached"` and the Critic's flagged claims, so a caller can tell a verified report from an unverified one. |
 | Runaway loops | Both the rewrite and research loops are separately capped; `test_the_graph_terminates_when_the_critic_never_passes` proves termination. |
 | Observability | Every node emits a structured trace entry (`node`, `detail`, `elapsed_ms`) plus a log line, returned in the API response. |
+| A crash, redeploy or timeout mid-run | Checkpointed after every node; `POST /api/runs/{id}/resume` continues from the last finished node. |
+| A client disconnecting mid-run | The run executes on its own worker thread, not on the HTTP response, so it still finishes and is recorded. |
 
 ## Tech stack
 
 | Layer | Choice | Why |
 | --- | --- | --- |
 | Orchestration | LangGraph (`app/graph.py`) | An explicit state machine with reducers and conditional edges, not a fixed chain |
+| Durability | LangGraph SQLite checkpointer + run index (`app/persistence.py`) | Resumable runs, `interrupt()`-based plan review, run history that survives restarts |
 | LLM | Gemini (`app/llm/gemini_client.py`) | Every decision point (plan, extract facts, critique) is a forced function call via `FunctionCallingConfig(mode="ANY")`, so nothing is parsed from free text |
 | Retrieval | `gemini-embedding-001` + Chroma (cosine), BM25, rank fusion, optional ONNX cross-encoder | All of them benchmarked against each other; the winner is the default |
 | Tools | `mcp` SDK, real client/server over stdio | The tool server is callable by any MCP client, not just this repo |
-| API | FastAPI (`app/main.py`) | `POST /api/report` and an SSE `POST /api/report/stream`; optional shared-password gate |
+| API | FastAPI (`app/main.py`) | `POST /api/report`, an SSE `POST /api/report/stream`, and `/api/runs` to list, inspect, resume, cancel and delete runs; optional shared-password gate |
 | Frontend | Vite + React + three.js (`frontend/`) | Live 3D view of the agents, step-by-step replay, tabbed report with hoverable citation chips, Markdown/PDF export, local history, command palette |
 | Quality gates | ruff, pytest (85% floor), stdio smoke test, offline eval, retrieval benchmark | Each has pass/fail thresholds, enforced in CI on Python 3.11 and 3.12 |
 | Deploy | Docker, Railway (API), Vercel (UI) | Branch-protected `master`, required checks, secret scanning, Dependabot |
@@ -268,8 +316,8 @@ retrieval benchmark below, not from habit.
 ## Tests
 
 ```bash
-pytest                        # 166 tests, fully offline, no API keys, no cost
-pytest --cov=app              # 92% line coverage
+pytest                        # 284 tests, fully offline, no API keys, no cost
+pytest --cov=app              # 95% line coverage
 ruff check . && ruff format --check .
 ```
 
@@ -518,12 +566,16 @@ All settings are environment variables read at call time (see `app/config.py` an
 | `AGENTDESK_LLM_MAX_ATTEMPTS` | `4` | retry budget for 429/5xx/connection errors |
 | `AGENTDESK_APP_PASSWORD` | — | optional; gates `/api/report*` behind an `X-App-Password` header for public deployments |
 | `AGENTDESK_CORS_ORIGINS` | `*` | comma-separated list of origins allowed to call the API |
+| `AGENTDESK_RUNS_DB` | `./runs/agentdesk.sqlite` | SQLite file for checkpoints and the run index; `memory` keeps them in-process. On an ephemeral disk, mount a volume here to keep runs across deploys |
+| `AGENTDESK_MAX_PLAN_SUBTASKS` | `8` | most sub-questions a reviewer can leave in an edited plan |
 
 ## Project layout
 
 ```
 app/
-  graph.py            LangGraph state machine, reducers, citation resolution
+  graph.py            LangGraph state machine, reducers, citation resolution, run lifecycle
+                      (start / review interrupt / resume / cancel)
+  persistence.py      SQLite checkpointer + run index
   config.py           settings; errors.py: typed error taxonomy
   agents/             planner, researcher, analyst, synthesizer, writer, critic
     base.py           @node decorator: timing, logging, trace entries
@@ -531,11 +583,11 @@ app/
   mcp/                server.py (tool process), client.py (session), tools.py (impls)
   rag/                ingest.py (chunk/embed/upsert), retriever.py (candidates → fusion →
                       rerank → floor), bm25.py, rerank.py
-  main.py             FastAPI surface: auth gate, CORS, /api/report(/stream)
+  main.py             FastAPI surface: auth gate, CORS, /api/report(/stream), /api/runs, run worker threads
 frontend/              Vite + React + three.js UI (3D live pipeline + replay, tabbed report, history)
 eval/                  pipeline eval + retrieval benchmark: labelled sets, stub model,
                        runners, cached embeddings, checked-in results
-tests/                 166 tests; doubles.py holds the offline stand-ins
+tests/                 284 tests; doubles.py holds the offline stand-ins
 scripts/               ingest_docs, run_demo, check_mcp_server
 ```
 
@@ -562,9 +614,11 @@ Stated plainly, because they are the honest next steps rather than hidden gaps:
   author.** That is big enough to find a broken floor and to rank retrievers, but small enough
   that one question is worth 1.5 points of recall. The floor was calibrated on the same
   questions it is measured on, so 0.40 leaves margin on the side of keeping real answers.
-- **No persistence, and auth is a shared password, not per-user.** Runs are stateless (nothing is
-  saved server-side between requests), and `AGENTDESK_APP_PASSWORD` is a single shared secret
-  for gating a public deployment, not real multi-user authentication.
+- **Auth is a shared password, not per-user**, so every user sees the same run history.
+  `AGENTDESK_APP_PASSWORD` gates a public deployment; it is not multi-user authentication.
+- **Runs live on one server's disk.** The SQLite checkpointer suits a single instance; scaling
+  out needs the Postgres checkpointer. Resuming an orphaned run assumes no other instance is
+  executing it. Without a mounted volume, a redeploy clears run history.
 - **The offline eval never exercises the revision or research loops** (the stub Critic passes
   every case). Those paths are covered by `tests/test_graph_flow.py` instead.
 - **DuckDuckGo scraping is best-effort**; it is a fallback so the tool never hard-fails, not a
@@ -572,13 +626,14 @@ Stated plainly, because they are the honest next steps rather than hidden gaps:
 
 ## Engineering log: what was built, and what changed along the way
 
-The project went through five rounds of work. Each one fixed something specific rather than adding features for their own sake.
+The project went through six rounds of work. Each one fixed something specific rather than adding features for their own sake.
 
 1. **Production hardening.** The first version truncated every RAG passage at its first blank line (782 characters retrieved, 22 delivered) because passages were serialised to text and re-parsed. Fixed by passing structured data across the MCP boundary, then added a regression test that exercises the seam. Also added the research loop (the Critic can request more evidence), bounded retries and typed errors.
 2. **Port to Gemini and live deployment.** Moved the whole LLM and embedding layer from Claude + OpenAI to Gemini (`google-genai`) with the API contract unchanged, then deployed the backend on Railway and the UI on Vercel. Deployment exposed two bugs that tests missed: the MCP tool subprocess did not inherit the environment (API keys), and parallel RAG calls each created their own Chroma client on the same index and corrupted it. Both are fixed and covered.
 3. **A new frontend.** A Vite + React + three.js UI where the five agents orbit the orchestrator and light up live as the SSE stream arrives. It has run replay, a tabbed report with hoverable citation chips, a command palette, local history, and Markdown/PDF export.
 4. **A retrieval benchmark that changed the defaults.** 64 labelled questions plus 16 unanswerable ones. It showed the relevance floor (tuned for OpenAI) refused **0 of 16** off-topic questions under Gemini. Re-calibrated to 0.40, it now refuses all off-topic ones and loses no answerable question. It also showed hybrid search and the reranker did not earn their place on this corpus, so the default stays dense.
 5. **Answer-quality eval and a public-benchmark harness.** An LLM-judge eval run on 34 questions (correctness 0.92, faithfulness 0.95), plus a run on the public BEIR SciFact dataset (hybrid nDCG@10 0.70), because a self-written benchmark can flatter its author. Notably, the best retriever differs between the two corpora.
+6. **Durable runs and human-in-the-loop.** A SQLite checkpointer behind every run, an `interrupt()`-based plan-review step, resume-from-failure, cooperative cancel and a run API. The UI gained a plan editor and reattaches to runs after a reload. Live testing found that a client disconnect stranded the run mid-graph. Runs now execute on worker threads decoupled from the HTTP response.
 
 Repository hygiene: `master` is protected (PRs only, required CI checks, linear history), secret scanning and Dependabot are on, and every change above landed through a reviewed-by-CI pull request.
 

@@ -1,6 +1,19 @@
 import { ArrowUp, Keyboard, Menu, Plus, RefreshCw, Search, TriangleAlert } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { checkPassword, clearStoredPassword, fetchHealth, getStoredPassword, streamReport, type Depth } from "./api";
+import {
+  cancelRun,
+  checkPassword,
+  clearStoredPassword,
+  fetchHealth,
+  fetchRun,
+  getStoredPassword,
+  rejectRun,
+  resumeRun,
+  streamReport,
+  type Depth,
+  type PlanEdits,
+  type StreamHandlers,
+} from "./api";
 import CommandPalette from "./components/CommandPalette";
 import DraftingPreview from "./components/DraftingPreview";
 import FollowUps from "./components/FollowUps";
@@ -8,6 +21,7 @@ import Hero from "./components/Hero";
 import Logo from "./components/Logo";
 import PasswordGate from "./components/PasswordGate";
 import PipelinePanel from "./components/PipelinePanel";
+import PlanReview from "./components/PlanReview";
 import QuestionComposer from "./components/QuestionComposer";
 import ReportView from "./components/ReportView";
 import ShortcutsDialog from "./components/ShortcutsDialog";
@@ -31,6 +45,20 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("agentdesk.depth", depth);
   }, [depth]);
+  const [reviewPlan, setReviewPlan] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem("agentdesk.reviewPlan") === "1";
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem("agentdesk.reviewPlan", reviewPlan ? "1" : "0");
+    } catch {
+      /* storage unavailable: the toggle just won't be remembered */
+    }
+  }, [reviewPlan]);
   const abortRef = useRef<Map<string, AbortController>>(new Map());
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -98,6 +126,51 @@ export default function App() {
   const active = runs.find((r) => r.id === activeId) ?? null;
 
   // ---- Runs ------------------------------------------------------------------------
+  /** Event handlers shared by a fresh run and a resumed one. */
+  const handlersFor = useCallback(
+    (id: string): StreamHandlers => ({
+      onRun: (serverId) => patchRun(id, { serverId }),
+      onProgress: (entry) => patchRun(id, (r) => ({ trace: [...r.trace, entry] })),
+      onPlanReview: (plan) => {
+        patchRun(id, { pendingPlan: plan, running: false });
+        toast("Plan ready for your review", "info");
+        if (document.hidden) document.title = "● Plan needs review · AgentDesk";
+      },
+      onReport: (result) => {
+        patchRun(id, { result, running: false, pendingPlan: null, finishedAt: Date.now() });
+        toast(result.status === "passed" ? "Report ready and verified" : "Report ready (not fully verified)", result.status === "passed" ? "success" : "info");
+        if (document.hidden) document.title = "✓ Report ready · AgentDesk";
+      },
+      onCancelled: () => patchRun(id, { running: false, error: "Stopped. You cancelled this run.", finishedAt: Date.now() }),
+      onError: (message) => patchRun(id, { error: message, running: false, finishedAt: Date.now() }),
+    }),
+    [patchRun, toast],
+  );
+
+  /** Run one streamed segment of a run with shared abort, auth and error handling. */
+  const attachStream = useCallback(
+    (id: string, open: (handlers: StreamHandlers, signal: AbortSignal) => Promise<void>) => {
+      const controller = new AbortController();
+      abortRef.current.set(id, controller);
+      open(handlersFor(id), controller.signal)
+        .catch((err: Error & { status?: number }) => {
+          if (err.name === "AbortError") return;
+          if (err.status === 401) {
+            clearStoredPassword();
+            setGate("locked");
+          }
+          const message = err instanceof TypeError ? "Couldn't reach the AgentDesk API. It may be waking up, so try again in a moment." : err.message;
+          patchRun(id, { error: message, running: false, finishedAt: Date.now() });
+        })
+        .finally(() => {
+          abortRef.current.delete(id);
+          // A stream that closes without a report, review or error event shouldn't spin forever.
+          patchRun(id, (r) => (r.running ? { running: false, error: "The connection closed before the report arrived.", finishedAt: Date.now() } : {}));
+        });
+    },
+    [handlersFor, patchRun],
+  );
+
   const startRun = useCallback(
     (question: string) => {
       if (runs.some((r) => r.running)) {
@@ -110,41 +183,38 @@ export default function App() {
       setActiveId(id);
       setDrawerOpen(false);
       scrollRef.current?.scrollTo({ top: 0 });
-
-      const controller = new AbortController();
-      abortRef.current.set(id, controller);
-
-      streamReport(
-        question,
-        password,
-        {
-          onProgress: (entry) => patchRun(id, (r) => ({ trace: [...r.trace, entry] })),
-          onReport: (result) => {
-            patchRun(id, { result, running: false, finishedAt: Date.now() });
-            toast(result.status === "passed" ? "Report ready and verified" : "Report ready (not fully verified)", result.status === "passed" ? "success" : "info");
-            if (document.hidden) document.title = "✓ Report ready · AgentDesk";
-          },
-          onError: (message) => patchRun(id, { error: message, running: false, finishedAt: Date.now() }),
-        },
-        controller.signal,
-        depth,
-      )
-        .catch((err: Error & { status?: number }) => {
-          if (err.name === "AbortError") return;
-          if (err.status === 401) {
-            clearStoredPassword();
-            setGate("locked");
-          }
-          const message = err instanceof TypeError ? "Couldn't reach the AgentDesk API. It may be waking up, so try again in a moment." : err.message;
-          patchRun(id, { error: message, running: false, finishedAt: Date.now() });
-        })
-        .finally(() => {
-          abortRef.current.delete(id);
-          // A stream that closes without a report or error event shouldn't spin forever.
-          patchRun(id, (r) => (r.running ? { running: false, error: "The connection closed before the report arrived.", finishedAt: Date.now() } : {}));
-        });
+      attachStream(id, (handlers, signal) => streamReport(question, password, handlers, signal, { depth, reviewPlan }));
     },
-    [password, patchRun, runs, toast, depth],
+    [password, runs, toast, depth, reviewPlan, attachStream],
+  );
+
+  const approvePlan = useCallback(
+    (id: string, edits: PlanEdits) => {
+      const run = runs.find((r) => r.id === id);
+      if (!run?.serverId) return;
+      if (runs.some((r) => r.running)) {
+        toast("Wait for the current research to finish, or stop it first", "info");
+        return;
+      }
+      const serverId = run.serverId;
+      patchRun(id, { pendingPlan: null, running: true, error: null });
+      attachStream(id, (handlers, signal) => resumeRun(serverId, password, edits, handlers, signal));
+    },
+    [runs, password, patchRun, attachStream, toast],
+  );
+
+  const rejectPlan = useCallback(
+    async (id: string) => {
+      const run = runs.find((r) => r.id === id);
+      if (!run?.serverId) return;
+      try {
+        await rejectRun(run.serverId, password);
+        patchRun(id, { pendingPlan: null, error: "Plan rejected. Nothing was researched.", finishedAt: Date.now() });
+      } catch (err) {
+        toast((err as Error).message, "error");
+      }
+    },
+    [runs, password, patchRun, toast],
   );
 
   const stopRun = useCallback(() => {
@@ -152,9 +222,64 @@ export default function App() {
     if (!running) return;
     abortRef.current.get(running.id)?.abort();
     abortRef.current.delete(running.id);
+    // Closing the stream alone no longer stops anything: the run executes on the
+    // server independently of this connection, so ask it to halt explicitly.
+    if (running.serverId) cancelRun(running.serverId, password).catch(() => undefined);
     patchRun(running.id, { running: false, error: "Stopped. You cancelled this run.", finishedAt: Date.now() });
     toast("Research stopped", "info");
-  }, [runs, patchRun, toast]);
+  }, [runs, patchRun, toast, password]);
+
+  // ---- Reattach to runs the page lost track of ---------------------------------------
+  // Runs execute server-side, independent of the browser. If the page was closed
+  // mid-run, ask the server how it ended, polling while it is still going.
+  const detachedKey = runs
+    .filter((r) => r.detached && r.serverId)
+    .map((r) => `${r.id}:${r.serverId}`)
+    .join(",");
+  useEffect(() => {
+    if (gate !== "unlocked" || !detachedKey) return;
+    const detached = detachedKey.split(",").map((pair) => {
+      const [id, serverId] = pair.split(":");
+      return { id, serverId };
+    });
+    let cancelled = false;
+    let timer = 0;
+
+    async function poll() {
+      let stillRunning = false;
+      for (const run of detached) {
+        try {
+          const server = await fetchRun(run.serverId, password);
+          if (cancelled) return;
+          if (server.status === "running") {
+            stillRunning = true;
+            patchRun(run.id, { trace: server.trace });
+          } else if (server.status === "completed" && server.result) {
+            patchRun(run.id, { detached: false, trace: server.trace, result: server.result, error: null, finishedAt: Date.now() });
+            toast("A run you left finished on the server", "success");
+          } else if (server.status === "awaiting_review" && server.pending_review) {
+            patchRun(run.id, { detached: false, trace: server.trace, pendingPlan: { run_id: server.run_id, ...server.pending_review }, error: null });
+          } else {
+            const reason = server.status === "cancelled" ? "Stopped. This run was cancelled." : (server.error ?? "The run failed on the server.");
+            patchRun(run.id, { detached: false, trace: server.trace, error: reason, finishedAt: Date.now() });
+          }
+        } catch (err) {
+          if (cancelled) return;
+          if ((err as { status?: number }).status === 404) {
+            patchRun(run.id, { detached: false, error: "Interrupted. The server no longer has this run (it may have been redeployed).", finishedAt: Date.now() });
+          } else {
+            stillRunning = true; // API waking up; try again shortly
+          }
+        }
+      }
+      if (stillRunning && !cancelled) timer = window.setTimeout(poll, 4000);
+    }
+    poll();
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [gate, password, detachedKey, patchRun, toast]);
 
   function newResearch() {
     setActiveId(null);
@@ -287,7 +412,12 @@ export default function App() {
   );
 
   const composer = (large?: boolean) => (
-    <QuestionComposer depth={depth} onDepthChange={setDepth} running={anyRunning} onSubmit={startRun} onStop={stopRun} inputRef={inputRef} autoFocus={large} large={large} />
+    <QuestionComposer
+      depth={depth}
+      onDepthChange={setDepth}
+      reviewPlan={reviewPlan}
+      onReviewPlanChange={setReviewPlan}
+      running={anyRunning} onSubmit={startRun} onStop={stopRun} inputRef={inputRef} autoFocus={large} large={large} />
   );
 
   return (
@@ -395,6 +525,25 @@ export default function App() {
                     >
                       <RefreshCw size={12} /> Try again
                     </button>
+                  </div>
+                )}
+
+                {active.pendingPlan && (
+                  <div className="no-print">
+                    <PlanReview
+                      key={active.pendingPlan.run_id}
+                      plan={active.pendingPlan}
+                      busy={anyRunning}
+                      onApprove={(edits) => approvePlan(active.id, edits)}
+                      onReject={() => rejectPlan(active.id)}
+                    />
+                  </div>
+                )}
+
+                {active.detached && (
+                  <div className="no-print animate-fade-up flex items-center gap-3 rounded-2xl border border-[var(--border)] px-4 py-3.5 text-sm text-[var(--text-dim)]">
+                    <RefreshCw size={15} className="shrink-0 animate-spin text-[var(--accent)]" />
+                    The page was closed during this run, but it kept going on the server. Checking how it ended…
                   </div>
                 )}
 
