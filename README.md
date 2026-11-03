@@ -55,9 +55,10 @@ Every `[source_id]` resolves to a real file chunk or URL, so the report can be a
 | --- | --- |
 | Finding the right document (64 labelled questions) | **97%** Recall@4 (the right chunk is in the top 4) |
 | Refusing off-topic questions | **0% → 100%**, found and fixed by the benchmark |
-| Offline tests | **302 tests, 96% coverage**, no API keys needed |
+| Offline tests | **315 tests, 96% coverage**, no API keys needed |
 | Durable runs | Checkpointed after every node: a run **survives a server restart**, resumes from the failed node, and can **pause for a human to edit the plan** · [details](#durable-runs-and-human-in-the-loop) |
 | Observability | Tokens and cost per agent on every run, fleet metrics, and OpenTelemetry traces. The first trace showed **8.2s of a 27s run** spent starting the MCP tool server · [details](#observability-tokens-cost-and-traces) |
+| Research step latency | **24.5s → 4.9s (−80%)** by keeping one MCP tool-server session warm, found by that trace · [details](#acting-on-the-trace-a-warm-mcp-session) |
 | Real production bugs found by deploying | **2**, both fixed with regression tests |
 | Answer quality (26 questions, LLM judge) | **0.92** correctness · **0.95** faithfulness · **100%** no made-up answers to unanswerable questions · [details](#answer-quality-llm-judge) |
 | Public benchmark (BEIR SciFact) | **0.70** nDCG@10 with hybrid search on 300 expert-labelled claims; our BM25 reproduces the published figure · [details](#public-benchmark-beir-scifact) |
@@ -291,6 +292,40 @@ subprocess** (spawn, import Chroma, handshake) on every research round. The mode
 are not the bottleneck; process start-up and tool I/O are. The whole run was 7.6k tokens,
 about $0.006 at list price.
 
+### Acting on the trace: a warm MCP session
+
+The fix keeps **one MCP session open for the life of the process**
+(`app/mcp/shared.py`). A daemon thread runs a private event loop, and an owner task on it
+holds the `stdio_client` session open. That has to be one task because the client is
+anyio-based: the task that enters the context must be the one that exits it. The
+Researcher still runs a short-lived loop per step and sends each `call_tool` across the
+thread as a future, inside a copy of its `contextvars`, so tracing spans and cost
+attribution still nest under the calling agent. The API also warms the session at
+start-up, so the first visitor doesn't pay for it either.
+
+The details that make it safe to share:
+
+- **Recovery.** A transport-level failure (the subprocess died, the pipe broke) tears the
+  session down and retries the call once on a fresh one. Tool calls are read-only, so
+  that's safe. Errors a tool reports about itself come back as results and are never
+  retried.
+- **Cancellation.** A caller's `asyncio.wait_for` timeout cancels the call on the shared
+  loop too, and leaves the session usable.
+- **Shutdown** cancels and awaits in-flight calls before stopping the loop. Testing
+  found that stopping the loop with tasks pending abandoned a tool call inside Chroma,
+  which showed up as an intermittent `Failed to get segments` in an unrelated later test.
+- `AGENTDESK_MCP_REUSE=0` restores the old per-round session.
+
+Measured live against Gemini, same question, deep mode, three runs each:
+
+| | fresh session per round | warm shared session |
+| --- | --- | --- |
+| Researcher step (avg) | 24.5s | **4.9s** |
+
+End-to-end time fell too (55.8s → 27.1s), but that number is noisy. Some runs take an
+extra Critic → Researcher round and Gemini latency varies several-fold run to run, so
+the research-step time is the honest measure of this change.
+
 ## Design deep-dives
 
 ### Why MCP instead of calling the tools directly
@@ -365,7 +400,7 @@ retrieval benchmark below, not from habit.
 ## Tests
 
 ```bash
-pytest                        # 302 tests, fully offline, no API keys, no cost
+pytest                        # 315 tests, fully offline, no API keys, no cost
 pytest --cov=app              # 96% line coverage
 ruff check . && ruff format --check .
 ```
@@ -619,6 +654,7 @@ All settings are environment variables read at call time (see `app/config.py` an
 | `AGENTDESK_MAX_PLAN_SUBTASKS` | `8` | most sub-questions a reviewer can leave in an edited plan |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | — | OTLP/HTTP collector to export traces to (e.g. `http://localhost:4318`); unset = tracing off. Other standard `OTEL_*` variables (headers, sampler) work too |
 | `OTEL_SERVICE_NAME` | `agentdesk-api` | service name on exported spans |
+| `AGENTDESK_MCP_REUSE` | `1` | keep one MCP tool-server session warm and share it across research rounds; `0` opens a fresh one per round |
 | `AGENTDESK_PRICE_INPUT_PER_M` / `AGENTDESK_PRICE_OUTPUT_PER_M` | per model | override the USD-per-1M-token prices used for cost |
 
 ## Project layout
@@ -633,14 +669,15 @@ app/
   agents/             planner, researcher, analyst, synthesizer, writer, critic
     base.py           @node decorator: timing, logging, trace entries
   llm/gemini_client.py  forced function-calling + retry policy
-  mcp/                server.py (tool process), client.py (session), tools.py (impls)
+  mcp/                server.py (tool process), client.py (session), shared.py (warm shared
+                      session on a background loop), tools.py (impls)
   rag/                ingest.py (chunk/embed/upsert), retriever.py (candidates → fusion →
                       rerank → floor), bm25.py, rerank.py
   main.py             FastAPI surface: auth gate, CORS, /api/report(/stream), /api/runs, run worker threads
 frontend/              Vite + React + three.js UI (3D live pipeline + replay, tabbed report, history)
 eval/                  pipeline eval + retrieval benchmark: labelled sets, stub model,
                        runners, cached embeddings, checked-in results
-tests/                 302 tests; doubles.py holds the offline stand-ins
+tests/                 315 tests; doubles.py holds the offline stand-ins
 scripts/               ingest_docs, run_demo, check_mcp_server
 ```
 
@@ -679,7 +716,7 @@ Stated plainly, because they are the honest next steps rather than hidden gaps:
 
 ## Engineering log: what was built, and what changed along the way
 
-The project went through seven rounds of work. Each one fixed something specific rather than adding features for their own sake.
+The project went through eight rounds of work. Each one fixed something specific rather than adding features for their own sake.
 
 1. **Production hardening.** The first version truncated every RAG passage at its first blank line (782 characters retrieved, 22 delivered) because passages were serialised to text and re-parsed. Fixed by passing structured data across the MCP boundary, then added a regression test that exercises the seam. Also added the research loop (the Critic can request more evidence), bounded retries and typed errors.
 2. **Port to Gemini and live deployment.** Moved the whole LLM and embedding layer from Claude + OpenAI to Gemini (`google-genai`) with the API contract unchanged, then deployed the backend on Railway and the UI on Vercel (the API moved to Render when the Railway trial ended). Deployment exposed two bugs that tests missed: the MCP tool subprocess did not inherit the environment (API keys), and parallel RAG calls each created their own Chroma client on the same index and corrupted it. Both are fixed and covered.
@@ -688,6 +725,7 @@ The project went through seven rounds of work. Each one fixed something specific
 5. **Answer-quality eval and a public-benchmark harness.** An LLM-judge eval run on 34 questions (correctness 0.92, faithfulness 0.95), plus a run on the public BEIR SciFact dataset (hybrid nDCG@10 0.70), because a self-written benchmark can flatter its author. Notably, the best retriever differs between the two corpora.
 6. **Durable runs and human-in-the-loop.** A SQLite checkpointer behind every run, an `interrupt()`-based plan-review step, resume-from-failure, cooperative cancel and a run API. The UI gained a plan editor and reattaches to runs after a reload. Live testing found that a client disconnect stranded the run mid-graph. Runs now execute on worker threads decoupled from the HTTP response.
 7. **Observability.** Per-agent token and cost accounting through a `contextvars` ledger, a metrics endpoint, a Usage tab and a System metrics view, plus OpenTelemetry spans for runs, agents, Gemini calls and MCP tool calls. Verified by exporting a live run's 26 spans to an OTLP receiver. The first trace showed that starting the MCP tool server costs 8.2s of every research round.
+8. **A warm MCP session, because the trace said so.** One tool-server session per process, shared across research rounds through a background event loop, with retry-once recovery, cancellation and clean shutdown. The research step went from 24.5s to 4.9s on live runs. Testing it surfaced a shutdown bug (pending tasks abandoned mid-Chroma-call) that showed up only as an intermittent failure in an unrelated test.
 
 Repository hygiene: `master` is protected (PRs only, required CI checks, linear history), secret scanning and Dependabot are on, and every change above landed through a reviewed-by-CI pull request.
 

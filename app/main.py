@@ -7,6 +7,7 @@ import queue
 import secrets
 import threading
 from collections.abc import Iterator
+from contextlib import asynccontextmanager
 from typing import Literal
 
 from dotenv import load_dotenv
@@ -29,6 +30,8 @@ from app.graph import (
     run_agentdesk,
     stream_agentdesk,
 )
+from app.mcp.client import mcp_session
+from app.mcp.shared import reset_shared_session, shared_session
 from app.observability import compute_metrics, init_tracing
 
 load_dotenv()  # no-ops if .env doesn't exist (Docker/Railway set real env vars instead)
@@ -37,10 +40,28 @@ TRACING = init_tracing()  # exports spans only when OTEL_EXPORTER_OTLP_ENDPOINT 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("agentdesk.api")
 
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    """Warm the shared MCP session at boot so the first question doesn't pay for it.
+
+    Non-blocking: the server accepts requests (and passes health checks) while
+    the tool server starts; a question arriving first simply waits for it.
+    """
+    if get_settings().mcp_reuse and os.environ.get("AGENTDESK_MCP_PREWARM", "1") != "0":
+        future = shared_session(mcp_session).warm()
+        future.add_done_callback(
+            lambda f: f.exception() and log.warning("MCP prewarm failed: %s", f.exception())
+        )
+    yield
+    reset_shared_session()
+
+
 app = FastAPI(
     title="AgentDesk",
-    version="1.1.0",
+    version="1.2.0",
     description="Multi-agent research & report orchestrator (LangGraph + MCP + RAG)",
+    lifespan=lifespan,
 )
 
 _raw_cors_origins = os.environ.get("AGENTDESK_CORS_ORIGINS", "*")

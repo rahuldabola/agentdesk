@@ -9,6 +9,7 @@ import pytest
 
 import app.graph as graph_module
 import app.llm.gemini_client as gemini_client
+import app.mcp.shared as shared_mcp
 import app.persistence as persistence
 from tests.doubles import fake_embed_texts, flatten_exception, in_memory_mcp_session
 
@@ -49,6 +50,15 @@ def in_memory_runs(monkeypatch):
     persistence.reset_persistence()
     yield
     persistence.reset_persistence()
+
+
+@pytest.fixture(autouse=True)
+def fresh_mcp_session(monkeypatch):
+    """The warm MCP session is process-wide; never let one outlive its test."""
+    monkeypatch.setenv("AGENTDESK_MCP_PREWARM", "0")
+    shared_mcp.reset_shared_session()
+    yield
+    shared_mcp.reset_shared_session()
 
 
 @pytest.fixture(autouse=True)

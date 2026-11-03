@@ -73,6 +73,7 @@ class Settings:
     fetch_pages: int
     fetch_max_chars: int
     query_rewrite: bool
+    mcp_reuse: bool
 
     # Control loop
     max_revisions: int
@@ -120,6 +121,9 @@ def get_settings() -> Settings:
         fetch_max_chars=_int("AGENTDESK_FETCH_MAX_CHARS", 1800),
         # Let the internal researcher reword a query that retrieved nothing, once.
         query_rewrite=_int("AGENTDESK_QUERY_REWRITE", 1) != 0,
+        # Keep one MCP tool-server session warm and share it across research rounds
+        # (0 = open a fresh session per round, the old behaviour).
+        mcp_reuse=_int("AGENTDESK_MCP_REUSE", 1) != 0,
         max_revisions=_int("AGENTDESK_MAX_REVISIONS", 2),
         max_research_rounds=_int("AGENTDESK_MAX_RESEARCH_ROUNDS", 1),
         # SQLite file holding graph checkpoints and the run index ("memory" keeps
