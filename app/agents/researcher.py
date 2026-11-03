@@ -24,6 +24,7 @@ from app.agents.base import node
 from app.config import agent_model, get_settings
 from app.llm.gemini_client import structured_call
 from app.mcp.client import call_tool, mcp_session
+from app.mcp.shared import shared_session
 
 log = logging.getLogger("agentdesk.researcher")
 
@@ -218,13 +219,20 @@ async def _gather(
         async with limit:
             return await call_tool(session, tool, args)
 
-    async with mcp_session() as session:
+    async def run_lanes(session):
         lanes = []
         if use_rag:
             lanes.append(_internal_lane(session, subtasks, guarded, question, activity, deep))
         if use_web:
             lanes.append(_web_lane(session, subtasks, guarded, activity, deep))
-        results = await asyncio.gather(*lanes)
+        return await asyncio.gather(*lanes)
+
+    if settings.mcp_reuse:
+        # The warm, process-wide session: no subprocess start-up per round.
+        results = await run_lanes(shared_session(mcp_session))
+    else:
+        async with mcp_session() as session:
+            results = await run_lanes(session)
 
     return [pair for lane in results for pair in lane], activity
 
