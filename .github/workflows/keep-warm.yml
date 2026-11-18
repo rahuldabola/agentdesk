@@ -4,8 +4,13 @@
 name: Keep warm
 
 on:
+  # Awake 8 PM-8 AM IST only (14:30-02:30 UTC): 12 h/day per service, so this and the other
+  # free Render service on the account (~720 h together) stay under Render's 750 free hours/month.
+  # Outside this window the instance sleeps after 15 idle minutes and wakes on the next request.
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "30-59/10 14 * * *"
+    - cron: "*/10 15-23,0-1 * * *"
+    - cron: "0-30/10 2 * * *"
   workflow_dispatch:
 
 jobs:
